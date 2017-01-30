@@ -2,7 +2,7 @@
 Properties of the opposite category.
 ---------------------------------------------------------------------------- -/
 
-import src.Cat.basic
+import Qvr.Cat.basic
 
 namespace Qvr
 universe variables ℓobj ℓhom
