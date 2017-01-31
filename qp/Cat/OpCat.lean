@@ -4,7 +4,7 @@ Properties of the opposite category.
 
 import qp.Cat.basic
 
-namespace Qvr
+namespace qp
 universe variables ℓobj ℓhom
 
 
@@ -16,4 +16,4 @@ universe variables ℓobj ℓhom
 | (Cat.mk obj hom id circ circ_assoc circ_id_left circ_id_right)
 := rfl
 
-end Qvr
+end qp

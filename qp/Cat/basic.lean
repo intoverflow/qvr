@@ -4,7 +4,7 @@ properties.
 ---------------------------------------------------------------------------- -/
 
 
-namespace Qvr
+namespace qp
 universe variables ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄
 
 
@@ -583,4 +583,4 @@ theorem BxHom.eq {C : Cat}
   := rfl
 end Cat
 
-end Qvr
+end qp
