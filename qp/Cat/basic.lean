@@ -813,6 +813,12 @@ infixl `××` : 130 := λ C D, ProdCat C D
 -/
 @[reducible] definition PropCat : Cat.{1 0} := LeanCat.{0}
 
+/-! #brief The presheaf category.
+-/
+@[reducible] definition PreShCat (C : Cat.{ℓobj ℓhom})
+    : Cat
+:= FunCat {{C}}⁻¹ LeanCat.{ℓhom}
+
 /-! #brief The functor from CatCat to LeanCat.
 -/
 @[reducible] definition CatCat.toLean
