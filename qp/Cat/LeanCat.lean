@@ -14,7 +14,7 @@ universe variables ℓ ℓobj ℓhom
 Limits.
 ---------------------------------------------------------------------------- -/
 
-/-! #brief For certain universe levels, LeanCat has all limits.
+/-! #brief For certain type levels, LeanCat has all limits.
 -/
 definition LeanCat.HasAllLimits
     : HasAllLimits LeanCat.{max 1 ℓobj ℓhom}
@@ -31,8 +31,8 @@ definition LeanCat.HasAllLimits
                                   apply g^.has_property
                                 end
                         }
-           , is_final := { final := λ cone, { mediate := λ c, ⟨ λ b, cone^.is_cone^.proj b c
-                                                              , λ b₁ b₂ f, by rw cone^.is_cone^.proj_circ
+           , is_final := { final := λ cone, { mediate := λ c, ⟨ λ b, (cone b) c
+                                                              , λ b₁ b₂ f, begin dsimp, rw cone^.is_cone^.proj_circ end
                                                               ⟩
                                             , factor := λ x, rfl
                                             }

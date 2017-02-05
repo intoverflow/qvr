@@ -68,6 +68,15 @@ structure ConeHom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
 := { coe := HasCone.cone
    }
 
+--/-! #brief Every HasCone can be treated as a function on objects.
+---/
+@[reducible] instance HasCone.has_coe_to_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    : has_coe_to_fun (HasCone F)
+:= { F := λ has_cone, ∀ (x : [[B]]), has_cone^.cone →→ F x
+   , coe := λ has_cone, has_cone^.is_cone^.proj
+   }
+
 /-! #brief Every ConeHom can be used as a hom.
 -/
 @[reducible] instance ConeHom.has_coe_to_hom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
@@ -169,6 +178,32 @@ The category of cones.
    , circ_assoc := λ cone₁ cone₂ cone₃ cone₄ h g f, ConeHom.comp_assoc
    , circ_id_left := λ cone₁ cone₂ f, ConeHom.comp_id_left
    , circ_id_right := λ cone₁ cone₂ f, ConeHom.comp_id_right
+   }
+
+/-! #brief Every object in ConeCat can be used as an object in the codomain.
+-/
+@[reducible] instance ConeCat.obj_has_coe_to_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    : has_coe [[ConeCat F]] [[C]]
+:= { coe := HasCone.cone
+   }
+
+--/-! #brief Every object in ConeCat can be treated as a function on objects of the domain.
+---/
+@[reducible] instance ConeCat.obj_has_coe_to_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    : has_coe_to_fun [[ConeCat F]]
+:= { F := λ has_cone, ∀ (x : [[B]]), has_cone^.cone →→ F x
+   , coe := λ has_cone, has_cone^.is_cone^.proj
+   }
+
+/-! #brief Every hom in ConeCat can be used as a hom in the codomain.
+-/
+@[reducible] instance ConeCat.hom_has_coe_to_hom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    {cone₁ cone₂ : [[ConeCat F]]}
+    : has_coe ((ConeCat F)^.hom cone₁ cone₂) (C^.hom cone₁ cone₂)
+:= { coe := ConeHom.mediate
    }
 
 
