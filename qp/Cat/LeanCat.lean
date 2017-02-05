@@ -24,7 +24,7 @@ definition LeanCat.HasAllLimits
    , is_limit
       := λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ LeanCat.{max 1 ℓobj ℓhom})
          , { is_cone := { proj := λ b g, g^.elt_of b
-                        , proj_circ
+                        , triangle
                            := λ b₁ b₂ f
                               , begin
                                   dsimp, apply funext, intro g,
@@ -32,7 +32,7 @@ definition LeanCat.HasAllLimits
                                 end
                         }
            , is_final := { final := λ cone, { mediate := λ c, ⟨ λ b, (cone b) c
-                                                              , λ b₁ b₂ f, begin dsimp, rw cone^.is_cone^.proj_circ end
+                                                              , λ b₁ b₂ f, begin dsimp, rw cone^.is_cone^.triangle end
                                                               ⟩
                                             , factor := λ x, rfl
                                             }

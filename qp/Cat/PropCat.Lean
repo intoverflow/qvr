@@ -23,7 +23,7 @@ definition PropCat.HasAllLimits
    , is_limit
       := λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ PropCat)
          , { is_cone := { proj := λ b g, g b
-                        , proj_circ := λ b₁ b₂ f, rfl
+                        , triangle := λ b₁ b₂ f, rfl
                         }
            , is_final := { final := λ cone, { mediate := λ c, λ b, (cone b) c
                                             , factor := λ x, rfl

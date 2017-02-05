@@ -30,7 +30,6 @@ structure Cat : Type ((max ℓobj ℓhom) + 1)
    (circ_id_right : ∀ {x y : obj} {f : hom x y}
                     , circ f (id x) = f)
 
-attribute [simp] Cat.circ_assoc
 attribute [simp] Cat.circ_id_left
 attribute [simp] Cat.circ_id_right
 
@@ -61,7 +60,6 @@ structure Fun (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
                , hom (g ∘∘ f) = hom g ∘∘ hom f)
 
 attribute [simp] Fun.hom_id
-attribute [simp] Fun.hom_circ
 
 -- A functor between categories.
 -- \rightrightarrows\rightrightarrows
@@ -98,8 +96,6 @@ structure NatTrans
    (transport : ∀ {x y : [[C]]} {f : x →→ y}
                 , component y ∘∘ (F ↗ f)
                    = (G ↗ f) ∘∘ component x)
-
-attribute [simp] NatTrans.transport
 
 -- A natural transformation.
 -- \rightarrowtail\rightarrowtail
@@ -189,7 +185,7 @@ theorem Fun.heq
 := { obj := λ x, G (F x)
    , hom := λ x y f, G ↗ (F ↗ f)
    , hom_id := λ x, begin dsimp, simp end
-   , hom_circ := λ x y z g f, begin dsimp, simp end
+   , hom_circ := λ x y z g f, begin dsimp, simp [Fun.hom_circ] end
    }
 
 -- Composition of functors.
@@ -516,12 +512,12 @@ theorem Iso.circ {C : Cat.{ℓobj ℓhom}}
     (iso₂₃ : Iso f₂₃ f₃₂)
     : Iso (f₂₃ ∘∘ f₁₂) (f₂₁ ∘∘ f₃₂)
 := { id₁ := by calc (f₂₁ ∘∘ f₃₂) ∘∘ (f₂₃ ∘∘ f₁₂)
-                        = f₂₁ ∘∘ ((f₃₂ ∘∘ f₂₃) ∘∘ f₁₂) : by simp
+                        = f₂₁ ∘∘ ((f₃₂ ∘∘ f₂₃) ∘∘ f₁₂) : by simp [Cat.circ_assoc]
                     ... = f₂₁ ∘∘ (⟨⟨x₂⟩⟩ ∘∘ f₁₂)       : by rw iso₂₃^.id₁
                     ... = f₂₁ ∘∘ f₁₂                   : by simp
                     ... = ⟨⟨x₁⟩⟩                       : by rw iso₁₂^.id₁
    , id₂ := by calc (f₂₃ ∘∘ f₁₂) ∘∘ (f₂₁ ∘∘ f₃₂)
-                        = f₂₃ ∘∘ ((f₁₂ ∘∘ f₂₁) ∘∘ f₃₂) : by simp
+                        = f₂₃ ∘∘ ((f₁₂ ∘∘ f₂₁) ∘∘ f₃₂) : by simp [Cat.circ_assoc]
                     ... = f₂₃ ∘∘ (⟨⟨x₂⟩⟩ ∘∘ f₃₂)       : by rw iso₁₂^.id₂
                     ... = f₂₃ ∘∘ f₃₂                   : by simp
                     ... = ⟨⟨x₃⟩⟩                       : by rw iso₂₃^.id₂
@@ -841,7 +837,7 @@ infixl `××` : 130 := λ C D, ProdCat C D
           , begin
               simp,
               apply funext, intro c,
-              dsimp, simp
+              dsimp, simp [Cat.circ_assoc]
             end
    }
 
