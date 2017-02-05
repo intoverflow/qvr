@@ -31,7 +31,7 @@ definition LeanCat.HasAllLimits
                                   apply g^.has_property
                                 end
                         }
-           , is_final := { final := λ cone, { mediate := λ c, ⟨ λ b, cone^.is_cone^.proj _ c
+           , is_final := { final := λ cone, { mediate := λ c, ⟨ λ b, cone^.is_cone^.proj b c
                                                               , λ b₁ b₂ f, by rw cone^.is_cone^.proj_circ
                                                               ⟩
                                             , factor := λ x, rfl
