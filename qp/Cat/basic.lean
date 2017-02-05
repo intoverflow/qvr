@@ -546,9 +546,9 @@ Initial and final objects.
 ---------------------------------------------------------------------------- -/
 
 -- An initial object.
-structure IsInit {C : Cat.{ℓobj ℓhom}}
+structure IsInit (C : Cat.{ℓobj ℓhom})
     (x : [[C]])
-    : Type ((max ℓobj ℓhom) + 1)
+    : Type (max 1 ℓobj ℓhom)
 := (init : ∀ (y : [[C]]), x →→ y)
    (uniq : ∀ {y : [[C]]} (h : x →→ y), h = init y)
 
@@ -557,7 +557,7 @@ structure IsInit {C : Cat.{ℓobj ℓhom}}
 ---/
 @[reducible] instance IsInit.has_coe_to_fun {C : Cat.{ℓobj ℓhom}}
     {x : [[C]]}
-    : has_coe_to_fun (IsInit x)
+    : has_coe_to_fun (IsInit C x)
 := { F := λ x_init, ∀ (y : [[C]]), x →→ y
    , coe := λ x_init y, x_init^.init y
    }
@@ -570,17 +570,17 @@ we have (by IsInit.uniq) that f₁₂ = x₁_init x₂,
 and f₂₁ = x₂_init x₁.
 -/
 definition IsInit.iso {C : Cat.{ℓobj ℓhom}}
-    {x₁ : [[C]]} (x₁_init : IsInit x₁)
-    {x₂ : [[C]]} (x₂_init : IsInit x₂)
+    {x₁ : [[C]]} (x₁_init : IsInit C x₁)
+    {x₂ : [[C]]} (x₂_init : IsInit C x₂)
     : Iso (x₁_init x₂) (x₂_init x₁)
 := { id₁ := begin dsimp, rw (x₁_init^.uniq ⟨⟨x₁⟩⟩), apply x₁_init^.uniq end
    , id₂ := begin dsimp, rw (x₂_init^.uniq ⟨⟨x₂⟩⟩), apply x₂_init^.uniq end
    }
 
 -- A final object.
-structure IsFinal {C : Cat.{ℓobj ℓhom}}
+structure IsFinal (C : Cat.{ℓobj ℓhom})
     (y : [[C]])
-    : Type ((max ℓobj ℓhom) + 1)
+    : Type (max 1 ℓobj ℓhom)
 := (final : ∀ (x : [[C]]), x →→ y)
    (uniq : ∀ {x : [[C]]} (h : x →→ y), h = final x)
 
@@ -589,7 +589,7 @@ structure IsFinal {C : Cat.{ℓobj ℓhom}}
 ---/
 @[reducible] instance IsFinal.has_coe_to_fun {C : Cat.{ℓobj ℓhom}}
     {y : [[C]]}
-    : has_coe_to_fun (IsFinal y)
+    : has_coe_to_fun (IsFinal C y)
 := { F := λ y_final, ∀ (x : [[C]]), x →→ y
    , coe := λ y_final x, y_final^.final x
    }
@@ -602,8 +602,8 @@ we have (by IsFinal.uniq) that f₁₂ = x₂_final x₁,
 and f₂₁ = x₁_final x₂.
 -/
 definition IsFinal.iso {C : Cat.{ℓobj ℓhom}}
-    {x₁ : [[C]]} (x₁_final : IsFinal x₁)
-    {x₂ : [[C]]} (x₂_final : IsFinal x₂)
+    {x₁ : [[C]]} (x₁_final : IsFinal C x₁)
+    {x₂ : [[C]]} (x₂_final : IsFinal C x₂)
     : Iso (x₂_final x₁) (x₁_final x₂)
 := { id₁ := begin dsimp, rw (x₁_final^.uniq ⟨⟨x₁⟩⟩), apply x₁_final^.uniq end
    , id₂ := begin dsimp, rw (x₂_final^.uniq ⟨⟨x₂⟩⟩), apply x₂_final^.uniq end

@@ -5,7 +5,7 @@ The Yoneda embedding and the Yoneda lemma.
 import .basic
 
 namespace qp
-universe variables ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄
+universe variables ℓobj ℓhom
 
 
 
