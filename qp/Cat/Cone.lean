@@ -220,6 +220,36 @@ structure IsLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
 := (is_cone : IsCone F c)
    (is_final : IsFinal (ConeCat F) (HasCone.mk c is_cone))
 
+-- TODO: Fix docstring!
+--/-! #brief Every IsLimit can be used as an IsCone.
+---/
+@[reducible] instance IsLimit.has_coe_to_IsCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} {c : [[C]]}
+    : has_coe (IsLimit F c) (IsCone F c)
+:= { coe := IsLimit.is_cone
+   }
+
+/-! #brief The mediating map (in the ConeCat) from a cone to the limit.
+-/
+@[reducible] definition IsLimit.mediate_cone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} {c : [[C]]}
+    (c_limit : IsLimit F c)
+  : ∀ {c' : [[C]]} (c'_cone : IsCone F c')
+    , ConeHom c'_cone c_limit^.is_cone
+  := λ c' cone, IsFinal.final (IsLimit.is_final c_limit)
+                              { cone := c'
+                              , is_cone := cone
+                              }
+
+/-! #brief The mediating map (in C) from a cone to the limit.
+-/
+@[reducible] definition IsLimit.mediate {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} {c : [[C]]}
+    (c_limit : IsLimit F c)
+    : ∀ {c' : [[C]]} (cone : IsCone F c')
+      , c' →→ c
+:= λ c' cone, ConeHom.mediate (IsLimit.mediate_cone c_limit cone)
+
 -- Notion of when a functor preserves limits.
 structure PreservesLimits {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (F : C ⇉⇉ D)
