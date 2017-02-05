@@ -17,7 +17,7 @@ Limits.
 /-! #brief PropCat has all limits at all type levels.
 -/
 definition PropCat.HasAllLimits
-    : HasAllLimits PropCat
+    : HasAllLimits.{ℓobj ℓhom} PropCat
 := { limit
       := λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ PropCat), ∀ (b : [[B]]), F b
    , is_limit

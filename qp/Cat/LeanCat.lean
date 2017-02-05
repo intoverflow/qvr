@@ -17,7 +17,7 @@ Limits.
 /-! #brief For certain type levels, LeanCat has all limits.
 -/
 definition LeanCat.HasAllLimits
-    : HasAllLimits LeanCat.{max 1 ℓobj ℓhom}
+    : HasAllLimits.{ℓobj ℓhom} LeanCat.{max 1 ℓobj ℓhom}
 := { limit
       := λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ LeanCat.{max 1 ℓobj ℓhom})
          , { g : ∀ (b : [[B]]), F b // ∀ {b₁ b₂ : [[B]]} (f : b₁ →→ b₂), g b₂ = (F ↗ f) (g b₁) }
