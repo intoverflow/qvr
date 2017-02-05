@@ -6,7 +6,7 @@ import .basic
 import .Cone
 
 namespace qp
-universe variables ℓ ℓobj ℓhom
+universe variables ℓobj ℓhom
 
 
 
