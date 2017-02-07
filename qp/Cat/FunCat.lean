@@ -31,6 +31,24 @@ Swapping the argument-order of functors into a functor category.
    , hom_circ := λ c₁ c₂ c₃ g f, begin apply NatTrans.eq, intro b, dsimp, simp [Fun.hom_circ] end
    }
 
+/-! #brief The swap of a cone.
+-/
+@[reducible] definition FunCat.swap.IsCone {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D)
+    {B : Cat.{ℓobj ℓhom}}
+    (F : B⇉⇉FunCat C D)
+    (cone : [[ConeCat F]])
+    (c : [[C]])
+    : IsCone (FunCat.swap F c) (BxCone.cone cone c)
+:= { proj := λ x, (cone^.is_cone^.proj x) c
+   , triangle
+      := λ x₁ x₂ f
+         , begin
+             dsimp,
+             rw (IsCone.triangle (BxCone.is_cone cone) f)
+             end
+   }          
+
 
 
 /- ----------------------------------------------------------------------------
@@ -81,23 +99,23 @@ Limits.
            end
    }
 
-/-! #brief The swap of a cone.
+/-! #brief Building a cone with LimitFun □□ FunCat.swap.
 -/
-@[reducible] definition LimitFun.swapCone {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+@[reducible] definition LimitFun_swap.IsCone {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D)
-    {B : Cat.{ℓobj ℓhom}}
-    (F : B⇉⇉FunCat C D)
-    (cone : [[ConeCat F]])
-    (c : [[C]])
-    : IsCone (FunCat.swap F c) (BxCone.cone cone c)
-:= { proj := λ x, (cone^.is_cone^.proj x) c
+    {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ FunCat C D)
+    : IsCone F (LimitFun B D_HasAllLimits □□ FunCat.swap F)
+:= { proj
+      := λ x, { component := λ c, by apply IsLimit.proj (D_HasAllLimits^.is_limit (FunCat.swap F c)) x
+              , transport := λ c₁ c₂ f, by rw -(IsLimit.factor (D_HasAllLimits^.is_limit (FunCat.swap F c₂)) _)
+              }
    , triangle
       := λ x₁ x₂ f
          , begin
-             dsimp,
-             rw (IsCone.triangle (BxCone.is_cone cone) f)
-             end
-   }          
+             apply NatTrans.eq, intro c, dsimp,
+             apply IsLimit.triangle (D_HasAllLimits^.is_limit (FunCat.swap F c)) f
+           end
+   }
 
 
 notation `&&&` x `::` y `&&&` := Fun.mk x y _ _
@@ -113,19 +131,7 @@ notation `???` x `???` := NatTrans.mk x _
          , LimitFun B D_HasAllLimits □□ FunCat.swap F
    , is_limit
       := λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ FunCat C D)
-         , { is_cone
-              := { proj
-                    := λ x
-                       , { component := λ c, by apply IsLimit.proj (D_HasAllLimits^.is_limit (FunCat.swap F c)) x
-                         , transport := λ c₁ c₂ f, by rw -(IsLimit.factor (D_HasAllLimits^.is_limit (FunCat.swap F c₂)) _)
-                         }
-                 , triangle
-                    := λ x₁ x₂ f
-                       , begin
-                           apply NatTrans.eq, intro c, dsimp,
-                           apply IsLimit.triangle (D_HasAllLimits^.is_limit (FunCat.swap F c)) f
-                         end
-                 }
+         , { is_cone := LimitFun_swap.IsCone D_HasAllLimits F
            , is_final
               := { final
                     := λ cone
@@ -133,7 +139,7 @@ notation `???` x `???` := NatTrans.mk x _
                             := { component
                                   := λ c
                                      , IsLimit.mediate (D_HasAllLimits^.is_limit (FunCat.swap F c))
-                                        (LimitFun.swapCone D_HasAllLimits F cone c)
+                                        (FunCat.swap.IsCone D_HasAllLimits F cone c)
                                , transport := λ c₁ c₂ f, sorry
                                }
                          , factor
