@@ -72,13 +72,21 @@ inductive Expr : ℕ → ℕ → Type
 | .Nf .Nb (@Expr.π₁ Nf Nb e) Mb v p ωNb := Expr.π₁ (subst e v p ωNb)
 | .Nf .Nb (@Expr.π₂ Nf Nb e) Mb v p ωNb := Expr.π₂ (subst e v p ωNb)
 
-/-! #brief Applies beta reduction to the head.
+/-! #brief Guard for beta reduction.
 -/
-@[reducible] definition rule_app
-    : ∀ {Nf : ℕ} (e : Expr Nf 0)
-      , Expr Nf 0
-| Nf (Expr.app (Expr.lam e₁) e₂) := subst e₁ e₂ { val := 0, is_lt := sorry } rfl
-| Nf e := e
+inductive can_beta {Nf Nb : ℕ} : Expr Nf Nb → Prop
+| ω : ∀ (e₁ : Expr Nf (Nb + 1)) (e₂ : Expr Nf Nb)
+      , can_beta (Expr.app (Expr.lam e₁) e₂)
+
+/-! #brief Applies beta reduction on the head.
+-/
+@[reducible] definition rule_beta
+    : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+        (ωe : can_beta e)
+      , Expr Nf Nb
+| Nf Nb (Expr.app (Expr.lam e₁) e₂) ωe
+:= subst e₁ e₂ { val := 0, is_lt := sorry } rfl
+| Nf Nb e ωe := e
 
 -- [e1/x1][e2/x2]e = [e2/x2][[e2/x2]e1/x1]e
 
@@ -110,7 +118,7 @@ definition ex₂
       let y' : Expr 8 2 := bvar { val := 1, is_lt := sorry } in
       let z' : Expr 8 2 := bvar { val := 0, is_lt := sorry } in
       let F' : Expr 8 2 := fvar { val := 7, is_lt := sorry }
-      in rule_app (app (lam (lam (lam (app (app x y) z)))) F)
+      in rule_beta (app (lam (lam (lam (app (app x y) z)))) F) sorry
           = lam (lam (app (app F' y') z'))
 := rfl
 
@@ -122,7 +130,7 @@ definition ex₃
       let x' : Expr 8 2 := bvar { val := 1, is_lt := sorry } in
       let z' : Expr 8 2 := bvar { val := 0, is_lt := sorry } in
       let F' : Expr 8 2 := fvar { val := 7, is_lt := sorry }
-      in rule_app (app (lam (lam (lam (app (app x y) z)))) F)
+      in rule_beta (app (lam (lam (lam (app (app x y) z)))) F) sorry
           = lam (lam (app (app x' F') z'))
 := rfl
 
@@ -135,11 +143,98 @@ definition ex₄
       let z' : Expr 8 1 := bvar { val := 0, is_lt := sorry } in
       let F' : Expr 8 1 := fvar { val := 7, is_lt := sorry } in
       let G' : Expr 8 1 := fvar { val := 5, is_lt := sorry }
-      in rule_app (app (rule_app (app (lam (lam (lam (app (app x y) z)))) F)) G)
+      in rule_beta (app (rule_beta (app (lam (lam (lam (app (app x y) z)))) F) sorry) G) sorry
           = lam (app (app F' G') z')
 := rfl
 
-
 end Examples
+
+/-! #brief Guard for left projection.
+-/
+inductive can_π₁ {Nf Nb : ℕ} : Expr Nf Nb → Prop
+| ω : ∀ (e₁ e₂ : Expr Nf Nb)
+      , can_π₁ (Expr.π₁ (Expr.pair e₁ e₂))
+
+/-! #brief Applies left projection on the head.
+-/
+@[reducible] definition rule_π₁
+    : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+        (ωe : can_π₁ e)
+      , Expr Nf Nb
+| Nf Nb (Expr.π₁ (Expr.pair e₁ e₂)) ωe := e₁
+| Nf Nb e ωe := e
+
+/-! #brief Guard for right projection.
+-/
+inductive can_π₂ {Nf Nb : ℕ} : Expr Nf Nb → Prop
+| ω : ∀ (e₁ e₂ : Expr Nf Nb)
+      , can_π₂ (Expr.π₂ (Expr.pair e₁ e₂))
+
+/-! #brief Applies right projection on the head.
+-/
+@[reducible] definition rule_π₂
+    : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+        (ωe : can_π₂ e)
+      , Expr Nf Nb
+| Nf Nb (Expr.π₂ (Expr.pair e₁ e₂)) ωe := e₂
+| Nf Nb e ωe := e
+
+
+namespace STLC
+open list
+
+/-! #brief list.nth, but without the option monad.
+-/
+@[reducible] definition {ℓ} get {A : Type ℓ}
+    : ∀ (aa : list A) (idx : fin (length aa))
+      , A
+| [] (fin.mk idx ω) := begin apply false.rec, cases ω end
+| (a :: aa) (fin.mk 0 ω) := a
+| (a :: aa) (fin.mk (nat.succ idx) ω) := get aa { val := idx, is_lt := sorry }
+
+/-! #brief Types in the simplty typed lambda calculus.
+-/
+inductive Ty : Type
+| unit : Ty
+| abs : Ty → Ty → Ty
+| pair : Ty → Ty → Ty
+
+/-! #brief Typing of expressions.
+-/
+inductive HasType
+    : ∀ (Tf Tb : list Ty)
+        (e : Expr (length Tf) (length Tb))
+        (τ : Ty)
+      , Type
+| unit : ∀ {Tf Tb : list Ty}
+         , HasType Tf Tb Expr.unit Ty.unit
+| fvar : ∀ {Tf Tb : list Ty} (f : fin (length Tf))
+         , HasType Tf Tb (Expr.fvar f) (get Tf f)
+| bvar : ∀ {Tf Tb : list Ty} (b : fin (length Tb))
+         , HasType Tf Tb (Expr.bvar b) (get Tb b)
+| lam : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
+          (e : Expr (length Tf) (length (τ₁ :: Tb)))
+          (e_type : HasType Tf (τ₁ :: Tb) e τ₂)
+        , HasType Tf Tb (Expr.lam e) (Ty.abs τ₁ τ₂)
+| app : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
+          (e₁ e₂ : Expr (length Tf) (length Tb))
+          (e₁_type : HasType Tf Tb e₁ (Ty.abs τ₁ τ₂))
+          (e₂_type : HasType Tf Tb e₂ τ₁)
+        , HasType Tf Tb (Expr.app e₁ e₂) τ₂
+| pair : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
+           (e₁ e₂ : Expr (length Tf) (length Tb))
+           (e₁_type : HasType Tf Tb e₁ τ₁)
+           (e₂_type : HasType Tf Tb e₂ τ₂)
+         , HasType Tf Tb (Expr.pair e₁ e₂) (Ty.pair τ₁ τ₂)
+| π₁ : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
+         (e : Expr (length Tf) (length Tb))
+         (e_type : HasType Tf Tb e (Ty.pair τ₁ τ₂))
+       , HasType Tf Tb (Expr.π₁ e) τ₁
+| π₂ : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
+         (e : Expr (length Tf) (length Tb))
+         (e_type : HasType Tf Tb e (Ty.pair τ₁ τ₂))
+       , HasType Tf Tb (Expr.π₂ e) τ₂
+
+end STLC
 
 end Lam
