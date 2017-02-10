@@ -54,5 +54,24 @@ inductive HasType
          (e_type : HasType Tf Tb e (Ty.pair τ₁ τ₂))
        , HasType Tf Tb (Expr.π₂ e) τ₂
 
+/-! #brief The type theoretic quiver morphism.
+-/
+@[reducible] definition HasTypeMor (NS : list Notion) (Tf Tb : list Ty) (τ : Ty)
+    : RedQvr NS (length Tf) (length Tb) ⇒⇒ FrgtQvr LeanCat
+:= { vtx := λ e, HasType Tf Tb e τ
+   , arr := λ s, { dom := HasType Tf Tb s^.src τ
+                 , codom := HasType Tf Tb s^.dst τ
+                 , hom := λ j, sorry
+                 }
+   , src := λ s, rfl
+   , dst := λ s, rfl
+   }
+
+/-! #brief The type theoretic functor.
+-/
+@[reducible] definition HasTypeFun (NS : list Notion) (Tf Tb : list Ty) (τ : Ty)
+    : RedCat NS (length Tf) (length Tb) ⇉⇉ LeanCat
+:= FreeCat_FrgtQvr_Adj.free_adjoint (HasTypeMor NS Tf Tb τ)
+
 end STLC
 end qp
