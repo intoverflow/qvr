@@ -2,7 +2,13 @@
 Lambda calculus.
 ---------------------------------------------------------------------------- -/
 
+import ..util
+import ..Qvr
+
+namespace qp
 namespace Lam
+
+open list
 
 /-! #brief An expression in the lambda calculus.
 -/
@@ -16,8 +22,55 @@ inductive Expr : ℕ → ℕ → Type
 | π₁ : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb), Expr Nf Nb
 | π₂ : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb), Expr Nf Nb
 
-/-! #brief Lifts a variable.
+-- A notion of reduction for the lambda calculus.
+structure Notion : Type
+:= (guard : ∀ {Nf Nb : ℕ}, Expr Nf Nb → Prop)
+   (guard_dec : ∀ {Nf Nb : ℕ} (e: Expr Nf Nb)
+                , decidable (guard e))
+   (rule : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+             (ωe : guard e)
+           , Expr Nf Nb)
+
+attribute [instance] Notion.guard_dec
+
+/-! #brief Compatible closure of the notions of reduction.
 -/
+inductive Step (NS : list Notion) : ∀ {Nf Nb : ℕ}, Expr Nf Nb → Expr Nf Nb → Type
+| rule : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+           (r : fin (length NS))
+           (ωe : (get NS r)^.guard e)
+         , Step e ((get NS r)^.rule e ωe)
+| lam : ∀ {Nf Nb : ℕ} (e e' : Expr Nf (Nb+1))
+          (s : Step e e')
+        , Step (Expr.lam e) (Expr.lam e')
+| app₁ : ∀ {Nf Nb : ℕ} (e₁ e₂ e₁' : Expr Nf Nb)
+           (s : Step e₁ e₁')
+         , Step (Expr.app e₁ e₂) (Expr.app e₁' e₂)
+| app₂ : ∀ {Nf Nb : ℕ} (e₁ e₂ e₂' : Expr Nf Nb)
+           (s : Step e₂ e₂')
+         , Step (Expr.app e₁ e₂) (Expr.app e₁ e₂')
+| pair₁ : ∀ {Nf Nb : ℕ} (e₁ e₂ e₁' : Expr Nf Nb)
+            (s : Step e₁ e₁')
+          , Step (Expr.pair e₁ e₂) (Expr.pair e₁' e₂)
+| pair₂ : ∀ {Nf Nb : ℕ} (e₁ e₂ e₂' : Expr Nf Nb)
+            (s : Step e₂ e₂')
+          , Step (Expr.pair e₁ e₂) (Expr.pair e₁ e₂')
+| π₁ : ∀ {Nf Nb : ℕ} (e e' : Expr Nf Nb)
+         (s : Step e e')
+       , Step (Expr.π₁ e) (Expr.π₁ e)
+| π₂ : ∀ {Nf Nb : ℕ} (e e' : Expr Nf Nb)
+         (s : Step e e')
+       , Step (Expr.π₂ e) (Expr.π₂ e')
+
+-- A boxed step.
+structure BxStep (NS : list Notion) (Nf Nb : ℕ) : Type
+:= (src : Expr Nf Nb)
+   (dst : Expr Nf Nb)
+   (step : Step NS src dst)
+
+-- TODO: Fix docstring!
+--/-! #brief Lifts a variable.
+---/
 @[reducible] definition lift_var
     {N : ℕ} (m : fin (N + 1)) (v : fin N)
     : fin (N + 1)
@@ -78,6 +131,27 @@ inductive can_beta {Nf Nb : ℕ} : Expr Nf Nb → Prop
 | ω : ∀ (e₁ : Expr Nf (Nb + 1)) (e₂ : Expr Nf Nb)
       , can_beta (Expr.app (Expr.lam e₁) e₂)
 
+/-! #brief can_beta is decidable.
+-/
+@[reducible] instance can_beta.decidable
+    : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+      , decidable (can_beta e)
+| Nf Nb (Expr.unit) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.fvar f) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.bvar b) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.lam e) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.unit) e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.fvar f) e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.bvar b) e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.lam e₁) e₂) := decidable.is_true (can_beta.ω e₁ e₂)
+| Nf Nb (Expr.app (Expr.app e₁ e₂) e₃) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.pair e₁ e₂) e₃) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.π₁ e₁) e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app (Expr.π₂ e₁) e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.pair e₁ e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ e) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ e) := decidable.is_false (λ ωe, begin cases ωe end)
+
 /-! #brief Applies beta reduction on the head.
 -/
 @[reducible] definition rule_beta
@@ -87,6 +161,14 @@ inductive can_beta {Nf Nb : ℕ} : Expr Nf Nb → Prop
 | Nf Nb (Expr.app (Expr.lam e₁) e₂) ωe
 := subst e₁ e₂ { val := 0, is_lt := sorry } rfl
 | Nf Nb e ωe := e
+
+/-! #brief beta reduction as a notion of reduction.
+-/
+@[reducible] definition Notion.beta : Notion
+:= { guard := @can_beta
+   , guard_dec := @can_beta.decidable
+   , rule := @rule_beta
+   }
 
 -- [e1/x1][e2/x2]e = [e2/x2][[e2/x2]e1/x1]e
 
@@ -155,6 +237,27 @@ inductive can_π₁ {Nf Nb : ℕ} : Expr Nf Nb → Prop
 | ω : ∀ (e₁ e₂ : Expr Nf Nb)
       , can_π₁ (Expr.π₁ (Expr.pair e₁ e₂))
 
+/-! #brief can_π₁ is decidable.
+-/
+@[reducible] instance can_π₁.decidable
+    : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+      , decidable (can_π₁ e)
+| Nf Nb (Expr.unit) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.fvar f) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.bvar b) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.lam e) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app e₁ e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.pair e₁ e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.unit)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.fvar f)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.bvar b)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.lam e)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.app e₁ e₂)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.pair e₁ e₂)) := decidable.is_true (can_π₁.ω e₁ e₂)
+| Nf Nb (Expr.π₁ (Expr.π₁ e)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ (Expr.π₂ e)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ e) := decidable.is_false (λ ωe, begin cases ωe end)
+
 /-! #brief Applies left projection on the head.
 -/
 @[reducible] definition rule_π₁
@@ -164,11 +267,40 @@ inductive can_π₁ {Nf Nb : ℕ} : Expr Nf Nb → Prop
 | Nf Nb (Expr.π₁ (Expr.pair e₁ e₂)) ωe := e₁
 | Nf Nb e ωe := e
 
+/-! #brief Left projection as a notion of reduction.
+-/
+@[reducible] definition Notion.π₁ : Notion
+:= { guard := @can_π₁
+   , guard_dec := @can_π₁.decidable
+   , rule := @rule_π₁
+   }
+
 /-! #brief Guard for right projection.
 -/
 inductive can_π₂ {Nf Nb : ℕ} : Expr Nf Nb → Prop
 | ω : ∀ (e₁ e₂ : Expr Nf Nb)
       , can_π₂ (Expr.π₂ (Expr.pair e₁ e₂))
+
+/-! #brief can_π₂ is decidable.
+-/
+@[reducible] instance can_π₂.decidable
+    : ∀ {Nf Nb : ℕ} (e : Expr Nf Nb)
+      , decidable (can_π₂ e)
+| Nf Nb (Expr.unit) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.fvar f) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.bvar b) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.lam e) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.app e₁ e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.pair e₁ e₂) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₁ e) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.unit)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.fvar f)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.bvar b)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.lam e)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.app e₁ e₂)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.pair e₁ e₂)) := decidable.is_true (can_π₂.ω e₁ e₂)
+| Nf Nb (Expr.π₂ (Expr.π₁ e)) := decidable.is_false (λ ωe, begin cases ωe end)
+| Nf Nb (Expr.π₂ (Expr.π₂ e)) := decidable.is_false (λ ωe, begin cases ωe end)
 
 /-! #brief Applies right projection on the head.
 -/
@@ -179,62 +311,32 @@ inductive can_π₂ {Nf Nb : ℕ} : Expr Nf Nb → Prop
 | Nf Nb (Expr.π₂ (Expr.pair e₁ e₂)) ωe := e₂
 | Nf Nb e ωe := e
 
-
-namespace STLC
-open list
-
-/-! #brief list.nth, but without the option monad.
+/-! #brief Right projection as a notion of reduction.
 -/
-@[reducible] definition {ℓ} get {A : Type ℓ}
-    : ∀ (aa : list A) (idx : fin (length aa))
-      , A
-| [] (fin.mk idx ω) := begin apply false.rec, cases ω end
-| (a :: aa) (fin.mk 0 ω) := a
-| (a :: aa) (fin.mk (nat.succ idx) ω) := get aa { val := idx, is_lt := sorry }
+@[reducible] definition Notion.π₂ : Notion
+:= { guard := @can_π₂
+   , guard_dec := @can_π₂.decidable
+   , rule := @rule_π₂
+   }
 
-/-! #brief Types in the simplty typed lambda calculus.
+/-! #brief The standard rules of lambda calculus.
 -/
-inductive Ty : Type
-| unit : Ty
-| abs : Ty → Ty → Ty
-| pair : Ty → Ty → Ty
+@[reducible] definition Notion.std : list Notion
+:= Notion.beta :: Notion.π₁ :: Notion.π₂ :: nil
 
-/-! #brief Typing of expressions.
+/- #brief The quiver of single step reductions for lambda calculus.
 -/
-inductive HasType
-    : ∀ (Tf Tb : list Ty)
-        (e : Expr (length Tf) (length Tb))
-        (τ : Ty)
-      , Type
-| unit : ∀ {Tf Tb : list Ty}
-         , HasType Tf Tb Expr.unit Ty.unit
-| fvar : ∀ {Tf Tb : list Ty} (f : fin (length Tf))
-         , HasType Tf Tb (Expr.fvar f) (get Tf f)
-| bvar : ∀ {Tf Tb : list Ty} (b : fin (length Tb))
-         , HasType Tf Tb (Expr.bvar b) (get Tb b)
-| lam : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
-          (e : Expr (length Tf) (length (τ₁ :: Tb)))
-          (e_type : HasType Tf (τ₁ :: Tb) e τ₂)
-        , HasType Tf Tb (Expr.lam e) (Ty.abs τ₁ τ₂)
-| app : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
-          (e₁ e₂ : Expr (length Tf) (length Tb))
-          (e₁_type : HasType Tf Tb e₁ (Ty.abs τ₁ τ₂))
-          (e₂_type : HasType Tf Tb e₂ τ₁)
-        , HasType Tf Tb (Expr.app e₁ e₂) τ₂
-| pair : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
-           (e₁ e₂ : Expr (length Tf) (length Tb))
-           (e₁_type : HasType Tf Tb e₁ τ₁)
-           (e₂_type : HasType Tf Tb e₂ τ₂)
-         , HasType Tf Tb (Expr.pair e₁ e₂) (Ty.pair τ₁ τ₂)
-| π₁ : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
-         (e : Expr (length Tf) (length Tb))
-         (e_type : HasType Tf Tb e (Ty.pair τ₁ τ₂))
-       , HasType Tf Tb (Expr.π₁ e) τ₁
-| π₂ : ∀ {Tf Tb : list Ty} (τ₁ τ₂ : Ty)
-         (e : Expr (length Tf) (length Tb))
-         (e_type : HasType Tf Tb e (Ty.pair τ₁ τ₂))
-       , HasType Tf Tb (Expr.π₂ e) τ₂
+@[reducible] definition RedQvr (NS : list Notion) (Nf Nb : ℕ) : Qvr
+:= { vtx := Expr Nf Nb
+   , arr := BxStep NS Nf Nb
+   , src := BxStep.src
+   , dst := BxStep.dst
+   }
 
-end STLC
+/-! #brief The category of traces of reductions for lambda calculus.
+-/
+@[reducible] definition RedCat (NS : list Notion) (Nf Nb : ℕ) : Cat
+:= FreeCat (RedQvr NS Nf Nb)
 
 end Lam
+end qp
