@@ -50,4 +50,30 @@ definition LeanCat.HasAllLimits
            }
    }
 
+
+
+/- ----------------------------------------------------------------------------
+Initial and final objects.
+---------------------------------------------------------------------------- -/
+
+/-! #brief poly_empty is an initial object in LeanCat.
+-/
+@[reducible] definition {ℓ} LeanCat.init : IsInit LeanCat.{ℓ} poly_empty.{ℓ}
+:= { init := λ A, poly_empty.elim
+   , uniq := λ A f, begin
+                      apply funext, intro e,
+                      exact poly_empty.elim e
+                    end
+   }
+
+/-! #brief poly_unit is a final object in LeanCat.
+-/
+@[reducible] definition {ℓ} LeanCat.final : IsFinal LeanCat.{ℓ} poly_unit.{ℓ}
+:= { final := λ A a, poly_unit.star
+   , uniq := λ A f, begin
+                      apply funext, intro a,
+                      apply poly_unit.uniq
+                    end
+   }
+
 end qp

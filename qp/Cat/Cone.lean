@@ -3,6 +3,7 @@ Cones and cocones.
 ---------------------------------------------------------------------------- -/
 
 import .basic
+import .FinCat
 
 namespace qp
 universe variables ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃
@@ -18,7 +19,7 @@ structure IsCone
     {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     (c : [[C]])
-    : Type  ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+    : Type  (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (proj : ∀ (x : [[B]]), c →→ F x)
    (triangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
                , proj x₂ = (F ↗ f) ∘∘ proj x₁)
@@ -26,7 +27,7 @@ structure IsCone
 -- Boxed version of IsCone.
 structure BxCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (cone : [[C]])
    (is_cone : IsCone F cone)
 
@@ -35,7 +36,7 @@ structure ConeHom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
     {F : B ⇉⇉ C}
     {c₁ : [[C]]} (cone₁ : IsCone F c₁)
     {c₂ : [[C]]} (cone₂ : IsCone F c₂)
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (mediate : c₁ →→ c₂)
    (factor : ∀ {x : [[B]]}
              , IsCone.proj cone₁ x = IsCone.proj cone₂ x ∘∘ mediate)
@@ -216,7 +217,7 @@ Limits.
 structure IsLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     (c : [[C]])
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (is_cone : IsCone F c)
    (is_final : IsFinal (ConeCat F) (BxCone.mk c is_cone))
 
@@ -296,6 +297,12 @@ theorem IsLimit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂
      apply @IsFinal.uniq _ _ (IsLimit.is_final c_limit) (BxCone.mk c' cone)
    end
 
+
+
+/- ----------------------------------------------------------------------------
+More definitions about limits.
+---------------------------------------------------------------------------- -/
+
 -- Notion of when a functor preserves limits.
 structure PreservesLimits {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (F : C ⇉⇉ D)
@@ -315,5 +322,62 @@ structure HasAllLimits
    (is_limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
                  (F : B ⇉⇉ C)
                , IsLimit F (limit F))
+
+-- A witness that a category has all finite limits.
+structure HasAllFiniteLimits
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+:= (limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (B_Fin : Cat.Fin B)
+              (F : B ⇉⇉ C)
+            , [[C]])
+   (is_limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (B_Fin : Cat.Fin B)
+                 (F : B ⇉⇉ C)
+               , IsLimit F (limit B_Fin F))
+
+-- TODO: Fix docstring!
+--/-! #brief Categories with all limits have all (finite) limits.
+---/
+definition HasAllLimits.HasAllFiniteLimits
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    (C_HasAllLimits : HasAllLimits C)
+    : HasAllFiniteLimits C
+:= { limit := λ B B_Fin F, C_HasAllLimits^.limit F
+   , is_limit := λ B B_Fin F, C_HasAllLimits^.is_limit F
+   }
+
+
+
+/- ----------------------------------------------------------------------------
+Some important limits.
+---------------------------------------------------------------------------- -/
+
+/-! #brief The limit of the empty diagram, if it exists, is final.
+-/
+@[reducible] definition EmptyCat.init.limit_final (C : Cat.{ℓobj₁ ℓhom₁})
+    (l : [[C]])
+    (l_limit : IsLimit (EmptyCat.init.{ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂} C) l)
+    : IsFinal C l
+:= { final
+      := λ c
+         , IsLimit.mediate l_limit
+            { proj := λ x, poly_empty.elim x
+            , triangle := λ x₁ x₂ f, poly_empty.elim f
+            }
+   , uniq
+      := λ x h
+         , begin
+             apply IsLimit.mediate_uniq,
+             intro e, apply poly_empty.elim e
+           end
+   }
+
+/-! #brief Every category with finite limits has a final object.
+-/
+@[reducible] definition HasAllFiniteLimits.HasFinal (C : Cat.{ℓobj₁ ℓhom₁})
+    (C_HasAllFiniteLimits : HasAllFiniteLimits C)
+    : IsFinal C (C_HasAllFiniteLimits^.limit EmptyCat.Fin (EmptyCat.init C))
+:= EmptyCat.init.limit_final C
+    (C_HasAllFiniteLimits^.limit EmptyCat.Fin (EmptyCat.init C))
+    (C_HasAllFiniteLimits^.is_limit EmptyCat.Fin (EmptyCat.init C))
 
 end qp

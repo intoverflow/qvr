@@ -3,6 +3,8 @@ The basic definitions of category theory, together with the most fundamental
 properties.
 ---------------------------------------------------------------------------- -/
 
+import ..util
+
 namespace qp
 universe variables ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄
 
@@ -438,6 +440,21 @@ structure NatIso {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
 
 
 /- ----------------------------------------------------------------------------
+Monomorphisms.
+---------------------------------------------------------------------------- -/
+
+-- A monomorphism.
+definition Monic {C : Cat.{ℓobj ℓhom}}
+    {x y : [[C]]}
+    (f : x →→ y)
+    : Prop
+:= ∀ (a : [[C]]) (g₁ g₂ : a →→ x)
+   , f ∘∘ g₁ = f ∘∘ g₂
+   → g₁ = g₂
+
+
+
+/- ----------------------------------------------------------------------------
 Isomorphisms.
 ---------------------------------------------------------------------------- -/
 
@@ -754,6 +771,12 @@ Some important categories.
 -- {{}}\inv
 notation `{{` C `}}⁻¹` := OpCat C
 
+/-! #brief The presheaf category.
+-/
+@[reducible] definition PreShCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
+    : Cat
+:= FunCat {{C}}⁻¹ D
+
 /-! #brief The product category.
 -/
 @[reducible] definition ProdCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
@@ -809,11 +832,17 @@ infixl `××` : 130 := λ C D, ProdCat C D
 -/
 @[reducible] definition PropCat : Cat.{1 0} := LeanCat.{0}
 
-/-! #brief The presheaf category.
+/-! #brief The category of Lean terms in finite types.
 -/
-@[reducible] definition PreShCat (C : Cat.{ℓobj ℓhom})
-    : Cat
-:= FunCat {{C}}⁻¹ LeanCat.{ℓhom}
+@[reducible] definition {ℓ} FinLeanCat : Cat.{(ℓ + 1) ℓ}
+:= { obj := BxFinType.{ℓ}
+   , hom := λ X Y, X^.T → Y^.T
+   , id := λ X x, x
+   , circ := λ X Y Z g f x, g (f x)
+   , circ_assoc := λ X Y Z W h g f, rfl
+   , circ_id_left := λ X Y f, rfl
+   , circ_id_right := λ X Y f, rfl
+   }
 
 /-! #brief The functor from CatCat to LeanCat.
 -/
@@ -839,6 +868,83 @@ infixl `××` : 130 := λ C D, ProdCat C D
               apply funext, intro c,
               dsimp, simp [Cat.circ_assoc]
             end
+   }
+
+/-! #brief The category with no objects.
+-/
+@[reducible] definition EmptyCat
+    : Cat.{ℓobj ℓhom}
+:= { obj := poly_empty.{ℓobj}
+   , hom := λ x y, poly_empty.{ℓhom}
+   , id := λ x, poly_empty.elim x
+   , circ := λ x y z g f, f
+   , circ_assoc := λ x y z w h g f, rfl
+   , circ_id_left := λ x y f, rfl
+   , circ_id_right := λ x y f, begin cases x end
+   }
+
+/-! #brief The functor from EmptyCat to an arbitrary category.
+-/
+@[reducible] definition EmptyCat.init (C : Cat.{ℓobj₁ ℓhom₁})
+    : EmptyCat.{ℓobj₂ ℓhom₂} ⇉⇉ C
+:= { obj := λ e, poly_empty.elim e
+   , hom := λ x y f, poly_empty.elim f
+   , hom_id := λ x, poly_empty.elim x
+   , hom_circ := λ x y z g f, poly_empty.elim f
+   }
+
+/-! #brief EmptyCat is initial in CatCat.
+-/
+@[reducible] definition EmptyCat.IsInitial
+    : IsInit CatCat.{ℓobj ℓhom} EmptyCat.{ℓobj ℓhom}
+:= { init := EmptyCat.init
+   , uniq
+      := λ C F
+         , begin
+             apply Fun.eq,
+             { intro x, exact poly_empty.elim x },
+             { intros x y f, exact poly_empty.elim f }
+           end
+   }
+
+/-! #brief The category with one object.
+-/
+@[reducible] definition StarCat
+    : Cat.{ℓobj ℓhom}
+:= { obj := poly_unit.{ℓobj}
+   , hom := λ x y, poly_unit.{ℓhom}
+   , id := λ x, poly_unit.star
+   , circ := λ x y z g f, f
+   , circ_assoc := λ x y z w h g f, rfl
+   , circ_id_left := λ x y f, rfl
+   , circ_id_right := λ x y f, begin cases x, cases f, apply rfl end
+   }
+
+/-! #brief The functor from an arbitrary category to StarCat.
+-/
+@[reducible] definition StarCat.final (C : Cat.{ℓobj₁ ℓhom₁})
+    : C ⇉⇉ StarCat.{ℓobj₂ ℓhom₂}
+:= { obj := λ c, poly_unit.star
+   , hom := λ x y f, poly_unit.star
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
+   }
+
+/-! #brief StarCat is final in CatCat.
+-/
+@[reducible] definition StarCat.IsFinal
+    : IsFinal CatCat.{ℓobj ℓhom} StarCat.{ℓobj ℓhom}
+:= { final := StarCat.final
+   , uniq
+      := λ C F
+         , begin
+             apply Fun.eq,
+             { intro x, apply poly_unit.uniq },
+             { intros x y f,
+               apply heq_of_eq,
+               exact eq.trans poly_unit.uniq (eq.symm poly_unit.uniq)
+             }
+           end
    }
 
 end qp

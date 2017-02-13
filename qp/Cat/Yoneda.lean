@@ -16,7 +16,7 @@ The Yoneda embedding.
 /-! #brief The Yoneda embedding of a category into its presheaf category.
 -/
 @[reducible] definition YonedaFun (C : Cat.{ℓobj ℓhom})
-    : C ⇉⇉ PreShCat C
+    : C ⇉⇉ PreShCat C LeanCat
 := { obj := λ c, { obj := λ x, x →→ c
                  , hom := λ x y f g, g ∘∘ f
                  , hom_id := λ x , begin apply funext, intro f, dsimp, simp end
@@ -32,7 +32,7 @@ The Yoneda embedding.
 /-! #brief The Yoneda representation of a natural transformation.
 -/
 @[reducible] definition YonedaFun.represent {C : Cat.{ℓobj ℓhom}}
-    (X : [[PreShCat C]])
+    (X : [[PreShCat C LeanCat]])
     (c : [[C]])
     (η : YonedaFun C c ↣↣ X)
     : X c
@@ -41,7 +41,7 @@ The Yoneda embedding.
 /-! #brief The natural transformation induced by a Yoneda representation.
 -/
 @[reducible] definition YonedaFun.construct {C : Cat.{ℓobj ℓhom}}
-    (X : [[PreShCat C]])
+    (X : [[PreShCat C LeanCat]])
     (c : [[C]])
     (r : X c)
     : YonedaFun C c ↣↣ X
@@ -52,7 +52,7 @@ The Yoneda embedding.
 /-! #brief YonedaFun.represent and YonedaFun.construct are inverses of one another.
 -/
 @[simp] theorem YonedaFun.represent_construct {C : Cat.{ℓobj ℓhom}}
-    (X : [[PreShCat C]])
+    (X : [[PreShCat C LeanCat]])
     (c : [[C]])
     (r : X c)
     : YonedaFun.represent X c (YonedaFun.construct X c r) = r
@@ -61,7 +61,7 @@ The Yoneda embedding.
 /-! #brief YonedaFun.construct and YonedaFun.represent are inverses of one another.
 -/
 @[simp] theorem YonedaFun.construct_represent {C : Cat.{ℓobj ℓhom}}
-    (X : [[PreShCat C]])
+    (X : [[PreShCat C LeanCat]])
     (c : [[C]])
     (η : YonedaFun C c ↣↣ X)
     : YonedaFun.construct X c (YonedaFun.represent X c η) = η

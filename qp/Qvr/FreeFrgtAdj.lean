@@ -33,6 +33,17 @@ The adjunction between FreeCatFun and FrgtQvrFun.
 Free adjoints (via FreeCatFun and FrgtQvrFun).
 ---------------------------------------------------------------------------- -/
 
+/-! #brief Helper for casting.
+-/
+@[simp] theorem FreeCat_FrgtQvr_Adj.free_adjoint.hom.cast
+    {Q : Qvr} {C : Cat}
+    {F : Q ⇒⇒ FrgtQvr C}
+    : ∀ {m n : ‖Q‖} {e : Qvr.BxArr m n}
+      , (F ↘ e^.arr)^.dom →→ (F ↘ e^.arr)^.codom
+         = F m →→ F n
+| .([arr⟩) .(⟨arr]) (Qvr.BxArr.mk arr (eq.refl .([arr⟩)) (eq.refl .(⟨arr])))
+:= begin dsimp, rw [-F^.src, -F^.dst] end
+
 /-! #brief The action of the free adjoint on a hom.
 -/
 @[reducible] definition FreeCat_FrgtQvr_Adj.free_adjoint.hom
@@ -44,13 +55,19 @@ Free adjoints (via FreeCatFun and FrgtQvrFun).
 := begin
      induction f,
      { apply Cat.id },
-     { cases e,
-       refine ih_1 ∘∘ cast _ (F ↘ arr)^.hom,
-       subst src, subst dst,
-       dsimp,
-       rw [-F^.src, -F^.dst]
-     }
+     { exact ih_1 ∘∘ cast FreeCat_FrgtQvr_Adj.free_adjoint.hom.cast (F ↘ e^.arr)^.hom }
    end
+
+/-! #brief Helper lemma for computing FreeCat_FrgtQvr_Adj.free_adjoint.hom.
+-/
+@[simp] theorem FreeCat_FrgtQvr_Adj.free_adjoint.hom.step
+    {Q : Qvr} {C : Cat}
+    (F : Q ⇒⇒ FrgtQvr C)
+    {x₁ x₂ x₃ : ‖Q‖} {e : Qvr.BxArr x₁ x₂} {es : x₂ ↝↝ x₃}
+    : FreeCat_FrgtQvr_Adj.free_adjoint.hom F (FreeCat.Hom.step x₁ x₂ x₃ e es)
+       = FreeCat_FrgtQvr_Adj.free_adjoint.hom F es
+          ∘∘ cast FreeCat_FrgtQvr_Adj.free_adjoint.hom.cast (F ↘ e^.arr)^.hom
+:= rfl
 
 /-! #brief The action of the free adjoint on an identity hom.
 -/
@@ -79,7 +96,11 @@ theorem FreeCat_FrgtQvr_Adj.free_adjoint.hom_id
                rw FreeCat_FrgtQvr_Adj.free_adjoint.hom_id,
                rw Cat.circ_id_right
              },
-             { exact sorry
+             { simp,
+               rw FreeCat.Hom.comp.step,
+               repeat { rw FreeCat_FrgtQvr_Adj.free_adjoint.hom.step },
+               rw ih_1,
+               rw Cat.circ_assoc
              }
            end
    }

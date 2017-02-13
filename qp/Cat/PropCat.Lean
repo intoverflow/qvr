@@ -16,7 +16,7 @@ Limits.
 
 /-! #brief PropCat has all limits at all type levels.
 -/
-definition PropCat.HasAllLimits
+@[reducible] definition PropCat.HasAllLimits
     : HasAllLimits.{ℓobj ℓhom} PropCat
 := { limit
       := λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ PropCat), ∀ (b : [[B]]), F b
@@ -31,6 +31,26 @@ definition PropCat.HasAllLimits
                          , uniq := λ cone h, begin apply ConeHom.eq, apply rfl end
                          }
            }
+   }
+
+
+
+/- ----------------------------------------------------------------------------
+Initial and final objects.
+---------------------------------------------------------------------------- -/
+
+/-! #brief false is an initial object in PropCat.
+-/
+@[reducible] definition PropCat.init : IsInit PropCat false
+:= { init := λ P, false.elim
+   , uniq := λ P ω, rfl
+   }
+
+/-! #brief true is a final object in PropCat.
+-/
+@[reducible] definition PropCat.final : IsFinal PropCat true
+:= { final := λ P ω, true.intro
+   , uniq := λ P ω, rfl
    }
 
 end qp
