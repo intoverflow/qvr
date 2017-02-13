@@ -66,7 +66,7 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
 
 /-! #brief Helper for defining pullback diagrams.
 -/
-@[reducible] definition PullbackDrgm {C : Cat.{ℓobj ℓhom}}
+@[reducible] definition CoSpanDrgm {C : Cat.{ℓobj ℓhom}}
     {a b z : [[C]]}
     (fa : a →→ z) (fb : b →→ z)
     : CoSpanCat ⇉⇉ C
@@ -90,7 +90,7 @@ structure IsPullback {C : Cat.{ℓobj ℓhom}}
     {x : [[C]]}
     (fa : x →→ a) (fb : x →→ b)
     : Type (max 1 ℓobj ℓhom)
-:= (is_limit : IsLimit (PullbackDrgm ga gb) x)
+:= (is_limit : IsLimit (CoSpanDrgm ga gb) x)
    (proj_a : is_limit^.proj CoSpanCat.Obj.a = fa)
    (proj_b : is_limit^.proj CoSpanCat.Obj.b = fb)
 
@@ -103,8 +103,8 @@ structure IsPullback {C : Cat.{ℓobj ℓhom}}
     {x : [[C]]}
     (fa : x →→ a) (fb : x →→ b)
     (ωsquare : ga ∘∘ fa = gb ∘∘ fb)
-    (mediate : ∀ (cone : [[ConeCat (PullbackDrgm ga gb)]]), cone^.cone →→ x)
-    : IsCone (PullbackDrgm ga gb) x
+    (mediate : ∀ (cone : [[ConeCat (CoSpanDrgm ga gb)]]), cone^.cone →→ x)
+    : IsCone (CoSpanDrgm ga gb) x
 := { proj := λ m, CoSpanCat.Obj.cases_on m fa fb (ga ∘∘ fa)
    , triangle
       := λ m n f
@@ -123,16 +123,16 @@ structure IsPullback {C : Cat.{ℓobj ℓhom}}
     (ga : a →→ z) (gb : b →→ z)
     {x : [[C]]}
     (fa : x →→ a) (fb : x →→ b)
-    (mediate : ∀ (cone : [[ConeCat (PullbackDrgm ga gb)]]), cone^.cone →→ x)
+    (mediate : ∀ (cone : [[ConeCat (CoSpanDrgm ga gb)]]), cone^.cone →→ x)
     (ωsquare : ga ∘∘ fa = gb ∘∘ fb)
-    (ωfactor_a : ∀ (cone : [[ConeCat (PullbackDrgm ga gb)]])
+    (ωfactor_a : ∀ (cone : [[ConeCat (CoSpanDrgm ga gb)]])
                  , cone^.is_cone^.proj CoSpanCat.Obj.a
                     = fa ∘∘ mediate cone)
-    (ωfactor_b : ∀ (cone : [[ConeCat (PullbackDrgm ga gb)]])
+    (ωfactor_b : ∀ (cone : [[ConeCat (CoSpanDrgm ga gb)]])
                  , cone^.is_cone^.proj CoSpanCat.Obj.b
                     = fb ∘∘ mediate cone)
-    (ωuniq : ∀ (cone : [[ConeCat (PullbackDrgm ga gb)]])
-               (h : (ConeCat (PullbackDrgm ga gb))^.hom
+    (ωuniq : ∀ (cone : [[ConeCat (CoSpanDrgm ga gb)]])
+               (h : (ConeCat (CoSpanDrgm ga gb))^.hom
                      cone
                      (BxCone.mk x (IsPullback.show_cone ga gb fa fb ωsquare mediate)))
              , h^.mediate = mediate cone)
