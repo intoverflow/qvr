@@ -68,7 +68,8 @@ Subobject classifier.
     (b : B^.T)
     : poly_bool.{ℓ}
 := if list.any (fin.enum A^.is_finite^.of_n)
-               (FinLeanCat.SubObjClass.compare_via f b)
+       (FinLeanCat.SubObjClass.compare_via f b)
+        = bool.tt
     then poly_bool.tt
     else poly_bool.ff
 
@@ -78,6 +79,26 @@ Subobject classifier.
     {f : A^.T → B^.T}
     {a : A^.T}
     : FinLeanCat.SubObjClass.in_image f (f a) = poly_bool.tt
+:= sorry
+
+/-! #brief The right-inverse of a monic.
+-/
+@[reducible] definition FinLeanCat.monic_inv {A B : BxFinType.{max 1 ℓ}}
+    (f : A^.T → B^.T)
+    (f_monic : @Monic FinLeanCat.{max 1 ℓ} A B f)
+    (b : B^.T)
+    (ωb : FinLeanCat.SubObjClass.in_image f b = poly_bool.tt)
+    : A^.T
+:= sorry
+
+/-! #brief FinLeanCat.monic_inv f is a right inverse of f.
+-/
+@[simp] theorem FinLeanCat.monic_inv.right_inv {A B : BxFinType.{max 1 ℓ}}
+    (f : A^.T → B^.T)
+    {f_monic : @Monic FinLeanCat.{max 1 ℓ} A B f}
+    {b : B^.T}
+    {ωb : FinLeanCat.SubObjClass.in_image f b = poly_bool.tt}
+    : f (FinLeanCat.monic_inv f f_monic b ωb) = b
 := sorry
 
 /-! #brief FinLeanCat has a subobject classifier.
@@ -100,15 +121,16 @@ Subobject classifier.
       := λ U X f f_monic
          , IsPullback.show _ _ _ _
            (λ cone cn,
-             begin
-               assert magic : X^.T → U^.T, { exact sorry },
-               apply magic,
-               apply cone^.is_cone^.proj CoSpanCat.Obj.a cn,
-             end)
+             FinLeanCat.monic_inv f f_monic (cone^.is_cone^.proj CoSpanCat.Obj.a cn)
+               begin
+                 apply eq.trans (eq.symm (congr_fun (cone^.is_cone^.triangle CoSpanCat.Hom.a) cn)),
+                 apply eq.trans (congr_fun (cone^.is_cone^.triangle CoSpanCat.Hom.b) cn),
+                 apply rfl
+               end)
            begin apply funext, intro u, apply FinLeanCat.SubObjClass.image_in_image end
-           begin intro cone, apply funext, intro cn, simp, exact sorry end
+           begin intro cone, apply funext, intro cn, apply eq.symm, simp, apply FinLeanCat.monic_inv.right_inv f end
            begin intro cone, apply funext, intro cn, apply poly_unit.uniq end
-           begin intros cone h, exact sorry end
+           begin intros cone h, apply funext, intro cn, apply eq.symm, exact sorry end
    , char_uniq
       := λ U X f f_monic char' ωpb
          , begin

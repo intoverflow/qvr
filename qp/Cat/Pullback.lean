@@ -64,7 +64,7 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
    , circ_id_right := λ m n f, rfl
    }
 
-/-! #brief Helper for defining pullback diagrams.
+/-! #brief Construct a cospan diagram.
 -/
 @[reducible] definition CoSpanDrgm {C : Cat.{ℓobj ℓhom}}
     {a b z : [[C]]}
@@ -82,6 +82,22 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
              { cases g, rw CoSpanCat^.circ_id_left, dsimp, rw C^.circ_id_left }
            end
    }
+
+/-! #brief Action of CoSpanDrgm on CoSpanCat.Hom.a.
+-/
+@[simp] theorem CoSpanDrgm.hom_a {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    (fa : a →→ z) (fb : b →→ z)
+    : (CoSpanDrgm fa fb)^.hom CoSpanCat.Hom.a = fa
+:= rfl
+
+/-! #brief Action of CoSpanDrgm on CoSpanCat.Hom.b.
+-/
+@[simp] theorem CoSpanDrgm.hom_b {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    (fa : a →→ z) (fb : b →→ z)
+    : (CoSpanDrgm fa fb)^.hom CoSpanCat.Hom.b = fb
+:= rfl
 
 -- A pullback is a limit of a cospan diagram.
 structure IsPullback {C : Cat.{ℓobj ℓhom}}
