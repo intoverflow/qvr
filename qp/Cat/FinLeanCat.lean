@@ -93,9 +93,9 @@ Subobject classifier.
 
 /-! #brief FinLeanCat.monic_inv f is a right inverse of f.
 -/
-@[simp] theorem FinLeanCat.monic_inv.right_inv {A B : BxFinType.{max 1 ℓ}}
+@[simp] theorem FinLeanCat.monic_inv.right_inv {A B : BxFinType.{ℓ}}
     (f : A^.T → B^.T)
-    {f_monic : @Monic FinLeanCat.{max 1 ℓ} A B f}
+    {f_monic : @Monic FinLeanCat.{ℓ} A B f}
     {b : B^.T}
     {ωb : FinLeanCat.SubObjClass.in_image f b = pbool.tt}
     : f (FinLeanCat.monic_inv f f_monic b ωb) = b
@@ -129,7 +129,7 @@ Subobject classifier.
                  exact sorry
                end)
            begin apply funext, intro u, apply FinLeanCat.SubObjClass.image_in_image end
-           begin intro cone, apply funext, intro cn, apply eq.symm, simp, exact sorry end -- apply FinLeanCat.monic_inv.right_inv f end
+           begin intro cone, apply funext, intro cn, apply eq.symm, simp, apply FinLeanCat.monic_inv.right_inv f end
            begin intro cone, apply funext, intro cn, apply punit.uniq end
            begin intros cone h, apply funext, intro cn, apply eq.symm, exact sorry end
    , char_uniq
