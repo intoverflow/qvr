@@ -16,10 +16,10 @@ NatTrans.
 ---------------------------------------------------------------------------- -/
 
 -- A strict category.
-structure Cat : Type ((max ℓobj ℓhom) + 1)
-:= (obj : Type ℓobj)
+structure Cat : Type (max ℓobj ℓhom)
+:= (obj : Sort ℓobj)
    (hom : ∀ (x y : obj)
-          , Type ℓhom)
+          , Sort ℓhom)
    (id : ∀ (x : obj)
          , hom x x)
    (circ : ∀ {x y z : obj}
@@ -53,7 +53,7 @@ infixl `∘∘` : 150 := Cat.circ _
 
 -- A functor between categories.
 structure Fun (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (obj : [[C]] → [[D]])
    (hom : ∀ {x y : [[C]]}, x →→ y → obj x →→ obj y)
    (hom_id : ∀ {x : [[C]]}, hom ⟨⟨x⟩⟩ = ⟨⟨obj x⟩⟩)
@@ -93,7 +93,7 @@ infix `↗` : 100 := λ {C : Cat} {D : Cat} (F : C ⇉⇉ D) {x y : [[C]]} (f : 
 structure NatTrans
     {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F G : C ⇉⇉ D)
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (component : ∀ (x : [[C]]), F x →→ G x)
    (transport : ∀ {x y : [[C]]} {f : x →→ y}
                 , component y ∘∘ (F ↗ f)
@@ -131,12 +131,12 @@ theorem Fun.eq {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
   (Fun.mk Gobj Ghom Ghom_id Ghom_circ)
   ωobj ωhom
 := begin
-     assert ωobj' : Fobj = Gobj, { exact funext ωobj },
+     assert ωobj' : Fobj = Gobj, { exact pfunext ωobj },
      subst ωobj',
      assert ωhom' : @Fhom = @Ghom,
-     { apply funext, intro x,
-       apply funext, intro y,
-       apply funext, intro f,
+     { apply pfunext, intro x,
+       apply pfunext, intro y,
+       apply pfunext, intro f,
        apply eq_of_heq,
        apply ωhom
      },
@@ -232,7 +232,7 @@ theorem NatTrans.eq {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom�
   (NatTrans.mk component₂ transport₂)
   ωcomponent
 := begin
-     assert ωcomponent' : component₁ = component₂, { exact funext ωcomponent },
+     assert ωcomponent' : component₁ = component₂, { exact pfunext ωcomponent },
      subst ωcomponent'
    end
 
@@ -561,7 +561,7 @@ Initial and final objects.
 -- An initial object.
 structure IsInit (C : Cat.{ℓobj ℓhom})
     (x : [[C]])
-    : Type (max 1 ℓobj ℓhom)
+    : Type (max ℓobj ℓhom)
 := (init : ∀ (y : [[C]]), x →→ y)
    (uniq : ∀ {y : [[C]]} (h : x →→ y), h = init y)
 
@@ -593,7 +593,7 @@ definition IsInit.iso {C : Cat.{ℓobj ℓhom}}
 -- A final object.
 structure IsFinal (C : Cat.{ℓobj ℓhom})
     (y : [[C]])
-    : Type (max 1 ℓobj ℓhom)
+    : Type (max ℓobj ℓhom)
 := (final : ∀ (x : [[C]]), x →→ y)
    (uniq : ∀ {x : [[C]]} (h : x →→ y), h = final x)
 
@@ -633,7 +633,7 @@ structure Adj
     {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (L : C ⇉⇉ D)
     (R : D ⇉⇉ C)
-  : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
+  : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
   := mk :: (counit : L □□ R ↣↣ Fun.id D)
            (unit : Fun.id C ↣↣ R □□ L)
            (id_left : ∀ {c : [[C]]}, counit (L c) ∘∘ (L ↗ (unit c)) = ⟨⟨L c⟩⟩)
@@ -703,7 +703,7 @@ Boxed homs.
 
 namespace Cat
 -- A hom in a category, boxed up with its domain and codomain.
-structure BxHom (C : Cat.{ℓobj ℓhom}) : Type (max 1 ℓobj ℓhom)
+structure BxHom (C : Cat.{ℓobj ℓhom}) : Type (max ℓobj ℓhom)
 := (dom : [[C]])
    (codom : [[C]])
    (hom : dom →→ codom)
@@ -781,10 +781,10 @@ notation `{{` C `}}⁻¹` := OpCat C
 -/
 @[reducible] definition ProdCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
     : Cat.{(max 1 ℓobj₁ ℓobj₂) (max 1 ℓhom₁ ℓhom₂)}
-:= { obj := [[C]] × [[D]]
-   , hom := λ x y, (x^.fst →→ y^.fst) × (x^.snd →→ y^.snd)
-   , id  := λ x, (⟨⟨x^.fst⟩⟩, ⟨⟨x^.snd⟩⟩)
-   , circ := λ x y z g f, (g^.fst ∘∘ f^.fst, g^.snd ∘∘ f^.snd)
+:= { obj := pprod [[C]] [[D]]
+   , hom := λ x y, pprod (x^.fst →→ y^.fst) (x^.snd →→ y^.snd)
+   , id  := λ x, pprod.mk ⟨⟨x^.fst⟩⟩ ⟨⟨x^.snd⟩⟩
+   , circ := λ x y z g f, pprod.mk (g^.fst ∘∘ f^.fst) (g^.snd ∘∘ f^.snd)
    , circ_assoc
       := λ x y z w h g f
          , begin dsimp, rw [C^.circ_assoc, D^.circ_assoc] end
@@ -819,7 +819,7 @@ infixl `××` : 130 := λ C D, ProdCat C D
 /-! #brief The category of Lean terms in Type {ℓ} and functions between them.
 -/
 @[reducible] definition {ℓ} LeanCat : Cat.{(ℓ + 1) ℓ}
-:= { obj := Type.{ℓ}
+:= { obj := Sort.{ℓ}
    , hom := λ X Y, X → Y
    , id := λ X x, x
    , circ := λ X Y Z g f x, g (f x)
@@ -834,7 +834,7 @@ infixl `××` : 130 := λ C D, ProdCat C D
 
 /-! #brief The category of Lean terms in finite types.
 -/
-@[reducible] definition {ℓ} FinLeanCat : Cat.{(ℓ + 1) ℓ}
+@[reducible] definition {ℓ} FinLeanCat : Cat.{(ℓ + 2) (ℓ + 1)}
 := { obj := BxFinType.{ℓ}
    , hom := λ X Y, X^.T → Y^.T
    , id := λ X x, x
@@ -860,12 +860,12 @@ infixl `××` : 130 := λ C D, ProdCat C D
     : {{C}}⁻¹ ×× C ⇉⇉ LeanCat.{ℓhom}
 := { obj := λ x, x^.fst →→ x^.snd
    , hom := λ x y fg c, fg^.snd ∘∘ c ∘∘ fg^.fst
-   , hom_id := λ x, by simp
+   , hom_id := λ x, begin apply pfunext, intro f, simp, simp end
    , hom_circ
        := λ x y z g f
           , begin
               simp,
-              apply funext, intro c,
+              apply pfunext, intro c,
               dsimp, simp [Cat.circ_assoc]
             end
    }
@@ -874,9 +874,9 @@ infixl `××` : 130 := λ C D, ProdCat C D
 -/
 @[reducible] definition EmptyCat
     : Cat.{ℓobj ℓhom}
-:= { obj := poly_empty.{ℓobj}
-   , hom := λ x y, poly_empty.{ℓhom}
-   , id := λ x, poly_empty.elim x
+:= { obj := pempty.{ℓobj}
+   , hom := λ x y, pempty.{ℓhom}
+   , id := λ x, pempty.elim x
    , circ := λ x y z g f, f
    , circ_assoc := λ x y z w h g f, rfl
    , circ_id_left := λ x y f, rfl
@@ -887,10 +887,10 @@ infixl `××` : 130 := λ C D, ProdCat C D
 -/
 @[reducible] definition EmptyCat.init (C : Cat.{ℓobj₁ ℓhom₁})
     : EmptyCat.{ℓobj₂ ℓhom₂} ⇉⇉ C
-:= { obj := λ e, poly_empty.elim e
-   , hom := λ x y f, poly_empty.elim f
-   , hom_id := λ x, poly_empty.elim x
-   , hom_circ := λ x y z g f, poly_empty.elim f
+:= { obj := λ e, begin cases e end
+   , hom := λ x y f, begin cases f end
+   , hom_id := λ x, begin cases x end
+   , hom_circ := λ x y z g f, begin cases f end
    }
 
 /-! #brief EmptyCat is initial in CatCat.
@@ -902,8 +902,8 @@ infixl `××` : 130 := λ C D, ProdCat C D
       := λ C F
          , begin
              apply Fun.eq,
-             { intro x, exact poly_empty.elim x },
-             { intros x y f, exact poly_empty.elim f }
+             { intro x, cases x },
+             { intros x y f, cases f }
            end
    }
 
@@ -911,21 +911,21 @@ infixl `××` : 130 := λ C D, ProdCat C D
 -/
 @[reducible] definition StarCat
     : Cat.{ℓobj ℓhom}
-:= { obj := poly_unit.{ℓobj}
-   , hom := λ x y, poly_unit.{ℓhom}
-   , id := λ x, poly_unit.star
+:= { obj := punit.{ℓobj}
+   , hom := λ x y, punit.{ℓhom}
+   , id := λ x, punit.star
    , circ := λ x y z g f, f
    , circ_assoc := λ x y z w h g f, rfl
    , circ_id_left := λ x y f, rfl
-   , circ_id_right := λ x y f, begin cases x, cases f, apply rfl end
+   , circ_id_right := λ x y f, begin cases f, apply rfl end
    }
 
 /-! #brief The functor from an arbitrary category to StarCat.
 -/
 @[reducible] definition StarCat.final (C : Cat.{ℓobj₁ ℓhom₁})
     : C ⇉⇉ StarCat.{ℓobj₂ ℓhom₂}
-:= { obj := λ c, poly_unit.star
-   , hom := λ x y f, poly_unit.star
+:= { obj := λ c, punit.star
+   , hom := λ x y f, punit.star
    , hom_id := λ x, rfl
    , hom_circ := λ x y z g f, rfl
    }
@@ -939,10 +939,10 @@ infixl `××` : 130 := λ C D, ProdCat C D
       := λ C F
          , begin
              apply Fun.eq,
-             { intro x, apply poly_unit.uniq },
+             { intro x, apply punit.uniq },
              { intros x y f,
                apply heq_of_eq,
-               exact eq.trans poly_unit.uniq (eq.symm poly_unit.uniq)
+               exact eq.trans punit.uniq (eq.symm punit.uniq)
              }
            end
    }

@@ -3,27 +3,34 @@ Things that should be in the Lean standard library but aren't.
 ---------------------------------------------------------------------------- -/
 
 
-
-/-! #brief empty, but at any type level.
+/-! #brief funext, but at any sort.
 -/
-inductive {ℓ} poly_empty : Type ℓ
+definition {ℓ₁ ℓ₂} pfunext {A : Sort ℓ₁} {B : A → Sort ℓ₂}
+    {f₁ f₂ : ∀ (a : A), B a}
+    (ω : ∀ (a : A), f₁ a = f₂ a)
+    : f₁ = f₂
+:= sorry
 
-/-! #brief Eliminating a poly_empty.
+/-! #brief empty, but at any sort level.
 -/
-@[reducible] definition {ℓ₁ ℓ₂} poly_empty.elim {A : Type ℓ₂}
-    : poly_empty.{ℓ₁} → A
+inductive {ℓ} pempty : Sort ℓ
+
+/-! #brief Eliminating a pempty.
+-/
+@[reducible] definition {ℓ₁ ℓ₂} pempty.elim {A : Sort ℓ₂}
+    : pempty.{ℓ₁} → A
 | x := begin cases x end
 
-/-! #brief poly_unit is uniquely inhabited.
+/-! #brief punit is uniquely inhabited.
 -/
-theorem {ℓ} poly_unit.uniq
-    : ∀ {x : poly_unit.{ℓ}}
-      , x = poly_unit.star
+theorem {ℓ} punit.uniq
+    : ∀ {x : punit.{ℓ}}
+      , x = punit.star
 | x := begin cases x, apply rfl end 
 
-/-! #brief bool, but at any type level.
+/-! #brief bool, but at any sort level.
 -/
-inductive {ℓ} poly_bool : Type (max 1 ℓ) | ff | tt
+inductive {ℓ} pbool : Type ℓ | ff | tt
 
 namespace list
 /-! #brief list.nth, but without the option monad.
@@ -35,15 +42,16 @@ namespace list
 | (a :: aa) (fin.mk 0 ω) := a
 | (a :: aa) (fin.mk (nat.succ idx) ω) := get aa { val := idx, is_lt := nat.lt_of_succ_lt_succ ω }
 
+/-
 /-! #brief Length of append.
 -/
-@[simp] theorem {ℓ} length_append {A : Type ℓ}
+@[simp] theorem {ℓ} length_append {A : Sort ℓ}
     : ∀ {aa₁ aa₂ : list A}
       , length (aa₁ ++ aa₂) = length aa₁ + length aa₂
 := begin
      intros aa₁ aa₂,
      induction aa₁ with a₁ aa₁,
-     { simp, apply rfl },
+     { simp },
      calc length (a₁ :: aa₁ ++ aa₂)
               = length (a₁ :: (aa₁ ++ aa₂))     : rfl
           ... = length (aa₁ ++ aa₂) + 1         : rfl
@@ -51,11 +59,12 @@ namespace list
           ... = (length aa₁ + 1) + length aa₂   : by simp
           ... = length (a₁ :: aa₁) + length aa₂ : rfl
    end
+-/
 end list
 
 /-! #brief Eliminating a fin 0.
 -/
-@[reducible] definition {ℓ} fin.zero_elim {A : Type ℓ}
+@[reducible] definition {ℓ} fin.zero_elim {A : Sort ℓ}
     : fin 0 → A
 | (fin.mk n ω)
 := begin apply false.cases_on, cases ω end
@@ -82,14 +91,14 @@ end list
 
 /-! #brief The length of the enumeration.
 -/
-theorem {ℓ} fin.length_enum {A : Type ℓ}
+@[simp] theorem {ℓ} fin.length_enum {A : Type ℓ}
     : ∀ {N : ℕ} {f : fin N → A}
       , list.length (fin.enum f) = N
 | 0 f := rfl
 | (nat.succ N) f
 := begin
      dsimp [fin.enum, fin.enum._main],
-     apply eq.trans list.length_append,
+     apply eq.trans (list.length_append _ _),
      rw fin.length_enum,
      apply rfl
    end
@@ -99,11 +108,11 @@ theorem {ℓ} fin.length_enum {A : Type ℓ}
 @[simp] theorem {ℓ} fin.fn_enum {A : Type ℓ}
     : ∀ {N : ℕ} {f : fin N → A}
       , fin.fn (fin.enum f) = cast (by rw fin.length_enum) f
-| 0 f := begin apply funext, intro n, apply fin.zero_elim n end
+| 0 f := begin apply funext, intro n, exact fin.zero_elim n end
 | (nat.succ N) f := sorry
 
 -- A finite type.
-structure {ℓ} FinType (T : Type ℓ) : Type (max 1 ℓ)
+structure {ℓ} FinType (T : Sort ℓ) : Type ℓ
 := (card : ℕ)
    (of_n : fin card → T)
    (n_of : T → fin card)
@@ -116,34 +125,34 @@ structure {ℓ} BxFinType : Type (ℓ + 1)
    (is_finite : FinType T)
 
 -- TODO: Fix docstring!
---/-! #brief poly_empty is a finite type.
+--/-! #brief pempty is a finite type.
 ---/
-@[reducible] definition {ℓ} poly_empty.FinType
-    : FinType poly_empty.{ℓ}
+@[reducible] definition {ℓ} pempty.FinType
+    : FinType pempty.{ℓ}
 := { card := 0
-   , of_n := fin.zero_elim
-   , n_of := poly_empty.elim
+   , of_n := λ n, fin.zero_elim n
+   , n_of := pempty.elim
    , n_of_n := λ n, fin.zero_elim n
-   , of_n_of := λ t, poly_empty.elim t
+   , of_n_of := λ t, begin cases t end
    }
 
-/-! #brief poly_unit is a finite type.
+/-! #brief punit is a finite type.
 -/
-@[reducible] definition {ℓ} poly_unit.FinType
-    : FinType poly_unit.{ℓ}
+@[reducible] definition {ℓ} punit.FinType
+    : FinType punit.{ℓ}
 := { card := 1
-   , of_n := λ n, poly_unit.star
+   , of_n := λ n, punit.star
    , n_of := λ p, { val := 0, is_lt := by apply nat.less_than_or_equal.refl }
    , n_of_n := λ n, begin cases n, apply fin.eq_of_veq, induction val, apply rfl, cases is_lt, cases a end
-   , of_n_of := λ t, eq.symm poly_unit.uniq
+   , of_n_of := λ t, eq.symm punit.uniq
    }
 
-/-! #brief poly_bool is a finite type.
+/-! #brief pbool is a finite type.
 -/
-@[reducible] definition {ℓ} poly_bool.FinType
-    : FinType poly_bool.{ℓ}
+@[reducible] definition {ℓ} pbool.FinType
+    : FinType pbool.{ℓ}
 := { card := 2
-   , of_n := fin.fn (poly_bool.ff :: poly_bool.tt :: [])
+   , of_n := fin.fn (pbool.ff :: pbool.tt :: [])
    , n_of := λ b, begin
                     cases b,
                     { refine { val := 0, is_lt := _ },

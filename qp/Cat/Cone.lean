@@ -19,7 +19,7 @@ structure IsCone
     {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     (c : [[C]])
-    : Type  (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+    : Sort  (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (proj : ∀ (x : [[B]]), c →→ F x)
    (triangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
                , proj x₂ = (F ↗ f) ∘∘ proj x₁)
@@ -27,7 +27,7 @@ structure IsCone
 -- Boxed version of IsCone.
 structure BxCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
-    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+    : Sort (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (cone : [[C]])
    (is_cone : IsCone F cone)
 
@@ -36,7 +36,7 @@ structure ConeHom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
     {F : B ⇉⇉ C}
     {c₁ : [[C]]} (cone₁ : IsCone F c₁)
     {c₂ : [[C]]} (cone₂ : IsCone F c₂)
-    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+    : Sort (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (mediate : c₁ →→ c₂)
    (factor : ∀ {x : [[B]]}
              , IsCone.proj cone₁ x = IsCone.proj cone₂ x ∘∘ mediate)
@@ -360,14 +360,14 @@ Some important limits.
 := { final
       := λ c
          , IsLimit.mediate l_limit
-            { proj := λ x, poly_empty.elim x
-            , triangle := λ x₁ x₂ f, poly_empty.elim f
+            { proj := λ x, pempty.elim x
+            , triangle := λ x₁ x₂ f, pempty.elim f
             }
    , uniq
       := λ x h
          , begin
              apply IsLimit.mediate_uniq,
-             intro e, apply poly_empty.elim e
+             intro e, apply pempty.elim e
            end
    }
 

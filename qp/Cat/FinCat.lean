@@ -19,15 +19,15 @@ structure Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type (max 1 ℓobj ℓhom)
 --/-! #brief EmptyCat is finite.
 ---/
 @[reducible] definition EmptyCat.Fin : Cat.Fin EmptyCat.{ℓobj ℓhom}
-:= { obj := poly_empty.FinType
-   , hom := λ x y, poly_empty.FinType
+:= { obj := pempty.FinType
+   , hom := λ x y, pempty.FinType
    }
 
 /-! #brief StarCat is finite.
 -/
 @[reducible] definition StarCat.Fin : Cat.Fin StarCat.{ℓobj ℓhom}
-:= { obj := poly_unit.FinType
-   , hom := λ x y, poly_unit.FinType
+:= { obj := punit.FinType
+   , hom := λ x y, punit.FinType
    }
 
 end qp

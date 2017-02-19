@@ -15,9 +15,9 @@ just a morphism of directed graphs.
 ---------------------------------------------------------------------------- -/
 
 -- A quiver.
-structure Qvr : Type ((max ℓvtx ℓarr) + 1)
-:= (vtx : Type.{ℓvtx})
-   (arr : Type.{ℓarr})
+structure Qvr : Type (max ℓvtx ℓarr)
+:= (vtx : Sort.{ℓvtx})
+   (arr : Sort.{ℓarr})
    (src : arr → vtx)
    (dst : arr → vtx)
 
@@ -41,7 +41,7 @@ notation `⟨` e `]` := Qvr.dst _ e
 structure Qvr.Mor
     (A : Qvr.{ℓvtx₁ ℓarr₁})
     (B : Qvr.{ℓvtx₂ ℓarr₂})
-    : Type ((max ℓvtx₁ ℓarr₁ ℓvtx₂ ℓarr₂) + 1)
+    : Type (max ℓvtx₁ ℓarr₁ ℓvtx₂ ℓarr₂)
 := (vtx : ‖A‖ → ‖B‖)
    (arr : A^.arr → B^.arr)
    (src : ∀ {e : ⟅A⟆}, [arr e⟩ = vtx [e⟩)
@@ -82,9 +82,9 @@ theorem Qvr.Mor.eq {A : Qvr.{ℓvtx₁ ℓarr₁}} {B : Qvr.{ℓvtx₂ ℓarr₂
 | (Qvr.Mor.mk vtx₁ arr₁ src₁ dst₁) (Qvr.Mor.mk vtx₂ arr₂ src₂ dst₂)
   ωvtx ωarr
 := begin
-     assert ωvtx' : vtx₁ = vtx₂, { exact funext ωvtx },
+     assert ωvtx' : vtx₁ = vtx₂, { exact pfunext ωvtx },
      subst ωvtx',
-     assert ωarr' : arr₁ = arr₂, { exact funext ωarr },
+     assert ωarr' : arr₁ = arr₂, { exact pfunext ωarr },
      subst ωarr'
    end
 
@@ -147,7 +147,7 @@ The category of quivers.
 := { obj := Qvr.{ℓvtx ℓarr}
    , hom := Qvr.Mor
    , id := Qvr.Mor.id
-   , circ := @Qvr.Mor.comp
+   , circ := λ x y z g f, Qvr.Mor.comp g f
    , circ_assoc := @Qvr.Mor.comp_assoc
    , circ_id_left := @Qvr.Mor.comp_id_left
    , circ_id_right := @Qvr.Mor.comp_id_right
@@ -160,7 +160,7 @@ Boxed arrows.
 ---------------------------------------------------------------------------- -/
 
 -- A boxed arrow.
-structure Qvr.BxArr {Q : Qvr.{ℓvtx ℓarr}} (v₁ v₂ : ‖Q‖) : Type (max 1 ℓvtx ℓarr)
+structure Qvr.BxArr {Q : Qvr.{ℓvtx ℓarr}} (v₁ v₂ : ‖Q‖) : Sort (max 1 ℓvtx ℓarr)
 := (arr : ⟅Q⟆)
    (src : v₁ = [arr⟩)
    (dst : v₂ = ⟨arr])

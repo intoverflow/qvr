@@ -16,13 +16,12 @@ The quiver underlying a category.
 /-! #brief The quiver underlying a category.
 -/
 @[reducible] definition FrgtQvr (C : Cat.{ℓobj ℓhom})
-    : Qvr.{ℓobj (max 1 ℓobj ℓhom)}
+    : Qvr.{ℓobj ((max ℓobj ℓhom) + 1)}
 := { vtx := [[C]]
    , arr := Cat.BxHom C
    , src := Cat.BxHom.dom
    , dst := Cat.BxHom.codom
    }
-
 
 
 /- ----------------------------------------------------------------------------
@@ -72,7 +71,7 @@ The forgetful functor yielding the quiver underlying a category.
 /-! #brief The forgetful functor yielding the quiver underlying a category.
 -/
 @[reducible] definition FrgtQvrFun
-    : CatCat.{ℓobj ℓhom} ⇉⇉ QvrCat.{ℓobj (max 1 ℓobj ℓhom)}
+    : CatCat.{ℓobj ℓhom} ⇉⇉ QvrCat.{ℓobj ((max ℓobj ℓhom) + 1)}
 := { obj := FrgtQvr
    , hom := @FrgtQvr.FrgtMor
    , hom_id := @FrgtQvr.FrgtMor.id

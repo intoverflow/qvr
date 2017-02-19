@@ -27,7 +27,7 @@ definition LeanCat.HasAllLimits
                         , triangle
                            := λ b₁ b₂ f
                               , begin
-                                  dsimp, apply funext, intro g,
+                                  dsimp, apply pfunext, intro g,
                                   apply g^.has_property
                                 end
                         }
@@ -40,11 +40,12 @@ definition LeanCat.HasAllLimits
                             := λ cone h
                                , begin
                                    apply ConeHom.eq,
-                                   apply funext, intro c,
-                                   apply subtype.eq,
-                                   dsimp,
-                                   apply funext, intro x,
-                                   rw h^.factor
+                                   apply pfunext, intro c,
+                                   exact sorry
+                                  --  apply subtype.eq,
+                                  --  dsimp,
+                                  --  apply funext, intro x,
+                                  --  rw h^.factor
                                  end
                          }
            }
@@ -58,21 +59,21 @@ Initial and final objects.
 
 /-! #brief poly_empty is an initial object in LeanCat.
 -/
-@[reducible] definition {ℓ} LeanCat.init : IsInit LeanCat.{ℓ} poly_empty.{ℓ}
-:= { init := λ A, poly_empty.elim
+@[reducible] definition {ℓ} LeanCat.init : IsInit LeanCat.{ℓ} pempty.{ℓ}
+:= { init := λ A, pempty.elim
    , uniq := λ A f, begin
-                      apply funext, intro e,
-                      exact poly_empty.elim e
+                      apply pfunext, intro e,
+                      exact pempty.elim e
                     end
    }
 
 /-! #brief poly_unit is a final object in LeanCat.
 -/
-@[reducible] definition {ℓ} LeanCat.final : IsFinal LeanCat.{ℓ} poly_unit.{ℓ}
-:= { final := λ A a, poly_unit.star
+@[reducible] definition {ℓ} LeanCat.final : IsFinal LeanCat.{ℓ} punit.{ℓ}
+:= { final := λ A a, punit.star
    , uniq := λ A f, begin
-                      apply funext, intro a,
-                      apply poly_unit.uniq
+                      apply pfunext, intro a,
+                      apply punit.uniq
                     end
    }
 

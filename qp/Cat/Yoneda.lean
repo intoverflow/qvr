@@ -19,14 +19,14 @@ The Yoneda embedding.
     : C ⇉⇉ PreShCat C LeanCat
 := { obj := λ c, { obj := λ x, x →→ c
                  , hom := λ x y f g, g ∘∘ f
-                 , hom_id := λ x , begin apply funext, intro f, dsimp, simp end
-                 , hom_circ := λ x y z g f, begin apply funext, intro h, dsimp, simp [Cat.circ_assoc] end
+                 , hom_id := λ x , begin apply pfunext, intro f, dsimp, simp end
+                 , hom_circ := λ x y z g f, begin apply pfunext, intro h, dsimp, simp [Cat.circ_assoc] end
                  }
    , hom := λ x y g, { component := λ x f, g ∘∘ f
-                     , transport := λ x y g, begin dsimp, apply funext, intro f, simp [Cat.circ_assoc] end
+                     , transport := λ x y g, begin dsimp, apply pfunext, intro f, simp [Cat.circ_assoc] end
                      }
-   , hom_id := λ x, begin apply NatTrans.eq, dsimp, intro y, apply funext, intro g, simp end
-   , hom_circ := λ x y z g f, begin apply NatTrans.eq, dsimp, intro w, apply funext, intro h, simp [Cat.circ_assoc] end
+   , hom_id := λ x, begin apply NatTrans.eq, dsimp, intro y, apply pfunext, intro g, simp end
+   , hom_circ := λ x y z g f, begin apply NatTrans.eq, dsimp, intro w, apply pfunext, intro h, simp [Cat.circ_assoc] end
    }
 
 /-! #brief The Yoneda representation of a natural transformation.
@@ -46,7 +46,7 @@ The Yoneda embedding.
     (r : X c)
     : YonedaFun C c ↣↣ X
 := { component := λ x g, (X ↗ g) r
-   , transport := λ x y g, begin apply funext, intro f, dsimp, rw X^.hom_circ end
+   , transport := λ x y g, begin apply pfunext, intro f, dsimp, rw X^.hom_circ end
    }
 
 /-! #brief YonedaFun.represent and YonedaFun.construct are inverses of one another.
@@ -68,7 +68,7 @@ The Yoneda embedding.
 := begin
      apply NatTrans.eq, intro y,
      dsimp,
-     apply funext, intro g,
+     apply pfunext, intro g,
      assert lem₁ : η y g = η y (⟨⟨c⟩⟩ ∘∘ g),
      { rw Cat.circ_id_left },
      refine eq.symm (eq.trans lem₁ _),
