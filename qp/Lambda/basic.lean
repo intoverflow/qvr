@@ -68,9 +68,8 @@ structure BxStep (NS : list Notion) (Nf Nb : ℕ) : Type
    (dst : Expr Nf Nb)
    (step : Step NS src dst)
 
--- TODO: Fix docstring!
---/-! #brief Lifts a variable.
----/
+/-! #brief Lifts a variable.
+-/
 @[reducible] definition lift_var
     {N : ℕ} (m : fin (N + 1)) (v : fin N)
     : fin (N + 1)

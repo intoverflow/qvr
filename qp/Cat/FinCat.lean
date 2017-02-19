@@ -15,9 +15,8 @@ structure Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type (max 1 ℓobj ℓhom)
 := (obj : FinType [[C]])
    (hom : ∀ (x y : [[C]]), FinType (x →→ y))
 
--- TODO: Fix docstring!
---/-! #brief EmptyCat is finite.
----/
+/-! #brief EmptyCat is finite.
+-/
 @[reducible] definition EmptyCat.Fin : Cat.Fin EmptyCat.{ℓobj ℓhom}
 := { obj := pempty.FinType
    , hom := λ x y, pempty.FinType

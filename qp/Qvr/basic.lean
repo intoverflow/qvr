@@ -165,9 +165,8 @@ structure Qvr.BxArr {Q : Qvr.{ℓvtx ℓarr}} (v₁ v₂ : ‖Q‖) : Sort (max 
    (src : v₁ = [arr⟩)
    (dst : v₂ = ⟨arr])
 
--- TODO: Fix docstring!
---/-! #brief Every arrow can be used as a boxed arrow.
----/
+/-! #brief Every arrow can be used as a boxed arrow.
+-/
 @[reducible] definition Qvr.BxArr.of_arr {Q : Qvr.{ℓvtx ℓarr}}
     (e : ⟅Q⟆)
     : Qvr.BxArr [e⟩ ⟨e]

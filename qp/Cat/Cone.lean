@@ -41,9 +41,8 @@ structure ConeHom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
    (factor : ∀ {x : [[B]]}
              , IsCone.proj cone₁ x = IsCone.proj cone₂ x ∘∘ mediate)
 
--- TODO: Fix docstring!
---/-! #brief Every cone can be treated as a function on objects.
----/
+/-! #brief Every cone can be treated as a function on objects.
+-/
 @[reducible] instance IsCone.has_coe_to_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
     {c : [[C]]}
@@ -221,9 +220,8 @@ structure IsLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
 := (is_cone : IsCone F c)
    (is_final : IsFinal (ConeCat F) (BxCone.mk c is_cone))
 
--- TODO: Fix docstring!
---/-! #brief Every IsLimit can be used as an IsCone.
----/
+/-! #brief Every IsLimit can be used as an IsCone.
+-/
 @[reducible] instance IsLimit.has_coe_to_IsCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C} {c : [[C]]}
     : has_coe (IsLimit F c) (IsCone F c)
@@ -334,9 +332,8 @@ structure HasAllFiniteLimits
                  (F : B ⇉⇉ C)
                , IsLimit F (limit B_Fin F))
 
--- TODO: Fix docstring!
---/-! #brief Categories with all limits have all (finite) limits.
----/
+/-! #brief Categories with all limits have all (finite) limits.
+-/
 definition HasAllLimits.HasAllFiniteLimits
     (C : Cat.{ℓobj₂ ℓhom₂})
     (C_HasAllLimits : HasAllLimits C)

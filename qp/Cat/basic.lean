@@ -475,9 +475,8 @@ structure IsIso {C : Cat.{ℓobj ℓhom}}
 := (inv : x₂ →→ x₁)
    (iso : Iso f inv)
 
--- TODO: Fix docstring!
---/-! #brief Swap the hom's in an isomorphism.
----/
+/-! #brief Swap the hom's in an isomorphism.
+-/
 theorem Iso.swap {C : Cat.{ℓobj ℓhom}}
     {x₁ x₂ : [[C]]}
     {f₁₂ : x₁ →→ x₂}
@@ -565,9 +564,8 @@ structure IsInit (C : Cat.{ℓobj ℓhom})
 := (init : ∀ (y : [[C]]), x →→ y)
    (uniq : ∀ {y : [[C]]} (h : x →→ y), h = init y)
 
--- TODO: Fix docstring!
---/-! #brief Every initial object can be treated as a function on objects.
----/
+/-! #brief Every initial object can be treated as a function on objects.
+-/
 @[reducible] instance IsInit.has_coe_to_fun {C : Cat.{ℓobj ℓhom}}
     {x : [[C]]}
     : has_coe_to_fun (IsInit C x)
@@ -597,9 +595,8 @@ structure IsFinal (C : Cat.{ℓobj ℓhom})
 := (final : ∀ (x : [[C]]), x →→ y)
    (uniq : ∀ {x : [[C]]} (h : x →→ y), h = final x)
 
--- TODO: Fix docstring!
---/-! #brief Every final object can be treated as a function on objects.
----/
+/-! #brief Every final object can be treated as a function on objects.
+-/
 @[reducible] instance IsFinal.has_coe_to_fun {C : Cat.{ℓobj ℓhom}}
     {y : [[C]]}
     : has_coe_to_fun (IsFinal C y)
@@ -646,9 +643,8 @@ attribute [simp] Adj.id_right
 -- \dashv
 notation L `⊣` R := Adj L R
 
--- TODO: Fix docstring!
---/-! #brief The right adjoint of a hom.
----/
+/-! #brief The right adjoint of a hom.
+-/
 @[reducible] definition Adj.right_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {L : C ⇉⇉ D} {R : D ⇉⇉ C} (adj : L ⊣ R)
     {c : [[C]]} {d : [[D]]}   (f : L c →→ d)
@@ -708,9 +704,8 @@ structure BxHom (C : Cat.{ℓobj ℓhom}) : Type (max ℓobj ℓhom)
    (codom : [[C]])
    (hom : dom →→ codom)
 
--- TODO: Fix docstring!
---/-! #brief An equality helper for `BxHom.
----/
+/-! #brief An equality helper for `BxHom.
+-/
 theorem BxHom.eq {C : Cat}
   : ∀ (h₁ h₂ : BxHom C)
     , h₁^.dom   =  h₂^.dom
@@ -729,9 +724,8 @@ end Cat
 Some important categories.
 ---------------------------------------------------------------------------- -/
 
--- TODO: Fix docstring!
---/-! #brief The category of categories at level {ℓobj ℓhom} and functors between them.
----/
+/-! #brief The category of categories at level {ℓobj ℓhom} and functors between them.
+-/
 @[reducible] definition CatCat : Cat.{((max ℓobj ℓhom) + 1) ((max ℓobj ℓhom) + 1)}
 := { obj := Cat.{ℓobj ℓhom}
    , hom := Fun.{ℓobj ℓhom ℓobj ℓhom}

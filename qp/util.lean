@@ -124,9 +124,8 @@ structure {ℓ} BxFinType : Type (ℓ + 1)
 := (T : Type ℓ)
    (is_finite : FinType T)
 
--- TODO: Fix docstring!
---/-! #brief pempty is a finite type.
----/
+/-! #brief pempty is a finite type.
+-/
 @[reducible] definition {ℓ} pempty.FinType
     : FinType pempty.{ℓ}
 := { card := 0

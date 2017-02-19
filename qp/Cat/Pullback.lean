@@ -110,9 +110,8 @@ structure IsPullback {C : Cat.{ℓobj ℓhom}}
    (proj_a : is_limit^.proj CoSpanCat.Obj.a = fa)
    (proj_b : is_limit^.proj CoSpanCat.Obj.b = fb)
 
--- TODO: Fix docstring!
---/-! #brief A helper for the helper for proving one has a pullback square.
----/
+/-! #brief A helper for the helper for proving one has a pullback square.
+-/
 @[reducible] definition IsPullback.show_cone {C : Cat.{ℓobj ℓhom}}
     {a b z : [[C]]}
     (ga : a →→ z) (gb : b →→ z)
