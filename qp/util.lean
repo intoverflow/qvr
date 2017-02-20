@@ -11,6 +11,16 @@ definition {ℓ₁ ℓ₂} pfunext {A : Sort ℓ₁} {B : A → Sort ℓ₂}
     : f₁ = f₂
 := sorry
 
+/-! #brief Equality helper for pprod.
+-/
+theorem {ℓ₁ ℓ₂} pprod.eq {A : Sort ℓ₁} {B : Sort ℓ₂}
+    : ∀ {xy₁ xy₂ : pprod A B}
+      , xy₁^.fst = xy₂^.fst
+      → xy₁^.snd = xy₂^.snd
+      → xy₁ = xy₂
+| (pprod.mk x y) (pprod.mk .x .y) (eq.refl .x) (eq.refl .y)
+:= rfl
+
 /-! #brief empty, but at any sort level.
 -/
 inductive {ℓ} pempty : Sort ℓ

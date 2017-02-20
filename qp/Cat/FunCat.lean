@@ -4,9 +4,93 @@ Properties of FunCat.
 
 import .basic
 import .Cone
+import .SubObjClass
 
 namespace qp
 universe variables ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃
+
+
+
+/- ----------------------------------------------------------------------------
+The constant functor.
+---------------------------------------------------------------------------- -/
+
+/-! #brief The constant functor.
+-/
+@[reducible] definition Fun.const (B : Cat.{ℓobj₁ ℓhom₁}) {C : Cat.{ℓobj₂ ℓhom₂}}
+    (c : [[C]])
+    : B ⇉⇉ C
+:= { obj := λ b, c
+   , hom := λ b₁ b₂ f, ⟨⟨c⟩⟩
+   , hom_id := λ b, rfl
+   , hom_circ := λ b₁ b₂ b₃ g f, by simp
+   }
+
+/-! #brief The constant natural transformation between two constant functors.
+-/
+@[reducible] definition Fun.const.NatTrans (B : Cat.{ℓobj₁ ℓhom₁}) {C : Cat.{ℓobj₂ ℓhom₂}}
+    {c₁ c₂ : [[C]]}
+    (f : c₁ →→ c₂)
+    : Fun.const B c₁ ↣↣ Fun.const B c₂
+:= { component := λ b, f
+   , transport := λ b₁ b₂ g, begin dsimp, simp end
+   }
+
+/-! #brief The constant natural transformation is monic when the underlying hom is monic.
+-/
+theorem Fun.const.NatTrans.Monic {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {c₁ c₂ : [[C]]}
+    {f : c₁ →→ c₂}
+    (f_monic : Monic f)
+    : @Monic (FunCat B C) _ _ (Fun.const.NatTrans B f)
+:= λ F η₁ η₂ ωη
+   , begin
+       apply NatTrans.eq, intro b,
+       apply f_monic,
+       apply congr_fun (congr_arg NatTrans.component ωη)
+     end
+
+
+
+/- ----------------------------------------------------------------------------
+Monics in FunCat.
+---------------------------------------------------------------------------- -/
+
+/-! #brief If a natural transformation is monic in FunCat, its components are also monic.
+-/
+theorem FunCat.NatTrans.Monic {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : [[FunCat B C]]}
+    {η : F₁ ↣↣ F₂}
+    (η_monic : @Monic (FunCat B C) F₁ F₂ η)
+    : ∀ (b : [[B]])
+      , Monic (η b)
+:= λ b c f₁ f₂ ω
+   , sorry
+
+
+/- ----------------------------------------------------------------------------
+Final.
+---------------------------------------------------------------------------- -/
+
+/-! #brief Final objects in functor categories.
+-/
+@[reducible] definition FunCat.Final (B : Cat.{ℓobj₁ ℓhom₁}) {C : Cat.{ℓobj₂ ℓhom₂}}
+    {c : [[C]]} (c_final : IsFinal C c)
+    : IsFinal (FunCat B C) (Fun.const B c)
+:= { final
+      := λ F
+         , { component := λ b, c_final (F b)
+           , transport := λ b₁ b₂ f, begin simp, apply c_final^.uniq end
+           }
+   , uniq
+      := λ F η
+         , begin
+             apply NatTrans.eq,
+             intro b,
+             dsimp,
+             apply c_final^.uniq
+           end
+   }
 
 
 
@@ -117,10 +201,6 @@ Limits.
            end
    }
 
-
-notation `&&&` x `::` y `&&&` := Fun.mk x y _ _
-notation `!!!` x `!!!` := IsCone.mk x _
-notation `???` x `???` := NatTrans.mk x _
 /-! #brief The functor category has as many limits as the codomain category.
 -/
 @[reducible] definition FunCat.HasAllLimits {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
@@ -158,6 +238,47 @@ notation `???` x `???` := NatTrans.mk x _
                          end
                  }
            }
+   }
+
+
+
+/- ----------------------------------------------------------------------------
+Subobject classifiers.
+---------------------------------------------------------------------------- -/
+
+/-! #brief Subobject classifiers.
+-/
+@[reducible] definition FunCat.SubObjClass {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {cl : [[C]]} {cl_final : IsFinal C cl}
+    (C_SubObjClass : SubObjClass C cl_final)
+    : SubObjClass (FunCat B C) (FunCat.Final B cl_final)
+:= { Ω := Fun.const B C_SubObjClass^.Ω
+   , true := Fun.const.NatTrans B C_SubObjClass^.true
+   , true_monic := Fun.const.NatTrans.Monic C_SubObjClass^.true_monic
+   , char
+      := λ U X η η_monic
+         , { component
+              := λ b
+                 , C_SubObjClass^.char (η b)
+                    (λ c u₁ u₂ ω, begin exact sorry end)
+           , transport := λ b₁ b₂ f, begin exact sorry end
+           }
+   , char_pullback
+      := λ U X f f_monic
+         , IsPullback.show _ _ _ _
+           (λ cone
+            , { component := λ b,
+                  IsLimit.mediate (C_SubObjClass^.char_pullback (f b) (FunCat.NatTrans.Monic f_monic b))^.is_limit
+                    { proj := λ x, begin exact sorry end
+                    , triangle := begin exact sorry end
+                    }
+              , transport := begin exact sorry end
+              })
+           begin exact sorry end
+           begin intro cone, exact sorry end
+           begin intro cone, exact sorry end
+           begin intros cone h, exact sorry end
+   , char_uniq := begin exact sorry end
    }
 
 end qp

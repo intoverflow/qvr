@@ -788,7 +788,7 @@ notation `{{` C `}}⁻¹` := OpCat C
 
 -- The product category.
 -- \times\times
-infixl `××` : 130 := λ C D, ProdCat C D
+infixr `××` : 130 := ProdCat
 
 /-! #brief Left-projection functor from the ProdCat.
 -/
@@ -806,6 +806,26 @@ infixl `××` : 130 := λ C D, ProdCat C D
     : C ×× D ⇉⇉ D
 := { obj := λ x, x^.snd
    , hom := λ x y f, f^.snd
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
+   }
+
+/-! #brief Left-associate ProdCat.
+-/
+@[reducible] definition ProdCat.assoc_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    : C ×× (D ×× E) ⇉⇉ (C ×× D) ×× E
+:= { obj := λ x, { fst := { fst := x^.fst, snd := x^.snd^.fst }, snd := x^.snd^.snd }
+   , hom := λ x y f, { fst := { fst := f^.fst, snd := f^.snd^.fst }, snd := f^.snd^.snd }
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
+   }
+
+/-! #brief Right-associate ProdCat.
+-/
+@[reducible] definition ProdCat.assoc_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    : (C ×× D) ×× E ⇉⇉ C ×× (D ×× E)
+:= { obj := λ x, { fst := x^.fst^.fst, snd := { fst := x^.fst^.snd, snd := x^.snd } }
+   , hom := λ x y f, { fst := f^.fst^.fst, snd := { fst := f^.fst^.snd, snd := f^.snd } }
    , hom_id := λ x, rfl
    , hom_circ := λ x y z g f, rfl
    }
