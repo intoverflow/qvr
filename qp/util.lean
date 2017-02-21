@@ -3,6 +3,7 @@ Things that should be in the Lean standard library but aren't.
 ---------------------------------------------------------------------------- -/
 
 
+
 /-! #brief funext, but at any sort.
 -/
 definition {ℓ₁ ℓ₂} pfunext {A : Sort ℓ₁} {B : A → Sort ℓ₂}
@@ -79,6 +80,14 @@ end list
 | (fin.mk n ω)
 := begin apply false.cases_on, cases ω end
 
+/-! #brief fin 1 is uniquely inhabited.
+-/
+theorem fin.one
+    : ∀ {n : fin 1}
+      , n = { val := 0, is_lt := by apply nat.less_than_or_equal.refl }
+| (fin.mk 0 ω) := rfl
+| (fin.mk (nat.succ n) ω) := begin cases ω, cases a end
+
 /-! #brief Helper to define a function out of fin.
 -/
 @[reducible] definition {ℓ} fin.fn {A : Type ℓ}
@@ -126,8 +135,8 @@ structure {ℓ} FinType (T : Sort ℓ) : Type ℓ
 := (card : ℕ)
    (of_n : fin card → T)
    (n_of : T → fin card)
-   (n_of_n : ∀ {n : fin card}, n_of (of_n n) = n)
-   (of_n_of : ∀ {t : T}, of_n (n_of t) = t)
+   (n_of_n : function.left_inverse n_of of_n)
+   (of_n_of : function.left_inverse of_n n_of)
 
 -- A boxed finite type.
 structure {ℓ} BxFinType : Type (ℓ + 1)
@@ -180,4 +189,15 @@ structure {ℓ} BxFinType : Type (ℓ + 1)
                       cases is_lt with x₁ x₂, cases x₂ with x₃ x₄, cases x₄
                     end
    , of_n_of := λ t, begin cases t, apply rfl, apply rfl end
+   }
+
+/-! #brief fin N is a finite type.
+-/
+@[reducible] definition fin.FinType (N : ℕ)
+    : FinType (fin N)
+:= { card := N
+   , of_n := λ n, n
+   , n_of := λ n, n
+   , n_of_n := λ n, rfl
+   , of_n_of := λ n, rfl
    }

@@ -444,7 +444,7 @@ Monomorphisms.
 ---------------------------------------------------------------------------- -/
 
 -- A monomorphism.
-definition Monic {C : Cat.{ℓobj ℓhom}}
+definition IsMonic {C : Cat.{ℓobj ℓhom}}
     {x y : [[C]]}
     (f : x →→ y)
     : Prop
@@ -721,6 +721,17 @@ end Cat
 
 
 /- ----------------------------------------------------------------------------
+Finite categories.
+---------------------------------------------------------------------------- -/
+
+-- A finite category.
+structure Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type (max 1 ℓobj ℓhom)
+:= (obj : FinType [[C]])
+   (hom : ∀ (x y : [[C]]), FinType (x →→ y))
+
+
+
+/- ----------------------------------------------------------------------------
 Some important categories.
 ---------------------------------------------------------------------------- -/
 
@@ -884,6 +895,88 @@ infixr `××` : 130 := ProdCat
             end
    }
 
+/-! #brief Homs in ObjCat.
+-/
+inductive {ℓ} ObjCat.Hom (A : Sort ℓ) : A → A → Sort ℓ
+| id : ∀ (a : A), ObjCat.Hom a a
+
+/-! #brief Composition in ObjCat.
+-/
+@[reducible] definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
+    : ∀ {x y z : A}
+        (g : ObjCat.Hom A y z)
+        (f : ObjCat.Hom A x y)
+      , ObjCat.Hom A x z
+| x .x y g (ObjCat.Hom.id .x) := g
+
+/-! #brief A category with no nontrivial homs.
+-/
+@[reducible] definition {ℓ} ObjCat (A : Sort ℓ) : Cat.{ℓ ℓ}
+:= { obj := A
+   , hom := ObjCat.Hom A
+   , id := ObjCat.Hom.id
+   , circ := λ x y z g f, ObjCat.Hom.comp g f
+   , circ_assoc := λ x y z w h g f, begin cases f, cases g, apply rfl end
+   , circ_id_left := λ x y f, begin cases f, apply rfl end
+   , circ_id_right := λ x y f, rfl
+   }
+
+/-! #brief ObjCat has no nontrivial homs.
+-/
+theorem {ℓ} ObjCat.hom_trivial {A : Sort ℓ}
+    : ∀ {x y : [[ObjCat A]]}
+        (f : (ObjCat A)^.hom x y)
+      , x = y
+| x .x (ObjCat.Hom.id .x) := rfl
+
+/-! #brief ObjCat A is finite when A is.
+-/
+@[reducible] definition {ℓ} ObjCat.Fin {A : Sort ℓ}
+    (A_FinType : FinType A)
+    : Cat.Fin (ObjCat A)
+:= { obj := A_FinType
+   , hom
+      := λ x y
+         , if ωnxy : A_FinType^.n_of x = A_FinType^.n_of y
+            then { card := 1
+                 , of_n
+                    := λ n
+                       , begin
+                           rw function.injective_of_left_inverse A_FinType^.of_n_of ωnxy,
+                           apply ObjCat.Hom.id
+                         end
+                 , n_of := λ n, { val := 0, is_lt := by apply nat.less_than_or_equal.refl }
+                 , n_of_n := λ n, eq.symm fin.one
+                 , of_n_of
+                    := λ n
+                       , begin
+                           assert ωxy : x = y,
+                           { rw function.injective_of_left_inverse A_FinType^.of_n_of ωnxy },
+                           subst ωxy,
+                           cases n,
+                           apply rfl
+                         end
+                 }
+            else { card := 0
+                 , of_n := λ n, fin.zero_elim n
+                 , n_of
+                    := λ n
+                       , begin
+                           assert ω : false,
+                           { apply ωnxy, rw ObjCat.hom_trivial n },
+                           cases ω
+                         end
+                 , n_of_n := λ n, fin.zero_elim n
+                 , of_n_of
+                    := λ n
+                       , begin
+                           assert ω : false,
+                           { apply ωnxy, rw ObjCat.hom_trivial n },
+                           cases ω
+                         end
+                 }
+   }
+
 /-! #brief The category with no objects.
 -/
 @[reducible] definition EmptyCat
@@ -895,6 +988,13 @@ infixr `××` : 130 := ProdCat
    , circ_assoc := λ x y z w h g f, rfl
    , circ_id_left := λ x y f, rfl
    , circ_id_right := λ x y f, begin cases x end
+   }
+
+/-! #brief EmptyCat is finite.
+-/
+@[reducible] definition EmptyCat.Fin : Cat.Fin EmptyCat.{ℓobj ℓhom}
+:= { obj := pempty.FinType
+   , hom := λ x y, pempty.FinType
    }
 
 /-! #brief The functor from EmptyCat to an arbitrary category.
@@ -932,6 +1032,13 @@ infixr `××` : 130 := ProdCat
    , circ_assoc := λ x y z w h g f, rfl
    , circ_id_left := λ x y f, rfl
    , circ_id_right := λ x y f, begin cases f, apply rfl end
+   }
+
+/-! #brief StarCat is finite.
+-/
+@[reducible] definition StarCat.Fin : Cat.Fin StarCat.{ℓobj ℓhom}
+:= { obj := punit.FinType
+   , hom := λ x y, punit.FinType
    }
 
 /-! #brief The functor from an arbitrary category to StarCat.

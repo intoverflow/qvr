@@ -85,7 +85,7 @@ Subobject classifier.
 -/
 @[reducible] definition FinLeanCat.monic_inv {A B : BxFinType.{ℓ}}
     (f : A^.T → B^.T)
-    (f_monic : @Monic FinLeanCat.{ℓ} A B f)
+    (f_monic : @IsMonic FinLeanCat.{ℓ} A B f)
     (b : B^.T)
     (ωb : FinLeanCat.SubObjClass.in_image f b = pbool.tt)
     : A^.T
@@ -95,7 +95,7 @@ Subobject classifier.
 -/
 @[simp] theorem FinLeanCat.monic_inv.right_inv {A B : BxFinType.{ℓ}}
     (f : A^.T → B^.T)
-    {f_monic : @Monic FinLeanCat.{ℓ} A B f}
+    {f_monic : @IsMonic FinLeanCat.{ℓ} A B f}
     {b : B^.T}
     {ωb : FinLeanCat.SubObjClass.in_image f b = pbool.tt}
     : f (FinLeanCat.monic_inv f f_monic b ωb) = b

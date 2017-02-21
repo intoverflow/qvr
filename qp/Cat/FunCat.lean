@@ -38,11 +38,11 @@ The constant functor.
 
 /-! #brief The constant natural transformation is monic when the underlying hom is monic.
 -/
-theorem Fun.const.NatTrans.Monic {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem Fun.const.NatTrans.IsMonic {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {c₁ c₂ : [[C]]}
     {f : c₁ →→ c₂}
-    (f_monic : Monic f)
-    : @Monic (FunCat B C) _ _ (Fun.const.NatTrans B f)
+    (f_monic : IsMonic f)
+    : @IsMonic (FunCat B C) _ _ (Fun.const.NatTrans B f)
 := λ F η₁ η₂ ωη
    , begin
        apply NatTrans.eq, intro b,
@@ -58,12 +58,12 @@ Monics in FunCat.
 
 /-! #brief If a natural transformation is monic in FunCat, its components are also monic.
 -/
-theorem FunCat.NatTrans.Monic {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem FunCat.NatTrans.IsMonic {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F₁ F₂ : [[FunCat B C]]}
     {η : F₁ ↣↣ F₂}
-    (η_monic : @Monic (FunCat B C) F₁ F₂ η)
+    (η_monic : @IsMonic (FunCat B C) F₁ F₂ η)
     : ∀ (b : [[B]])
-      , Monic (η b)
+      , IsMonic (η b)
 := λ b c f₁ f₂ ω
    , sorry
 
@@ -254,7 +254,7 @@ Subobject classifiers.
     : SubObjClass (FunCat B C) (FunCat.Final B cl_final)
 := { Ω := Fun.const B C_SubObjClass^.Ω
    , true := Fun.const.NatTrans B C_SubObjClass^.true
-   , true_monic := Fun.const.NatTrans.Monic C_SubObjClass^.true_monic
+   , true_monic := Fun.const.NatTrans.IsMonic C_SubObjClass^.true_monic
    , char
       := λ U X η η_monic
          , { component
@@ -268,7 +268,7 @@ Subobject classifiers.
          , IsPullback.show _ _ _ _
            (λ cone
             , { component := λ b,
-                  IsLimit.mediate (C_SubObjClass^.char_pullback (f b) (FunCat.NatTrans.Monic f_monic b))^.is_limit
+                  IsLimit.mediate (C_SubObjClass^.char_pullback (f b) (FunCat.NatTrans.IsMonic f_monic b))^.is_limit
                     { proj := λ x, begin exact sorry end
                     , triangle := begin exact sorry end
                     }

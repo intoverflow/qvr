@@ -4,6 +4,7 @@ Monoidal categories.
 
 import .basic
 import .Fun
+import .Product
 
 namespace qp
 universe variables ℓobj ℓhom
@@ -40,5 +41,74 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
                  let y₂ : tensor ⟨tensor ⟨w, x⟩, tensor ⟨y, z⟩ ⟩ →→ tensor ⟨w, tensor ⟨x, tensor ⟨y, z⟩ ⟩ ⟩
                       := assoc_right ⟨w, x, tensor ⟨y, z⟩ ⟩
                  in x₃ ∘∘ x₂ ∘∘ x₁ = y₂ ∘∘ y₁)
+
+/-! #brief A cartesian monoidal category.
+-/
+@[reducible] definition HasAllFiniteProducts.Monoidal {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    : Monoidal C
+:= { tensor := HasAllFiniteProducts.PairFun C_HasAllFiniteProducts
+   , unit := C_HasAllFiniteProducts^.prod []
+   , assoc_left
+      := { component
+            := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
+                       ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
+         , transport := λ xyz₁ xyz₂ f, sorry
+         }
+   , assoc_right
+      := { component
+            := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
+                       ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
+         , transport := λ xyz₁ xyz₂ f, sorry
+         }
+   , assoc_iso :=
+      { id₁ := NatTrans.eq
+                (λ x, let iso₁ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [] [x^.fst, x^.snd^.fst] [x^.snd^.snd] in
+                      let iso₂ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [x^.fst] [x^.snd^.fst, x^.snd^.snd] []
+                      in sorry)
+      , id₂ := NatTrans.eq
+                (λ x, let iso₁ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [] [x^.fst, x^.snd^.fst] [x^.snd^.snd] in
+                      let iso₂ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [x^.fst] [x^.snd^.fst, x^.snd^.snd] []
+                      in sorry)
+      }
+   , left_unitor
+      := { component := λ x, let foo : C_HasAllFiniteProducts^.prod [C_HasAllFiniteProducts^.prod [], x] →→ x
+                                  := IsLimit.proj (C_HasAllFiniteProducts^.is_prod [C_HasAllFiniteProducts^.prod [], x])
+                                      { val := 1, is_lt := sorry }
+                             in foo
+         , transport := begin exact sorry end
+         }
+   , left_unitor_inv
+      := { component := λ x, IsFiniteProduct.into (C_HasAllFiniteProducts^.is_prod [C_HasAllFiniteProducts^.prod [], x])
+                              (λ n, match n with
+                                      | (fin.mk 0 ωn) := (HasAllFiniteProducts.Final C_HasAllFiniteProducts)^.final x
+                                      | (fin.mk 1 ωn) := ⟨⟨x⟩⟩
+                                      | (fin.mk (nat.succ (nat.succ n)) ωn)
+                                         := false.cases_on _ begin cases ωn, cases a, cases a end
+                                    end)
+         , transport := begin exact sorry end
+         }
+   , left_unitor_iso := begin exact sorry end
+   , right_unitor
+      := { component := λ x, let foo : C_HasAllFiniteProducts^.prod [x, C_HasAllFiniteProducts^.prod [] ] →→ x
+                                  := IsLimit.proj (C_HasAllFiniteProducts^.is_prod [x, C_HasAllFiniteProducts^.prod [] ])
+                                      { val := 0, is_lt := sorry }
+                             in foo
+         , transport := begin exact sorry end
+         }
+   , right_unitor_inv
+      := { component := λ x, IsFiniteProduct.into (C_HasAllFiniteProducts^.is_prod [x, C_HasAllFiniteProducts^.prod [] ])
+                              (λ n, match n with
+                                      | (fin.mk 0 ωn) := ⟨⟨x⟩⟩
+                                      | (fin.mk 1 ωn) := (HasAllFiniteProducts.Final C_HasAllFiniteProducts)^.final x
+                                      | (fin.mk (nat.succ (nat.succ n)) ωn)
+                                         := false.cases_on _ begin cases ωn, cases a, cases a end
+                                    end)
+         , transport := begin exact sorry end
+         }
+   , right_unitor_iso := begin exact sorry end
+   , triangle := begin exact sorry end
+   , pentagon := begin exact sorry end
+   }
 
 end qp
