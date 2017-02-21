@@ -63,13 +63,9 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
          }
    , assoc_iso :=
       { id₁ := NatTrans.eq
-                (λ x, let iso₁ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [] [x^.fst, x^.snd^.fst] [x^.snd^.snd] in
-                      let iso₂ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [x^.fst] [x^.snd^.fst, x^.snd^.snd] []
-                      in sorry)
+                (λ x, sorry)
       , id₂ := NatTrans.eq
-                (λ x, let iso₁ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [] [x^.fst, x^.snd^.fst] [x^.snd^.snd] in
-                      let iso₂ := HasAllFiniteProducts.flatten_explode_iso C_HasAllFiniteProducts [x^.fst] [x^.snd^.fst, x^.snd^.snd] []
-                      in sorry)
+                (λ x, sorry)
       }
    , left_unitor
       := { component := λ x, let foo : C_HasAllFiniteProducts^.prod [C_HasAllFiniteProducts^.prod [], x] →→ x
@@ -79,7 +75,7 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
          , transport := begin exact sorry end
          }
    , left_unitor_inv
-      := { component := λ x, IsFiniteProduct.into (C_HasAllFiniteProducts^.is_prod [C_HasAllFiniteProducts^.prod [], x])
+      := { component := λ x, IsProduct.into (C_HasAllFiniteProducts^.is_prod [C_HasAllFiniteProducts^.prod [], x])
                               (λ n, match n with
                                       | (fin.mk 0 ωn) := (HasAllFiniteProducts.Final C_HasAllFiniteProducts)^.final x
                                       | (fin.mk 1 ωn) := ⟨⟨x⟩⟩
@@ -97,7 +93,7 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
          , transport := begin exact sorry end
          }
    , right_unitor_inv
-      := { component := λ x, IsFiniteProduct.into (C_HasAllFiniteProducts^.is_prod [x, C_HasAllFiniteProducts^.prod [] ])
+      := { component := λ x, IsProduct.into (C_HasAllFiniteProducts^.is_prod [x, C_HasAllFiniteProducts^.prod [] ])
                               (λ n, match n with
                                       | (fin.mk 0 ωn) := ⟨⟨x⟩⟩
                                       | (fin.mk 1 ωn) := (HasAllFiniteProducts.Final C_HasAllFiniteProducts)^.final x

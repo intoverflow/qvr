@@ -177,8 +177,8 @@ Limits.
          , begin
              apply eq.symm,
              apply IsLimit.mediate_uniq, intro x,
-             rw [D^.circ_assoc, -IsLimit.factor (D_HasAllLimits^.is_limit c₃)],
-             rw [-D^.circ_assoc, -IsLimit.factor (D_HasAllLimits^.is_limit c₂)],
+             rw [D^.circ_assoc, -IsLimit.mediate_factor (D_HasAllLimits^.is_limit c₃)],
+             rw [-D^.circ_assoc, -IsLimit.mediate_factor (D_HasAllLimits^.is_limit c₂)],
              dsimp, simp [Fun.hom_circ, Cat.circ_assoc]
            end
    }
@@ -191,7 +191,7 @@ Limits.
     : IsCone F (LimitFun B D_HasAllLimits □□ FunCat.swap F)
 := { proj
       := λ x, { component := λ c, by apply IsLimit.proj (D_HasAllLimits^.is_limit (FunCat.swap F c)) x
-              , transport := λ c₁ c₂ f, by rw -(IsLimit.factor (D_HasAllLimits^.is_limit (FunCat.swap F c₂)) _)
+              , transport := λ c₁ c₂ f, by rw -(IsLimit.mediate_factor (D_HasAllLimits^.is_limit (FunCat.swap F c₂)) _)
               }
    , triangle
       := λ x₁ x₂ f
@@ -226,7 +226,7 @@ Limits.
                             := λ x
                                , begin
                                    apply NatTrans.eq, intro c, dsimp,
-                                   rw -IsLimit.factor (D_HasAllLimits^.is_limit (FunCat.swap F c)),
+                                   rw -IsLimit.mediate_factor (D_HasAllLimits^.is_limit (FunCat.swap F c)),
                                  end
                          }
                  , uniq

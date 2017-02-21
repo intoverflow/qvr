@@ -220,14 +220,6 @@ structure IsLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
 := (is_cone : IsCone F c)
    (is_final : IsFinal (ConeCat F) (BxCone.mk c is_cone))
 
-/-! #brief Every IsLimit can be used as an IsCone.
--/
-@[reducible] instance IsLimit.has_coe_to_IsCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    : has_coe (IsLimit F c) (IsCone F c)
-:= { coe := IsLimit.is_cone
-   }
-
 /-! #brief The map from the limit to the image of the diagram.
 -/
 @[reducible] definition IsLimit.proj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
@@ -269,7 +261,7 @@ theorem IsLimit.triangle {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓ
 
 /-! #brief The mediating map has the usual factoring property.
 -/
-theorem IsLimit.factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem IsLimit.mediate_factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C} {c : [[C]]}
     (c_limit : IsLimit F c)
     {c' : [[C]]} (cone : IsCone F c')
@@ -295,6 +287,18 @@ theorem IsLimit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂
      apply @IsFinal.uniq _ _ (IsLimit.is_final c_limit) (BxCone.mk c' cone)
    end
 
+/-! #brief Limits are unique up to isomorphism.
+-/
+@[reducible] definition IsLimit.iso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} {c₁ c₂ : [[C]]}
+    (c₁_limit : IsLimit F c₁)
+    (c₂_limit : IsLimit F c₂)
+    : Iso (IsLimit.mediate c₂_limit c₁_limit^.is_cone)
+          (IsLimit.mediate c₁_limit c₂_limit^.is_cone)
+:= let iso := IsFinal.iso c₁_limit^.is_final c₂_limit^.is_final
+   in { id₁ := congr_arg ConeHom.mediate iso^.id₁
+      , id₂ := congr_arg ConeHom.mediate iso^.id₂
+      }
 
 
 /- ----------------------------------------------------------------------------
