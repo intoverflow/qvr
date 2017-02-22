@@ -116,11 +116,112 @@ definition HasAllFiniteProducts.explode {C : Cat.{(ℓobj + 1) ℓhom}}
     : Iso (HasAllFiniteProducts.flatten C_HasAllFiniteProducts factors₁ factors₂ factors₃)
           (HasAllFiniteProducts.explode C_HasAllFiniteProducts factors₁ factors₂ factors₃)
 := IsLimit.iso (HasAllFiniteProducts.flat_limit C_HasAllFiniteProducts factors₁ factors₂ factors₃)
-                          (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₂ ++ factors₃))
+               (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₂ ++ factors₃))
+
+/-! #brief Flattening of products.
+-/
+definition HasAllFiniteProducts.unit_limit {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (factors₁ factors₃ : list [[C]])
+    : IsProduct (list.get (factors₁ ++ factors₃))
+                (C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃))
+:= { is_cone
+      := { proj
+            := λ n
+               , let lim := C_HasAllFiniteProducts^.is_prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
+                 in if ω₁ : n^.val < list.length factors₁
+                     then cast sorry (IsLimit.proj lim { val := n^.val, is_lt := sorry })
+                     else cast sorry (IsLimit.proj lim { val := n^.val - list.length factors₁, is_lt := sorry })
+         , triangle
+            := λ n₁ n₂ f, begin cases f, simp end
+         }
+   , is_final
+      := { final := sorry
+         , uniq := sorry
+         }
+   }
+
+/-! #brief The unit-dropping hom.
+-/
+definition HasAllFiniteProducts.unit_drop {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (factors₁ factors₃ : list [[C]])
+    : C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
+       →→ C_HasAllFiniteProducts^.prod (factors₁ ++ factors₃)
+:= IsLimit.mediate (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₃))
+    (HasAllFiniteProducts.unit_limit C_HasAllFiniteProducts factors₁ factors₃)^.is_cone
+
+/-! #brief The unit-inserting hom.
+-/
+definition HasAllFiniteProducts.unit_insert {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (factors₁ factors₃ : list [[C]])
+    : C_HasAllFiniteProducts^.prod (factors₁ ++ factors₃)
+       →→ C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
+:= IsLimit.mediate (HasAllFiniteProducts.unit_limit C_HasAllFiniteProducts factors₁ factors₃)
+    (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₃))^.is_cone
+
+/-! #brief Dropping and insertion of units of products are isomorphisms.
+-/
+@[reducible] definition HasAllFiniteProducts.unit_drop_insert_iso {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (factors₁ factors₃ : list [[C]])
+    : Iso (HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts factors₁ factors₃)
+          (HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts factors₁ factors₃)
+:= IsLimit.iso (HasAllFiniteProducts.unit_limit C_HasAllFiniteProducts factors₁ factors₃)
+               (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₃))
+
+/-! #brief Singleton products.
+-/
+definition HasAllFiniteProducts.singleton_limit {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (x : [[C]])
+    : IsProduct (list.get [x]) x
+:= { is_cone
+      := { proj := λ n, match n with
+                          | (fin.mk 0 ωn) := ⟨⟨x⟩⟩
+                          | (fin.mk (nat.succ n) ωn) := false.cases_on _ begin cases ωn, cases a end
+                        end
+         , triangle
+            := λ n₁ n₂ f, begin cases f, simp end
+         }
+   , is_final
+      := { final := sorry
+         , uniq := sorry
+         }
+   }
+
+/-! #brief The singleton unboxing hom.
+-/
+definition HasAllFiniteProducts.singleton_unbox {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (x : [[C]])
+    : C_HasAllFiniteProducts^.prod [x] →→ x
+:= IsLimit.mediate (HasAllFiniteProducts.singleton_limit C_HasAllFiniteProducts x)
+    (C_HasAllFiniteProducts^.is_prod [x])^.is_cone
+
+/-! #brief The singleton boxing hom.
+-/
+definition HasAllFiniteProducts.singleton_box {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (x : [[C]])
+    : x →→ C_HasAllFiniteProducts^.prod [x]
+:= IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [x])
+    (HasAllFiniteProducts.singleton_limit C_HasAllFiniteProducts x)^.is_cone
+
+/-! #brief Unboxing and boxing of units of products are isomorphisms.
+-/
+@[reducible] definition HasAllFiniteProducts.singleton_unbox_box_iso {C : Cat.{(ℓobj + 1) ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    (x : [[C]])
+    : Iso (HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x)
+          (HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x)
+:= IsLimit.iso (C_HasAllFiniteProducts^.is_prod [x])
+               (HasAllFiniteProducts.singleton_limit C_HasAllFiniteProducts x)
 
 /-! #brief Helper for the pairwise product functor.
 -/
-@[reducible] definition HasAllFiniteProducts.PairFun₁ {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.PairFun_helper {C : Cat.{(ℓobj + 1) ℓhom}}
     {xy₁ xy₂ : [[C ×× C]]}
     (f : (C ×× C)^.hom xy₁ xy₂)
     : ∀ (n : fin 2)
@@ -138,7 +239,7 @@ definition HasAllFiniteProducts.explode {C : Cat.{(ℓobj + 1) ℓhom}}
    , hom
       := λ xy₁ xy₂ f
          , IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [xy₂^.fst, xy₂^.snd])
-            { proj := λ n, HasAllFiniteProducts.PairFun₁ f n
+            { proj := λ n, HasAllFiniteProducts.PairFun_helper f n
                             ∘∘ IsLimit.proj (C_HasAllFiniteProducts^.is_prod [xy₁^.fst, xy₁^.snd]) n
             , triangle := λ z₁ z₂ g, begin cases g, simp end
             }

@@ -50,15 +50,13 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
 := { tensor := HasAllFiniteProducts.PairFun C_HasAllFiniteProducts
    , unit := C_HasAllFiniteProducts^.prod []
    , assoc_left
-      := { component
-            := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
-                       ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
+      := { component := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
+                                ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
          , transport := λ xyz₁ xyz₂ f, sorry
          }
    , assoc_right
-      := { component
-            := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
-                       ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
+      := { component := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
+                                ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
          , transport := λ xyz₁ xyz₂ f, sorry
          }
    , assoc_iso :=
@@ -68,38 +66,24 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
                 (λ x, sorry)
       }
    , left_unitor
-      := { component := λ x, let foo : C_HasAllFiniteProducts^.prod [C_HasAllFiniteProducts^.prod [], x] →→ x
-                                  := IsLimit.proj (C_HasAllFiniteProducts^.is_prod [C_HasAllFiniteProducts^.prod [], x])
-                                      { val := 1, is_lt := sorry }
-                             in foo
+      := { component := λ x, HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x
+                              ∘∘ HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts [] [x]
          , transport := begin exact sorry end
          }
    , left_unitor_inv
-      := { component := λ x, IsProduct.into (C_HasAllFiniteProducts^.is_prod [C_HasAllFiniteProducts^.prod [], x])
-                              (λ n, match n with
-                                      | (fin.mk 0 ωn) := (HasAllFiniteProducts.Final C_HasAllFiniteProducts)^.final x
-                                      | (fin.mk 1 ωn) := ⟨⟨x⟩⟩
-                                      | (fin.mk (nat.succ (nat.succ n)) ωn)
-                                         := false.cases_on _ begin cases ωn, cases a, cases a end
-                                    end)
+      := { component := λ x, HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts [] [x]
+                              ∘∘ HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x
          , transport := begin exact sorry end
          }
    , left_unitor_iso := begin exact sorry end
    , right_unitor
-      := { component := λ x, let foo : C_HasAllFiniteProducts^.prod [x, C_HasAllFiniteProducts^.prod [] ] →→ x
-                                  := IsLimit.proj (C_HasAllFiniteProducts^.is_prod [x, C_HasAllFiniteProducts^.prod [] ])
-                                      { val := 0, is_lt := sorry }
-                             in foo
+      := { component := λ x, HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x
+                              ∘∘ HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts [x] []
          , transport := begin exact sorry end
          }
    , right_unitor_inv
-      := { component := λ x, IsProduct.into (C_HasAllFiniteProducts^.is_prod [x, C_HasAllFiniteProducts^.prod [] ])
-                              (λ n, match n with
-                                      | (fin.mk 0 ωn) := ⟨⟨x⟩⟩
-                                      | (fin.mk 1 ωn) := (HasAllFiniteProducts.Final C_HasAllFiniteProducts)^.final x
-                                      | (fin.mk (nat.succ (nat.succ n)) ωn)
-                                         := false.cases_on _ begin cases ωn, cases a, cases a end
-                                    end)
+      := { component := λ x, HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts [x] []
+                              ∘∘ HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x
          , transport := begin exact sorry end
          }
    , right_unitor_iso := begin exact sorry end
