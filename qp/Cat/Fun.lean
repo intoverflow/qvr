@@ -13,18 +13,6 @@ namespace qp
 Functors and product categories.
 ---------------------------------------------------------------------------- -/
 
-/-! #brief Flip the arguments going into a functor.
--/
-@[reducible] definition Fun.flip
-    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : C₁ ×× C₂ ⇉⇉ D)
-    : C₂ ×× C₁ ⇉⇉ D
-:= { obj := λ c, F ⟨c^.snd, c^.fst⟩
-   , hom := λ c₁ c₂ f, F^.hom ⟨f^.snd, f^.fst⟩
-   , hom_id := λ x, by apply F^.hom_id
-   , hom_circ := λ x y z g f, begin rw -F^.hom_circ end
-   }
-
 /-! #brief Composition into the left-argument of a functor out of a product category.
 -/
 @[reducible] definition Fun.left_comp

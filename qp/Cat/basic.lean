@@ -821,6 +821,65 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ x y z g f, rfl
    }
 
+/-! #brief Flip the factors in ProdCat.
+-/
+@[reducible] definition ProdCat.flip {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : C ×× D ⇉⇉ D ×× C
+:= { obj := λ x, ⟨x^.snd, x^.fst⟩
+   , hom := λ x y f, ⟨f^.snd, f^.fst⟩
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
+   }
+
+/-! #brief Flip is involutive.
+-/
+@[simp] theorem ProdCat.flip_flip {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ProdCat.flip □□ ProdCat.flip = Fun.id (C ×× D)
+:= begin
+     apply Fun.eq,
+     { intro x, cases x with c d, apply rfl },
+     { intros x y f,
+       cases x with c₁ d₁, cases y with c₂ d₂, cases f with fc fd,
+       apply heq.refl
+     }
+   end
+
+/-! #brief Flip the arguments of a natural transformation.
+-/
+@[reducible] definition NatTrans.flip 
+    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {F₁ : C₁ ×× C₂ ⇉⇉ D} {F₂ : C₂ ×× C₁ ⇉⇉ D}
+    (η : F₁ ↣↣ F₂ □□ ProdCat.flip)
+    : F₁ □□ ProdCat.flip ↣↣ F₂
+:= { component := λ c, pprod.cases_on c (λ c₂ c₁, η ⟨c₁, c₂⟩)
+   , transport
+      := λ x y f
+         , begin
+             cases x with x₂ x₁,
+             cases y with y₂ y₁,
+             cases f with f₂ f₁,
+             exact @NatTrans.transport _ _ _ _ η ⟨x₁, x₂⟩ ⟨y₁, y₂⟩ ⟨f₁, f₂⟩
+           end
+   }
+
+/-! #brief Un-flip the arguments of a natural transformation.
+-/
+@[reducible] definition NatTrans.unflip 
+    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {F₁ : C₁ ×× C₂ ⇉⇉ D} {F₂ : C₂ ×× C₁ ⇉⇉ D}
+    (η : F₁ □□ ProdCat.flip ↣↣ F₂)
+    : F₁ ↣↣ F₂ □□ ProdCat.flip
+:= { component := λ c, pprod.cases_on c (λ c₁ c₂, η ⟨c₂, c₁⟩)
+   , transport
+      := λ x y f
+         , begin
+             cases x with x₁ x₂,
+             cases y with y₁ y₂,
+             cases f with f₁ f₂,
+             exact @NatTrans.transport _ _ _ _ η ⟨x₂, x₁⟩ ⟨y₂, y₁⟩ ⟨f₂, f₁⟩
+           end
+   }
+
 /-! #brief Left-associate ProdCat.
 -/
 @[reducible] definition ProdCat.assoc_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
@@ -902,12 +961,28 @@ inductive {ℓ} ObjCat.Hom (A : Sort ℓ) : A → A → Sort ℓ
 
 /-! #brief Composition in ObjCat.
 -/
-@[reducible] definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
+definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
     : ∀ {x y z : A}
         (g : ObjCat.Hom A y z)
         (f : ObjCat.Hom A x y)
       , ObjCat.Hom A x z
 | x .x y g (ObjCat.Hom.id .x) := g
+
+/-! #brief ObjCat.Hom.id is a left identity for ObjCat.Hom.comp.
+-/
+@[simp] theorem {ℓ} ObjCat.Hom.comp_id_left {A : Sort ℓ}
+    : ∀ {x y : A}
+        {f : ObjCat.Hom A x y}
+      , ObjCat.Hom.comp (ObjCat.Hom.id y) f = f
+| x .x (ObjCat.Hom.id .x) := rfl
+
+/-! #brief ObjCat.Hom.id is a right identity for ObjCat.Hom.comp.
+-/
+@[simp] theorem {ℓ} ObjCat.Hom.comp_id_right {A : Sort ℓ}
+    : ∀ {x y : A}
+        {f : ObjCat.Hom A x y}
+      , ObjCat.Hom.comp f (ObjCat.Hom.id x) = f
+| x .x (ObjCat.Hom.id .x) := rfl
 
 /-! #brief A category with no nontrivial homs.
 -/
@@ -917,8 +992,8 @@ inductive {ℓ} ObjCat.Hom (A : Sort ℓ) : A → A → Sort ℓ
    , id := ObjCat.Hom.id
    , circ := λ x y z g f, ObjCat.Hom.comp g f
    , circ_assoc := λ x y z w h g f, begin cases f, cases g, apply rfl end
-   , circ_id_left := λ x y f, begin cases f, apply rfl end
-   , circ_id_right := λ x y f, rfl
+   , circ_id_left := λ x y f, by simp
+   , circ_id_right := λ x y f, by simp
    }
 
 /-! #brief ObjCat has no nontrivial homs.

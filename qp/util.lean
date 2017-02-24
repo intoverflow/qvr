@@ -43,35 +43,26 @@ theorem {ℓ} punit.uniq
 -/
 inductive {ℓ} pbool : Type ℓ | ff | tt
 
-namespace list
-/-! #brief list.nth, but without the option monad.
--/
-@[reducible] definition {ℓ} get {A : Type ℓ}
-    : ∀ (aa : list A) (idx : fin (length aa))
-      , A
-| [] (fin.mk idx ω) := begin apply false.rec, cases ω end
-| (a :: aa) (fin.mk 0 ω) := a
-| (a :: aa) (fin.mk (nat.succ idx) ω) := get aa { val := idx, is_lt := nat.lt_of_succ_lt_succ ω }
 
-/-
-/-! #brief Length of append.
+namespace function
+-- An isomorphism pair.
+structure {ℓ₁ ℓ₂} isomorphism {A : Type ℓ₁} {B : Type ℓ₂}
+    (f : A → B) (g : B → A)
+    : Prop
+:= (id₁ : left_inverse f g)
+   (id₂ : left_inverse g f)
+
+/-! #brief Composition of isomorphisms.
 -/
-@[simp] theorem {ℓ} length_append {A : Sort ℓ}
-    : ∀ {aa₁ aa₂ : list A}
-      , length (aa₁ ++ aa₂) = length aa₁ + length aa₂
-:= begin
-     intros aa₁ aa₂,
-     induction aa₁ with a₁ aa₁,
-     { simp },
-     calc length (a₁ :: aa₁ ++ aa₂)
-              = length (a₁ :: (aa₁ ++ aa₂))     : rfl
-          ... = length (aa₁ ++ aa₂) + 1         : rfl
-          ... = length aa₁ + length aa₂ + 1     : by rw ih_1
-          ... = (length aa₁ + 1) + length aa₂   : by simp
-          ... = length (a₁ :: aa₁) + length aa₂ : rfl
-   end
--/
-end list
+definition {ℓ₁ ℓ₂ ℓ₃} isomorphism.comp {A : Type ℓ₁} {B : Type ℓ₂} {C : Type ℓ₃}
+    {h : B → C} {j : C → B} (hj_iso : isomorphism h j)
+    {f : A → B} {g : B → A} (fg_iso : isomorphism f g)
+    : isomorphism (function.comp h f) (function.comp g j)
+:= { id₁ := λ c, begin dsimp, rw [fg_iso^.id₁, hj_iso^.id₁] end
+   , id₂ := λ c, begin dsimp, rw [hj_iso^.id₂, fg_iso^.id₂] end
+   }
+end function
+
 
 /-! #brief Eliminating a fin 0.
 -/
@@ -99,7 +90,7 @@ theorem fin.one
 
 /-! #brief Enumerate the image of a finite function.
 -/
-@[reducible] definition {ℓ} fin.enum {A : Type ℓ}
+definition {ℓ} fin.enum {A : Type ℓ}
     : ∀ {N : ℕ} (f : fin N → A)
       , list A
 | 0 f := []
@@ -129,6 +120,56 @@ theorem fin.one
       , fin.fn (fin.enum f) = cast (by rw fin.length_enum) f
 | 0 f := begin apply funext, intro n, exact fin.zero_elim n end
 | (nat.succ N) f := sorry
+
+namespace fin
+/-! #brief The N - _ permutation.
+-/
+definition minus_perm {N : ℕ}
+    : fin N → fin N
+:= λ n, { val := N - n^.val, is_lt := sorry }
+
+/-! #brief minus_perm is a permutation.
+-/
+definition minus_perm.iso {N : ℕ}
+    : function.isomorphism (@minus_perm N) minus_perm
+:= { id₁ := λ n, sorry
+   , id₂ := λ n, sorry
+   }
+
+end fin
+
+
+namespace list
+/-! #brief list.nth, but without the option monad.
+-/
+definition {ℓ} get {A : Type ℓ}
+    : ∀ (aa : list A) (idx : fin (length aa))
+      , A
+| [] (fin.mk idx ω) := begin apply false.rec, cases ω end
+| (a :: aa) (fin.mk 0 ω) := a
+| (a :: aa) (fin.mk (nat.succ idx) ω) := get aa { val := idx, is_lt := nat.lt_of_succ_lt_succ ω }
+
+/-! #brief Permute a list.
+-/
+definition {ℓ} perm {A : Type ℓ}
+    (aa : list A)
+    {perm : fin (list.length aa) → fin (list.length aa)}
+    {perm_inv : fin (list.length aa) → fin (list.length aa)}
+    (perm_iso : function.isomorphism perm perm_inv)
+    : list A
+:= fin.enum (λ n, get aa (perm n))
+
+/-! #brief Length of a permuted list.
+-/
+definition {ℓ} perm.length {A : Type ℓ}
+    {aa : list A}
+    {perm : fin (list.length aa) → fin (list.length aa)}
+    {perm_inv : fin (list.length aa) → fin (list.length aa)}
+    {perm_iso : function.isomorphism perm perm_inv}
+    : length (list.perm aa perm_iso) = length aa
+:= sorry
+end list
+
 
 -- A finite type.
 structure {ℓ} FinType (T : Sort ℓ) : Type ℓ

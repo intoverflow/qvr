@@ -4,7 +4,6 @@ Monoidal categories.
 
 import .basic
 import .Fun
-import .Product
 
 namespace qp
 universe variables ℓobj ℓhom
@@ -12,11 +11,11 @@ universe variables ℓobj ℓhom
 
 
 -- A monoidal category.
-structure Monoidal (C : Cat.{ℓobj ℓhom})
+structure IsMonoidal (C : Cat.{ℓobj ℓhom})
+    (tensor : C ×× C ⇉⇉ C)
+    (unit : [[C]])
     : Type ((max ℓobj ℓhom) + 1)
-:= (tensor : C ×× C ⇉⇉ C)
-   (unit : [[C]])
-   (assoc_left : Fun.right_comp tensor tensor ↣↣ Fun.left_comp tensor tensor □□ ProdCat.assoc_left)
+:= (assoc_left : Fun.right_comp tensor tensor ↣↣ Fun.left_comp tensor tensor □□ ProdCat.assoc_left)
    (assoc_right : Fun.left_comp tensor tensor □□ ProdCat.assoc_left ↣↣ Fun.right_comp tensor tensor)
    (assoc_iso : NatIso assoc_left assoc_right)
    (left_unitor : Fun.left_fill tensor unit ↣↣ Fun.id C)
@@ -42,90 +41,87 @@ structure Monoidal (C : Cat.{ℓobj ℓhom})
                        := assoc_right ⟨w, x, tensor ⟨y, z⟩ ⟩
                  in x₃ ∘∘ x₂ ∘∘ x₁ = y₂ ∘∘ y₁)
 
--- A braided monoidal category.
-structure Braided {C : Cat.{ℓobj ℓhom}} (C_Monoidal : Monoidal C)
-    : Type ((max ℓobj ℓhom) + 1)
-:= (braid : C_Monoidal^.tensor ↣↣ Fun.flip C_Monoidal^.tensor)
-   (unbraid : Fun.flip C_Monoidal^.tensor ↣↣ C_Monoidal^.tensor)
-   (braid_unbraid_iso : NatIso unbraid braid)
-   (hex_left
-     : ∀ {x y z : [[C]]}
-       , let x₁ : C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨x, y⟩ , z⟩ →→ C_Monoidal^.tensor ⟨x, C_Monoidal^.tensor ⟨y, z⟩ ⟩
-               := C_Monoidal^.assoc_right ⟨x, y, z⟩ in
-         let x₂ : C_Monoidal^.tensor ⟨x, C_Monoidal^.tensor ⟨y, z⟩ ⟩ →→ C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨y, z⟩ , x⟩
-               := braid ⟨x, C_Monoidal^.tensor ⟨y, z⟩ ⟩ in
-         let x₃ : C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨y, z⟩ , x⟩ →→ C_Monoidal^.tensor ⟨y, C_Monoidal^.tensor ⟨z, x⟩ ⟩
-               := C_Monoidal^.assoc_right ⟨y, z, x⟩ in
-         let y₁ : C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨x, y⟩ , z⟩ →→ C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨y, x⟩ , z⟩
-               := C_Monoidal^.tensor^.hom ⟨ braid ⟨x, y⟩, ⟨⟨z⟩⟩ ⟩ in
-         let y₂ : C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨y, x⟩ , z⟩ →→ C_Monoidal^.tensor ⟨y, C_Monoidal^.tensor ⟨x, z⟩ ⟩
-               := C_Monoidal^.assoc_right ⟨y, x, z⟩ in
-         let y₃ : C_Monoidal^.tensor ⟨y, C_Monoidal^.tensor ⟨x, z⟩ ⟩ →→ C_Monoidal^.tensor ⟨y, C_Monoidal^.tensor ⟨z, x⟩ ⟩
-               := C_Monoidal^.tensor^.hom ⟨ ⟨⟨y⟩⟩, braid ⟨x, z⟩ ⟩
-         in y₃ ∘∘ y₂ ∘∘ y₁ = x₃ ∘∘ x₂ ∘∘ x₁)
-    (hex_right
-      : ∀ {x y z : [[C]]}
-        , let x₁ : C_Monoidal^.tensor ⟨x, C_Monoidal^.tensor ⟨y, z⟩ ⟩ →→ C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨x, y⟩ , z⟩
-                := C_Monoidal^.assoc_left ⟨x, y, z⟩ in
-          let x₂ : C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨x, y⟩ , z⟩ →→ C_Monoidal^.tensor ⟨z, C_Monoidal^.tensor ⟨x, y⟩ ⟩
-                := braid ⟨C_Monoidal^.tensor ⟨x, y⟩, z⟩ in
-          let x₃ : C_Monoidal^.tensor ⟨z, C_Monoidal^.tensor ⟨x, y⟩ ⟩ →→ C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨z, x⟩ , y⟩
-                := C_Monoidal^.assoc_left ⟨z, x, y⟩ in
-          let y₁ : C_Monoidal^.tensor ⟨x, C_Monoidal^.tensor ⟨y, z⟩ ⟩ →→ C_Monoidal^.tensor ⟨x, C_Monoidal^.tensor ⟨z, y⟩ ⟩
-                := C_Monoidal^.tensor^.hom ⟨ ⟨⟨x⟩⟩, braid ⟨y, z⟩ ⟩ in
-          let y₂ : C_Monoidal^.tensor ⟨x, C_Monoidal^.tensor ⟨z, y⟩ ⟩ →→ C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨x, z⟩ , y⟩
-                := C_Monoidal^.assoc_left ⟨x, z, y⟩ in
-          let y₃ : C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨x, z⟩ , y⟩ →→ C_Monoidal^.tensor ⟨C_Monoidal^.tensor ⟨z, x⟩ , y⟩
-                := C_Monoidal^.tensor^.hom ⟨ braid ⟨x, z⟩, ⟨⟨y⟩⟩ ⟩
-          in y₃ ∘∘ y₂ ∘∘ y₁ = x₃ ∘∘ x₂ ∘∘ x₁)
-
-/-! #brief A cartesian monoidal category.
+/-! #brief The left hexagon diagram.
 -/
-@[reducible] definition HasAllFiniteProducts.Monoidal {C : Cat.{(ℓobj + 1) ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    : Monoidal C
-:= { tensor := HasAllFiniteProducts.PairFun C_HasAllFiniteProducts
-   , unit := C_HasAllFiniteProducts^.prod []
-   , assoc_left
-      := { component := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
-                                ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
-         , transport := λ xyz₁ xyz₂ f, sorry
-         }
-   , assoc_right
-      := { component := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
-                                ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
-         , transport := λ xyz₁ xyz₂ f, sorry
-         }
-   , assoc_iso :=
-      { id₁ := NatTrans.eq
-                (λ x, sorry)
-      , id₂ := NatTrans.eq
-                (λ x, sorry)
-      }
-   , left_unitor
-      := { component := λ x, HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x
-                              ∘∘ HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts [] [x]
-         , transport := begin exact sorry end
-         }
-   , left_unitor_inv
-      := { component := λ x, HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts [] [x]
-                              ∘∘ HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x
-         , transport := begin exact sorry end
-         }
-   , left_unitor_iso := begin exact sorry end
-   , right_unitor
-      := { component := λ x, HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x
-                              ∘∘ HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts [x] []
-         , transport := begin exact sorry end
-         }
-   , right_unitor_inv
-      := { component := λ x, HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts [x] []
-                              ∘∘ HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x
-         , transport := begin exact sorry end
-         }
-   , right_unitor_iso := begin exact sorry end
-   , triangle := begin exact sorry end
-   , pentagon := begin exact sorry end
+@[reducible] definition IsBraided.hex_right_diagram {C : Cat.{ℓobj ℓhom}}
+    {tensor : C ×× C ⇉⇉ C}
+    {unit : [[C]]}
+    (C_Monoidal : IsMonoidal C tensor unit)
+    (braid : tensor ↣↣ tensor □□ ProdCat.flip)
+    : Prop
+:= ∀ {x y z : [[C]]}
+   , let x₁ : tensor ⟨tensor ⟨x, y⟩ , z⟩ →→ tensor ⟨x, tensor ⟨y, z⟩ ⟩
+           := C_Monoidal^.assoc_right ⟨x, y, z⟩ in
+     let x₂ : tensor ⟨x, tensor ⟨y, z⟩ ⟩ →→ tensor ⟨tensor ⟨y, z⟩ , x⟩
+           := braid ⟨x, tensor ⟨y, z⟩ ⟩ in
+     let x₃ : tensor ⟨tensor ⟨y, z⟩ , x⟩ →→ tensor ⟨y, tensor ⟨z, x⟩ ⟩
+           := C_Monoidal^.assoc_right ⟨y, z, x⟩ in
+     let y₁ : tensor ⟨tensor ⟨x, y⟩ , z⟩ →→ tensor ⟨tensor ⟨y, x⟩ , z⟩
+           := tensor^.hom ⟨ braid ⟨x, y⟩, ⟨⟨z⟩⟩ ⟩ in
+     let y₂ : tensor ⟨tensor ⟨y, x⟩ , z⟩ →→ tensor ⟨y, tensor ⟨x, z⟩ ⟩
+           := C_Monoidal^.assoc_right ⟨y, x, z⟩ in
+     let y₃ : tensor ⟨y, tensor ⟨x, z⟩ ⟩ →→ tensor ⟨y, tensor ⟨z, x⟩ ⟩
+           := tensor^.hom ⟨ ⟨⟨y⟩⟩, braid ⟨x, z⟩ ⟩
+     in y₃ ∘∘ y₂ ∘∘ y₁ = x₃ ∘∘ x₂ ∘∘ x₁
+
+/-! #brief The right hexagon diagram.
+-/
+@[reducible] definition IsBraided.hex_left_diagram {C : Cat.{ℓobj ℓhom}}
+    {tensor : C ×× C ⇉⇉ C}
+    {unit : [[C]]}
+    (C_Monoidal : IsMonoidal C tensor unit)
+    (braid : tensor ↣↣ tensor □□ ProdCat.flip)
+    : Prop
+:= ∀ {x y z : [[C]]}
+   , let x₁ : tensor ⟨x, tensor ⟨y, z⟩ ⟩ →→ tensor ⟨tensor ⟨x, y⟩ , z⟩
+           := C_Monoidal^.assoc_left ⟨x, y, z⟩ in
+     let x₂ : tensor ⟨tensor ⟨x, y⟩ , z⟩ →→ tensor ⟨z, tensor ⟨x, y⟩ ⟩
+           := braid ⟨tensor ⟨x, y⟩, z⟩ in
+     let x₃ : tensor ⟨z, tensor ⟨x, y⟩ ⟩ →→ tensor ⟨tensor ⟨z, x⟩ , y⟩
+           := C_Monoidal^.assoc_left ⟨z, x, y⟩ in
+     let y₁ : tensor ⟨x, tensor ⟨y, z⟩ ⟩ →→ tensor ⟨x, tensor ⟨z, y⟩ ⟩
+           := tensor^.hom ⟨ ⟨⟨x⟩⟩, braid ⟨y, z⟩ ⟩ in
+     let y₂ : tensor ⟨x, tensor ⟨z, y⟩ ⟩ →→ tensor ⟨tensor ⟨x, z⟩ , y⟩
+           := C_Monoidal^.assoc_left ⟨x, z, y⟩ in
+     let y₃ : tensor ⟨tensor ⟨x, z⟩ , y⟩ →→ tensor ⟨tensor ⟨z, x⟩ , y⟩
+           := tensor^.hom ⟨ braid ⟨x, z⟩, ⟨⟨y⟩⟩ ⟩
+     in y₃ ∘∘ y₂ ∘∘ y₁ = x₃ ∘∘ x₂ ∘∘ x₁
+
+-- A braided monoidal category.
+structure IsBraided {C : Cat.{ℓobj ℓhom}}
+    {tensor : C ×× C ⇉⇉ C}
+    {unit : [[C]]}
+    (C_Monoidal : IsMonoidal C tensor unit)
+    (braid : tensor ↣↣ tensor □□ ProdCat.flip)
+    (unbraid : tensor □□ ProdCat.flip ↣↣ tensor)
+    : Type ((max ℓobj ℓhom) + 1)
+:= (unbraid_braid_iso : NatIso unbraid braid)
+   (hex_right : IsBraided.hex_right_diagram C_Monoidal braid)
+   (hex_left : IsBraided.hex_left_diagram C_Monoidal braid)
+
+/-! #brief A symmetric monoidal category.
+-/
+@[reducible] definition IsSymmetric (C : Cat.{ℓobj ℓhom})
+    {tensor : C ×× C ⇉⇉ C}
+    {unit : [[C]]}
+    (C_Monoidal : IsMonoidal C tensor unit)
+    (braid : tensor ↣↣ tensor □□ ProdCat.flip)
+    : Type ((max ℓobj ℓhom) + 1)
+:= IsBraided C_Monoidal braid (NatTrans.flip braid)
+
+/-! #brief Helper for showing a symmetric monoidal category.
+-/
+@[reducible] definition IsSymmetric.show {C : Cat.{ℓobj ℓhom}}
+    {tensor : C ×× C ⇉⇉ C}
+    {unit : [[C]]}
+    (C_Monoidal : IsMonoidal C tensor unit)
+    (braid : tensor ↣↣ tensor □□ ProdCat.flip)
+    (ωiso : NatIso (NatTrans.flip braid) braid)
+    (ωright : IsBraided.hex_right_diagram C_Monoidal braid)
+    : IsSymmetric C C_Monoidal braid
+:= { unbraid_braid_iso := ωiso
+   , hex_right := @ωright
+   , hex_left := λ x y z , sorry -- should follow from ωiso and ωright
    }
 
 end qp
