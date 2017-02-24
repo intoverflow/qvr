@@ -114,8 +114,8 @@ structure IsBraided {C : Cat.{ℓobj ℓhom}}
 @[reducible] definition IsSymmetric.show {C : Cat.{ℓobj ℓhom}}
     {tensor : C ×× C ⇉⇉ C}
     {unit : [[C]]}
-    (C_Monoidal : IsMonoidal C tensor unit)
-    (braid : tensor ↣↣ tensor □□ ProdCat.flip)
+    {C_Monoidal : IsMonoidal C tensor unit}
+    {braid : tensor ↣↣ tensor □□ ProdCat.flip}
     (ωiso : NatIso (NatTrans.flip braid) braid)
     (ωright : IsBraided.hex_right_diagram C_Monoidal braid)
     : IsSymmetric C C_Monoidal braid

@@ -457,12 +457,10 @@ theorem HasAllFiniteProducts.Symmetric {C : Cat.{(ℓobj + 1) ℓhom}}
     : IsSymmetric C
         (HasAllFiniteProducts.Monoidal C_HasAllFiniteProducts)
         (HasAllFiniteProducts.PairFun.BraidTrans C_HasAllFiniteProducts)
-:= { unbraid_braid_iso
-      := { id₁ := begin apply NatTrans.eq, intro c, cases c with c₁ c₂, dsimp, exact sorry end
-         , id₂ := sorry
-         }
-   , hex_left := sorry
-   , hex_right := sorry
-   }
+:= IsSymmetric.show
+    { id₁ := begin apply NatTrans.eq, intro c, cases c with c₁ c₂, dsimp, exact sorry end
+    , id₂ := begin exact sorry end
+    }
+    (λ x y z, begin exact sorry end)
 
 end qp
