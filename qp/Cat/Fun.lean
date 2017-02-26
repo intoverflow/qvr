@@ -37,30 +37,28 @@ Functors and product categories.
    , hom_circ := λ x y z g f, begin dsimp, rw -F^.hom_circ, rw G^.hom_circ end
    }
 
-/-! #brief Filling the left-argument of a functor out of a product category.
+/-! #brief Right product.
 -/
-@[reducible] definition Fun.left_fill
-    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : C₁ ×× C₂ ⇉⇉ D)
-    (c : [[C₁]])
-    : C₂ ⇉⇉ D
-:= { obj := λ x, F { fst := c, snd := x }
-   , hom := λ x y f, F^.hom { fst := ⟨⟨c⟩⟩, snd := f }
-   , hom_id := λ x, begin dsimp, rw -F^.hom_id end
-   , hom_circ := λ x y z g f, begin dsimp, rw -F^.hom_circ, dsimp, simp end
+@[reducible] definition LeftProdFun
+    {C₁ : Cat.{ℓobj₁ ℓhom₁}} (c₁ : [[C₁]])
+    (C₂ : Cat.{ℓobj₂ ℓhom₂})
+    : C₂ ⇉⇉ C₁ ×× C₂
+:= { obj := λ c₂, { fst := c₁, snd := c₂ }
+   , hom := λ c₂₁ c₂₂ f₂, { fst := ⟨⟨c₁⟩⟩, snd := f₂ }
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, begin dsimp, simp end
    }
 
-/-! #brief Filling the right-argument of a functor out of a product category.
+/-! #brief Left product.
 -/
-@[reducible] definition Fun.right_fill
-    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : C₁ ×× C₂ ⇉⇉ D)
-    (c : [[C₂]])
-    : C₁ ⇉⇉ D
-:= { obj := λ x, F { fst := x, snd := c }
-   , hom := λ x y f, F^.hom { fst := f, snd := ⟨⟨c⟩⟩ }
-   , hom_id := λ x, begin dsimp, rw -F^.hom_id end
-   , hom_circ := λ x y z g f, begin dsimp, rw -F^.hom_circ, dsimp, simp end
+@[reducible] definition RightProdFun
+    (C₁ : Cat.{ℓobj₁ ℓhom₁})
+    {C₂ : Cat.{ℓobj₂ ℓhom₂}} (c₂ : [[C₂]])
+    : C₁ ⇉⇉ C₁ ×× C₂
+:= { obj := λ c₁, { fst := c₁, snd := c₂ }
+   , hom := λ c₁₁ c₁₂ f₁, { fst := f₁, snd := ⟨⟨c₂⟩⟩ }
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, begin dsimp, simp end
    }
 
 end qp

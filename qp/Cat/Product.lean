@@ -19,7 +19,7 @@ Products.
 
 /-! #brief Construct a product diagram.
 -/
-@[reducible] definition ProductDrgm {C : Cat.{(ℓobj + 1) ℓhom}} {A : Sort ℓ}
+@[reducible] definition ProductDrgm {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (factors : A → [[C]])
     : ObjCat A ⇉⇉ C
 := { obj := factors
@@ -30,15 +30,15 @@ Products.
 
 /-! #brief A product is a limit of a finite product diagram.
 -/
-@[reducible] definition IsProduct {C : Cat.{(ℓobj + 1) ℓhom}} {A : Sort ℓ}
+@[reducible] definition IsProduct {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (factors : A → [[C]])
     (x : [[C]])
-    : Type (max 1 ℓ (ℓobj + 1) ℓhom)
+    : Type (max (ℓ + 1) ℓobj ℓhom)
 := IsLimit (ProductDrgm factors) x
 
 /-! #brief Helper for defining homs into a product.
 -/
-@[reducible] definition IsProduct.into {C : Cat.{(ℓobj + 1) ℓhom}} {A : Sort ℓ}
+@[reducible] definition IsProduct.into {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     {c₀ x : [[C]]}
     {factors : A → [[C]]}
     (x_IsProduct : IsProduct factors x)
@@ -50,36 +50,42 @@ Products.
      }
 
 -- A category with all products.
-structure HasAllProducts (C : Cat.{(ℓobj + 1) ℓhom})
-    : Type (max 1 ℓ (ℓobj + 1) ℓhom)
-:= (prod : ∀ {A : Sort ℓ}, (A → [[C]]) → [[C]])
-   (is_prod : ∀ {A : Sort ℓ} (factors : A → [[C]])
+structure HasAllProducts (C : Cat.{ℓobj ℓhom})
+    : Type (max (ℓ + 1) ℓobj ℓhom)
+:= (prod : ∀ {A : Type ℓ}, (A → [[C]]) → [[C]])
+   (is_prod : ∀ {A : Type ℓ} (factors : A → [[C]])
               , IsProduct factors (prod factors))
 
+/-! #brief Categories with all limits have all products.
+-/
+@[reducible] definition HasAllLimits.HasAllProducts {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllLimits : HasAllLimits.{ℓ (ℓ + 1) ℓobj ℓhom} C)
+    : HasAllProducts.{ℓ ℓobj ℓhom} C
+:= { prod := λ A factors, C_HasAllLimits^.limit (ProductDrgm factors)
+   , is_prod := λ A factors, C_HasAllLimits^.is_limit (ProductDrgm factors)
+   }
+
 -- A category with all finite products.
-structure HasAllFiniteProducts (C : Cat.{(ℓobj + 1) ℓhom})
-    : Type (max 1 (ℓobj + 1) ℓhom)
+structure HasAllFiniteProducts (C : Cat.{ℓobj ℓhom})
+    : Type (max 1 ℓobj ℓhom)
 := (prod : list [[C]] → [[C]])
    (is_prod : ∀ (factors : list [[C]])
               , IsProduct (list.get factors) (prod factors))
 
-/-! #brief Categories with finite products have final objects.
+/-! #brief Categories with all products have all finite products.
 -/
-@[reducible] definition HasAllFiniteProducts.Final {C : Cat.{(ℓobj + 1) ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    : IsFinal C (C_HasAllFiniteProducts^.prod [])
-:= { final := λ c, IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [])
-                    { proj := λ n, fin.zero_elim n
-                    , triangle := λ x₁ x₂ f, fin.zero_elim x₁
-                    }
-   , uniq := λ c h, begin apply IsLimit.mediate_uniq, intro x, exact fin.zero_elim x end
+@[reducible] definition HasAllProducts.HasAllFiniteProducts {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllProducts : HasAllProducts.{0 ℓobj ℓhom} C)
+    : HasAllFiniteProducts.{ℓobj ℓhom} C
+:= { prod := λ factors, C_HasAllProducts^.prod (list.get factors)
+   , is_prod := λ factors, C_HasAllProducts^.is_prod (list.get factors)
    }
 
 /-! #brief Categories with all finite limits have all finite products.
 -/
-@[reducible] definition HasAllFiniteLimits.HasAllFiniteProducts {C : Cat.{(ℓobj + 1) ℓhom}}
-    (C_HasAllFiniteLimits : HasAllFiniteLimits C)
-    : HasAllFiniteProducts C
+@[reducible] definition HasAllFiniteLimits.HasAllFiniteProducts {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllFiniteLimits : HasAllFiniteLimits.{0 1 ℓobj ℓhom} C)
+    : HasAllFiniteProducts.{ℓobj ℓhom} C
 := { prod
       := λ factors
          , C_HasAllFiniteLimits^.limit (ObjCat.Fin (fin.FinType (list.length factors)))
@@ -88,6 +94,18 @@ structure HasAllFiniteProducts (C : Cat.{(ℓobj + 1) ℓhom})
       := λ factors
          , C_HasAllFiniteLimits^.is_limit (ObjCat.Fin (fin.FinType (list.length factors)))
             (ProductDrgm (list.get factors))
+   }
+
+/-! #brief Categories with finite products have final objects.
+-/
+@[reducible] definition HasAllFiniteProducts.Final {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+    : IsFinal C (C_HasAllFiniteProducts^.prod [])
+:= { final := λ c, IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [])
+                    { proj := λ n, fin.zero_elim n
+                    , triangle := λ x₁ x₂ f, fin.zero_elim x₁
+                    }
+   , uniq := λ c h, begin apply IsLimit.mediate_uniq, intro x, exact fin.zero_elim x end
    }
 
 
@@ -106,7 +124,7 @@ In particular,
 
 /-! #brief Permutation of products.
 -/
-definition HasAllFiniteProducts.perm_limit {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.perm_limit {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors : list [[C]])
     {perm : fin (list.length factors) → fin (list.length factors)}
@@ -136,7 +154,7 @@ definition HasAllFiniteProducts.perm_limit {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The un-permuting hom.
 -/
-definition HasAllFiniteProducts.unperm {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.unperm {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors : list [[C]])
     {perm : fin (list.length factors) → fin (list.length factors)}
@@ -149,7 +167,7 @@ definition HasAllFiniteProducts.unperm {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The permuting hom.
 -/
-definition HasAllFiniteProducts.perm {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.perm {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors : list [[C]])
     {perm : fin (list.length factors) → fin (list.length factors)}
@@ -164,7 +182,7 @@ definition HasAllFiniteProducts.perm {C : Cat.{(ℓobj + 1) ℓhom}}
 
 prod [X₁, ..., Xn] ≅ prod (σ [X₁, ..., Xn]) for any permutation σ of [1,...,n].
 -/
-@[reducible] definition HasAllFiniteProducts.unpermute_permute_iso {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.unpermute_permute_iso {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors : list [[C]])
     {perm : fin (list.length factors) → fin (list.length factors)}
@@ -177,7 +195,7 @@ prod [X₁, ..., Xn] ≅ prod (σ [X₁, ..., Xn]) for any permutation σ of [1,
 
 /-! #brief Flattening of products of products.
 -/
-definition HasAllFiniteProducts.flat_limit {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.flat_limit {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₂ factors₃ : list [[C]])
     : IsProduct (list.get (factors₁ ++ factors₂ ++ factors₃))
@@ -206,7 +224,7 @@ definition HasAllFiniteProducts.flat_limit {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The flattening hom.
 -/
-definition HasAllFiniteProducts.flatten {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.flatten {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₂ factors₃ : list [[C]])
     : C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod factors₂] ++ factors₃)
@@ -216,7 +234,7 @@ definition HasAllFiniteProducts.flatten {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The exploding hom.
 -/
-definition HasAllFiniteProducts.explode {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.explode {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₂ factors₃ : list [[C]])
     : C_HasAllFiniteProducts^.prod (factors₁ ++ factors₂ ++ factors₃)
@@ -229,7 +247,7 @@ definition HasAllFiniteProducts.explode {C : Cat.{(ℓobj + 1) ℓhom}}
 prod [X₁, ..., Xn, prod [Y₁, ..., Ym], Z₁, ..., Zp]
  ≅ prod [X₁, ..., Xn, Y₁, ..., Ym, Z₁, ..., Zp]
 -/
-@[reducible] definition HasAllFiniteProducts.flatten_explode_iso {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.flatten_explode_iso {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₂ factors₃ : list [[C]])
     : Iso (HasAllFiniteProducts.flatten C_HasAllFiniteProducts factors₁ factors₂ factors₃)
@@ -239,7 +257,7 @@ prod [X₁, ..., Xn, prod [Y₁, ..., Ym], Z₁, ..., Zp]
 
 /-! #brief Flattening of products of empty products.
 -/
-definition HasAllFiniteProducts.unit_limit {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.unit_limit {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₃ : list [[C]])
     : IsProduct (list.get (factors₁ ++ factors₃))
@@ -262,7 +280,7 @@ definition HasAllFiniteProducts.unit_limit {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The unit-dropping hom.
 -/
-definition HasAllFiniteProducts.unit_drop {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.unit_drop {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₃ : list [[C]])
     : C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
@@ -272,7 +290,7 @@ definition HasAllFiniteProducts.unit_drop {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The unit-inserting hom.
 -/
-definition HasAllFiniteProducts.unit_insert {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.unit_insert {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₃ : list [[C]])
     : C_HasAllFiniteProducts^.prod (factors₁ ++ factors₃)
@@ -285,7 +303,7 @@ definition HasAllFiniteProducts.unit_insert {C : Cat.{(ℓobj + 1) ℓhom}}
 prod [X₁, ..., Xn, prod [], Z₁, ..., Zp]
  ≅ prod [X₁, ..., Xn, Z₁, ..., Zp]
 -/
-@[reducible] definition HasAllFiniteProducts.unit_drop_insert_iso {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.unit_drop_insert_iso {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (factors₁ factors₃ : list [[C]])
     : Iso (HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts factors₁ factors₃)
@@ -295,7 +313,7 @@ prod [X₁, ..., Xn, prod [], Z₁, ..., Zp]
 
 /-! #brief Singleton products.
 -/
-definition HasAllFiniteProducts.singleton_limit {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.singleton_limit {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (x : [[C]])
     : IsProduct (list.get [x]) x
@@ -315,7 +333,7 @@ definition HasAllFiniteProducts.singleton_limit {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The singleton unboxing hom.
 -/
-definition HasAllFiniteProducts.singleton_unbox {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.singleton_unbox {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (x : [[C]])
     : C_HasAllFiniteProducts^.prod [x] →→ x
@@ -324,7 +342,7 @@ definition HasAllFiniteProducts.singleton_unbox {C : Cat.{(ℓobj + 1) ℓhom}}
 
 /-! #brief The singleton boxing hom.
 -/
-definition HasAllFiniteProducts.singleton_box {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.singleton_box {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (x : [[C]])
     : x →→ C_HasAllFiniteProducts^.prod [x]
@@ -335,7 +353,7 @@ definition HasAllFiniteProducts.singleton_box {C : Cat.{(ℓobj + 1) ℓhom}}
 
 prod [X₁] ≅ X₁
 -/
-@[reducible] definition HasAllFiniteProducts.singleton_unbox_box_iso {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.singleton_unbox_box_iso {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     (x : [[C]])
     : Iso (HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x)
@@ -351,7 +369,7 @@ The pair functor.
 
 /-! #brief Helper for the pairwise product functor.
 -/
-@[reducible] definition HasAllFiniteProducts.PairFun_helper {C : Cat.{(ℓobj + 1) ℓhom}}
+definition HasAllFiniteProducts.PairFun_helper {C : Cat.{ℓobj ℓhom}}
     {xy₁ xy₂ : [[C ×× C]]}
     (f : (C ×× C)^.hom xy₁ xy₂)
     : ∀ (n : fin 2)
@@ -363,7 +381,7 @@ The pair functor.
 
 /-! #brief The pairwise product functor.
 -/
-@[reducible] definition HasAllFiniteProducts.PairFun {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.PairFun {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     : C ×× C ⇉⇉ C
 := { obj := λ xy, C_HasAllFiniteProducts^.prod [xy^.fst, xy^.snd]
@@ -389,7 +407,7 @@ The pair functor.
 
 /-! #brief The pairwise product functor.
 -/
-@[reducible] definition HasAllFiniteProducts.PairFun.BraidTrans {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.PairFun.BraidTrans {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     : HasAllFiniteProducts.PairFun C_HasAllFiniteProducts
        ↣↣ HasAllFiniteProducts.PairFun C_HasAllFiniteProducts □□ ProdCat.flip
@@ -403,7 +421,7 @@ Cartesian monoidal categories.
 
 /-! #brief Every category with all finite products is a cartesian monoidal category.
 -/
-@[reducible] definition HasAllFiniteProducts.Monoidal {C : Cat.{(ℓobj + 1) ℓhom}}
+@[reducible] definition HasAllFiniteProducts.Monoidal {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     : IsMonoidal C
        (HasAllFiniteProducts.PairFun C_HasAllFiniteProducts)
@@ -452,7 +470,7 @@ Cartesian monoidal categories.
 
 /-! #brief Cartesian monoidal categories are symmetric.
 -/
-theorem HasAllFiniteProducts.Symmetric {C : Cat.{(ℓobj + 1) ℓhom}}
+theorem HasAllFiniteProducts.Symmetric {C : Cat.{ℓobj ℓhom}}
     (C_HasAllFiniteProducts : HasAllFiniteProducts C)
     : IsSymmetric C
         (HasAllFiniteProducts.Monoidal C_HasAllFiniteProducts)

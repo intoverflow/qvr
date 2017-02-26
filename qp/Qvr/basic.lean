@@ -15,8 +15,8 @@ just a morphism of directed graphs.
 ---------------------------------------------------------------------------- -/
 
 -- A quiver.
-structure Qvr : Type (max ℓvtx ℓarr)
-:= (vtx : Sort.{ℓvtx})
+structure Qvr : Type ((max ℓvtx ℓarr) + 1)
+:= (vtx : Type.{ℓvtx})
    (arr : Sort.{ℓarr})
    (src : arr → vtx)
    (dst : arr → vtx)

@@ -19,7 +19,7 @@ structure IsCone
     {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     (c : [[C]])
-    : Sort  (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (proj : ∀ (x : [[B]]), c →→ F x)
    (triangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
                , proj x₂ = (F ↗ f) ∘∘ proj x₁)
@@ -27,7 +27,7 @@ structure IsCone
 -- Boxed version of IsCone.
 structure BxCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
-    : Sort (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (cone : [[C]])
    (is_cone : IsCone F cone)
 

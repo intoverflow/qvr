@@ -16,8 +16,8 @@ NatTrans.
 ---------------------------------------------------------------------------- -/
 
 -- A strict category.
-structure Cat : Type (max ℓobj ℓhom)
-:= (obj : Sort ℓobj)
+structure Cat : Type ((max ℓobj ℓhom) + 1)
+:= (obj : Type ℓobj)
    (hom : ∀ (x y : obj)
           , Sort ℓhom)
    (id : ∀ (x : obj)
@@ -96,8 +96,8 @@ structure NatTrans
     : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (component : ∀ (x : [[C]]), F x →→ G x)
    (transport : ∀ {x y : [[C]]} {f : x →→ y}
-                , component y ∘∘ (F ↗ f)
-                   = (G ↗ f) ∘∘ component x)
+                , component y ∘∘ (F^.hom f)
+                   = (G^.hom f) ∘∘ component x)
 
 -- A natural transformation.
 -- \rightarrowtail\rightarrowtail
@@ -153,7 +153,7 @@ theorem Fun.heq
                 , x₁ == x₂ → F₁ x₁ == F₂ x₂)
         (ωhom : ∀ (x₁ y₁ : [[C₁]]) (x₂ y₂ : [[C₂]])
                   (f₁ : x₁ →→ y₁) (f₂ : x₂ →→ y₂)
-                , f₁ == f₂ → F₁ ↗ f₁ == F₂ ↗ f₂)
+                , f₁ == f₂ → (F₁ ↗ f₁) == (F₂ ↗ f₂))
       , F₁ == F₂
 | C D F₁ .C .D F₂ (eq.refl .C) (eq.refl .D) ωobj ωhom
 := begin
@@ -178,6 +178,20 @@ theorem Fun.heq
    , hom_id := λ x, rfl
    , hom_circ := λ x y z g f, rfl
    }
+
+/-! #brief Action of the identity functor on objects.
+-/
+@[simp] theorem Fun.id.on_obj {C : Cat.{ℓobj ℓhom}}
+    {c : [[C]]}
+    : Fun.id C c = c
+:= rfl
+
+/-! #brief Action of the identity functor on homs.
+-/
+@[simp] theorem Fun.id.on_hom {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : [[C]]} {f : c₁ →→ c₂}
+    : Fun.id C ↗ f = f
+:= rfl
 
 /-! #brief Composition of functors.
 -/
@@ -267,7 +281,7 @@ theorem NatTrans.heq
    , transport
       := λ x y f
          , by calc ⟨⟨F y⟩⟩ ∘∘ (F ↗ f)
-                       = F ↗ f              : D^.circ_id_left
+                       = (F ↗ f)            : D^.circ_id_left
                    ... = (F ↗ f) ∘∘ ⟨⟨F x⟩⟩ : eq.symm D^.circ_id_right
    }
 
@@ -338,10 +352,10 @@ theorem NatTrans.comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
 := { component := λ x, G ↗ (η x)
    , transport
       := λ x y f
-         , by calc (G ↗ (η y)) ∘∘ ((G □□ F₁) ↗ f)
+         , by calc (G ↗ (η y)) ∘∘ ((G □□ F₁)^.hom f)
                        = G ↗ (η y ∘∘ (F₁ ↗ f))         : eq.symm G^.hom_circ
                    ... = G ↗ ((F₂ ↗ f) ∘∘ η x)         : by rw η^.transport
-                   ... = ((G □□ F₂) ↗ f) ∘∘ (G ↗ (η x)) : G^.hom_circ
+                   ... = ((G □□ F₂)^.hom f) ∘∘ (G ↗ (η x)) : G^.hom_circ
    }
 
 -- Composition of a functor with a natural transformation.
@@ -413,7 +427,12 @@ infix `◇□` : 150
 @[simp] theorem NatTrans.comp_fun_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F₁ F₂ : C ⇉⇉ D} {η : F₁ ↣↣ F₂}
     : η ◇□ Fun.id C == η
-:= by simp
+:= begin
+     apply NatTrans.heq rfl rfl,
+     { simp },
+     { simp },
+     { intros x₁ x₂ ωx, cases ωx, dsimp, simp }
+   end
 
 /-! #brief NatTrans.comp_fun distributes over Fun.comp.
 -/
@@ -633,8 +652,8 @@ structure Adj
   : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
   := mk :: (counit : L □□ R ↣↣ Fun.id D)
            (unit : Fun.id C ↣↣ R □□ L)
-           (id_left : ∀ {c : [[C]]}, counit (L c) ∘∘ (L ↗ (unit c)) = ⟨⟨L c⟩⟩)
-           (id_right : ∀ {d : [[D]]}, (R ↗ (counit d)) ∘∘ unit (R d) = ⟨⟨R d⟩⟩)
+           (id_left : ∀ {c : [[C]]}, counit (L c) ∘∘ L^.hom (unit c) = ⟨⟨L c⟩⟩)
+           (id_right : ∀ {d : [[D]]}, R^.hom (counit d) ∘∘ unit (R d) = ⟨⟨R d⟩⟩)
 
 attribute [simp] Adj.id_left
 attribute [simp] Adj.id_right
@@ -725,7 +744,7 @@ Finite categories.
 ---------------------------------------------------------------------------- -/
 
 -- A finite category.
-structure Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type (max 1 ℓobj ℓhom)
+structure Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type ((max ℓobj ℓhom) + 1)
 := (obj : FinType [[C]])
    (hom : ∀ (x y : [[C]]), FinType (x →→ y))
 
@@ -750,7 +769,7 @@ Some important categories.
 /-! #brief The category of functors and natural transformations between them.
 -/
 @[reducible] definition FunCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
-    : Cat.{((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1) ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)}
+    : Cat--.{((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1) ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)}
 := { obj := C ⇉⇉ D
    , hom := NatTrans
    , id := NatTrans.id
@@ -785,7 +804,7 @@ notation `{{` C `}}⁻¹` := OpCat C
 /-! #brief The product category.
 -/
 @[reducible] definition ProdCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
-    : Cat.{(max 1 ℓobj₁ ℓobj₂) (max 1 ℓhom₁ ℓhom₂)}
+    : Cat.{(max ℓobj₁ ℓobj₂) (max 1 ℓhom₁ ℓhom₂)}
 := { obj := pprod [[C]] [[D]]
    , hom := λ x y, pprod (x^.fst →→ y^.fst) (x^.snd →→ y^.snd)
    , id  := λ x, pprod.mk ⟨⟨x^.fst⟩⟩ ⟨⟨x^.snd⟩⟩
@@ -902,7 +921,7 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief The category of Lean terms in Type {ℓ} and functions between them.
 -/
-@[reducible] definition {ℓ} LeanCat : Cat.{(ℓ + 1) ℓ}
+@[reducible] definition {ℓ} LeanCat : Cat.{ℓ ℓ}
 := { obj := Sort.{ℓ}
    , hom := λ X Y, X → Y
    , id := λ X x, x
@@ -914,11 +933,11 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief The category of propositions and implications between them.
 -/
-@[reducible] definition PropCat : Cat.{1 0} := LeanCat.{0}
+@[reducible] definition PropCat : Cat.{0 0} := LeanCat.{0}
 
 /-! #brief The category of Lean terms in finite types.
 -/
-@[reducible] definition {ℓ} FinLeanCat : Cat.{(ℓ + 2) (ℓ + 1)}
+@[reducible] definition {ℓ} FinLeanCat : Cat.{(ℓ + 1) (ℓ + 1)}
 := { obj := BxFinType.{ℓ}
    , hom := λ X Y, X^.T → Y^.T
    , id := λ X x, x
@@ -931,7 +950,7 @@ infixr `××` : 130 := ProdCat
 /-! #brief The functor from CatCat to LeanCat.
 -/
 @[reducible] definition CatCat.toLean
-    : CatCat.{ℓobj ℓhom} ⇉⇉ LeanCat.{ℓobj}
+    : CatCat.{ℓobj ℓhom} ⇉⇉ LeanCat.{ℓobj + 1}
 := { obj := λ C, [[C]]
    , hom := λ C D F x, F x
    , hom_id := λ C, rfl
@@ -956,12 +975,12 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief Homs in ObjCat.
 -/
-inductive {ℓ} ObjCat.Hom (A : Sort ℓ) : A → A → Sort ℓ
+inductive {ℓ} ObjCat.Hom (A : Type ℓ) : A → A → Type ℓ
 | id : ∀ (a : A), ObjCat.Hom a a
 
 /-! #brief Composition in ObjCat.
 -/
-definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
+definition {ℓ} ObjCat.Hom.comp {A : Type ℓ}
     : ∀ {x y z : A}
         (g : ObjCat.Hom A y z)
         (f : ObjCat.Hom A x y)
@@ -970,7 +989,7 @@ definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
 
 /-! #brief ObjCat.Hom.id is a left identity for ObjCat.Hom.comp.
 -/
-@[simp] theorem {ℓ} ObjCat.Hom.comp_id_left {A : Sort ℓ}
+@[simp] theorem {ℓ} ObjCat.Hom.comp_id_left {A : Type ℓ}
     : ∀ {x y : A}
         {f : ObjCat.Hom A x y}
       , ObjCat.Hom.comp (ObjCat.Hom.id y) f = f
@@ -978,7 +997,7 @@ definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
 
 /-! #brief ObjCat.Hom.id is a right identity for ObjCat.Hom.comp.
 -/
-@[simp] theorem {ℓ} ObjCat.Hom.comp_id_right {A : Sort ℓ}
+@[simp] theorem {ℓ} ObjCat.Hom.comp_id_right {A : Type ℓ}
     : ∀ {x y : A}
         {f : ObjCat.Hom A x y}
       , ObjCat.Hom.comp f (ObjCat.Hom.id x) = f
@@ -986,7 +1005,7 @@ definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
 
 /-! #brief A category with no nontrivial homs.
 -/
-@[reducible] definition {ℓ} ObjCat (A : Sort ℓ) : Cat.{ℓ ℓ}
+@[reducible] definition {ℓ} ObjCat (A : Type ℓ) : Cat.{ℓ (ℓ + 1)}
 := { obj := A
    , hom := ObjCat.Hom A
    , id := ObjCat.Hom.id
@@ -998,7 +1017,7 @@ definition {ℓ} ObjCat.Hom.comp {A : Sort ℓ}
 
 /-! #brief ObjCat has no nontrivial homs.
 -/
-theorem {ℓ} ObjCat.hom_trivial {A : Sort ℓ}
+theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
     : ∀ {x y : [[ObjCat A]]}
         (f : (ObjCat A)^.hom x y)
       , x = y
@@ -1006,7 +1025,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Sort ℓ}
 
 /-! #brief ObjCat A is finite when A is.
 -/
-@[reducible] definition {ℓ} ObjCat.Fin {A : Sort ℓ}
+@[reducible] definition {ℓ} ObjCat.Fin {A : Type ℓ}
     (A_FinType : FinType A)
     : Cat.Fin (ObjCat A)
 := { obj := A_FinType
@@ -1056,7 +1075,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Sort ℓ}
 -/
 @[reducible] definition EmptyCat
     : Cat.{ℓobj ℓhom}
-:= { obj := pempty.{ℓobj}
+:= { obj := pempty.{ℓobj + 1}
    , hom := λ x y, pempty.{ℓhom}
    , id := λ x, pempty.elim x
    , circ := λ x y z g f, f
@@ -1100,7 +1119,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Sort ℓ}
 -/
 @[reducible] definition StarCat
     : Cat.{ℓobj ℓhom}
-:= { obj := punit.{ℓobj}
+:= { obj := punit.{ℓobj + 1}
    , hom := λ x y, punit.{ℓhom}
    , id := λ x, punit.star
    , circ := λ x y z g f, f
@@ -1141,6 +1160,71 @@ theorem {ℓ} ObjCat.hom_trivial {A : Sort ℓ}
                exact eq.trans punit.uniq (eq.symm punit.uniq)
              }
            end
+   }
+
+-- An object in a slice category.
+structure SliceCat.Obj (C : Cat.{ℓobj ℓhom}) (c : [[C]])
+    : Type (max ℓobj ℓhom)
+:= (dom : [[C]])
+   (hom : dom →→ c)
+
+-- A hom in a slice category.
+structure SliceCat.Hom {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    (x y : SliceCat.Obj C c)
+    : Type ℓhom
+:= (hom : C^.hom x^.dom y^.dom)
+   (triangle : x^.hom = y^.hom ∘∘ hom)
+
+/-! #brief The identity hom in a slice category.
+-/
+@[reducible] definition SliceCat.Hom.id {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    (x : SliceCat.Obj C c)
+    : SliceCat.Hom x x
+:= { hom := ⟨⟨x^.dom⟩⟩
+   , triangle := by simp
+   }
+
+/-! #brief Helper for proving equality of slice category homs.
+-/
+theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    {x y : SliceCat.Obj C c}
+    : ∀ {f₁ f₂ : SliceCat.Hom x y}
+      , f₁^.hom = f₂^.hom
+      → f₁ = f₂
+| (SliceCat.Hom.mk f ω₁) (SliceCat.Hom.mk .f ω₂) (eq.refl .f) := rfl
+
+/-! #brief Composition of homs in a slice category.
+-/
+@[reducible] definition SliceCat.Hom.comp {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    {x y z : SliceCat.Obj C c} (g : SliceCat.Hom y z) (f : SliceCat.Hom x y)
+    : SliceCat.Hom x z
+:= { hom := g^.hom ∘∘ f^.hom
+   , triangle := by rw [f^.triangle, g^.triangle, C^.circ_assoc]
+   }
+
+/-! #brief Slice categories.
+-/
+@[reducible] definition SliceCat
+    (C : Cat.{ℓobj ℓhom})
+    (c : [[C]])
+    : Cat.{(max ℓobj ℓhom) (ℓhom + 1)}
+:= { obj := SliceCat.Obj C c
+   , hom := SliceCat.Hom
+   , id := SliceCat.Hom.id
+   , circ := @SliceCat.Hom.comp C c
+   , circ_assoc := λ x y z w h g f, begin apply SliceCat.Hom.eq, dsimp, rw C^.circ_assoc end
+   , circ_id_left := λ x y f, begin apply SliceCat.Hom.eq, dsimp, simp end
+   , circ_id_right := λ x y f, begin apply SliceCat.Hom.eq, dsimp, simp end
+   }
+
+/-! #brief The functor from the slice category to the global category.
+-/
+@[reducible] definition UnsliceFun {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    : SliceCat C c ⇉⇉ C
+:= { obj := λ x, x^.dom
+   , hom := λ x y f, f^.hom
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
    }
 
 end qp

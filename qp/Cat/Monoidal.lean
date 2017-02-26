@@ -18,11 +18,11 @@ structure IsMonoidal (C : Cat.{ℓobj ℓhom})
 := (assoc_left : Fun.right_comp tensor tensor ↣↣ Fun.left_comp tensor tensor □□ ProdCat.assoc_left)
    (assoc_right : Fun.left_comp tensor tensor □□ ProdCat.assoc_left ↣↣ Fun.right_comp tensor tensor)
    (assoc_iso : NatIso assoc_left assoc_right)
-   (left_unitor : Fun.left_fill tensor unit ↣↣ Fun.id C)
-   (left_unitor_inv : Fun.id C ↣↣ Fun.left_fill tensor unit)
+   (left_unitor : tensor □□ LeftProdFun unit C ↣↣ Fun.id C)
+   (left_unitor_inv : Fun.id C ↣↣ tensor □□ LeftProdFun unit C)
    (left_unitor_iso : NatIso left_unitor left_unitor_inv)
-   (right_unitor : Fun.right_fill tensor unit ↣↣ Fun.id C)
-   (right_unitor_inv : Fun.id C ↣↣ Fun.right_fill tensor unit)
+   (right_unitor : tensor □□ RightProdFun C unit ↣↣ Fun.id C)
+   (right_unitor_inv : Fun.id C ↣↣ tensor □□ RightProdFun C unit)
    (right_unitor_iso : NatIso right_unitor right_unitor_inv)
    (triangle : ∀ {x y : [[C]]}
                , let lefty : tensor ⟨x, tensor ⟨unit, y⟩ ⟩ →→ tensor ⟨x, y⟩
@@ -123,5 +123,18 @@ structure IsBraided {C : Cat.{ℓobj ℓhom}}
    , hex_right := @ωright
    , hex_left := λ x y z , sorry -- should follow from ωiso and ωright
    }
+
+/-! #brief A closed symmetric monoidal category.
+-/
+@[reducible] definition IsClosedMonoidal (C : Cat.{ℓobj ℓhom})
+    {tensor : C ×× C ⇉⇉ C}
+    {unit : [[C]]}
+    {C_Monoidal : IsMonoidal C tensor unit}
+    {braid : tensor ↣↣ tensor □□ ProdCat.flip}
+    (C_Symmetric : IsSymmetric C C_Monoidal braid)
+    (internal_hom : ∀ (y : [[C]]), C ⇉⇉ C)
+    : Type (max ℓobj ℓhom)
+:= ∀ (y : [[C]])
+   , tensor □□ RightProdFun C y ⊣ internal_hom y
 
 end qp
