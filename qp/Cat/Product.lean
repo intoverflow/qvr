@@ -35,6 +35,34 @@ Products.
     : Type (max (ℓ + 1) ℓobj ℓhom)
 := Limit (ProductDrgm factors)
 
+/-! #brief Helper for helper for building products.
+-/
+@[reducible] definition Product.show_cone {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    (factors : A → [[C]])
+    (prd : [[C]])
+    (π : ∀ (a : A), prd →→ factors a)
+    : Cone (ProductDrgm factors)
+:= { obj := prd
+   , proj := π
+   , triangle := λ x₁ x₂ f, begin cases f, dsimp, simp end
+   }
+
+/-! #brief Helper for building products.
+-/
+@[reducible] definition Product.show {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    (factors : A → [[C]])
+    (prd : [[C]])
+    (π : ∀ (a : A), prd →→ factors a)
+    (mediate : ∀ (cone : Cone (ProductDrgm factors)), C^.hom cone prd)
+    (ωfactors : ∀ (cone : Cone (ProductDrgm factors)) {x : A}, cone^.proj x = π x ∘∘ mediate cone)
+    (ωuniq : ∀ (cone : Cone (ProductDrgm factors)) (h : ConeHom cone (Product.show_cone factors prd π)), h^.mediate = mediate cone)
+    : Product factors
+:= Limit.show (ProductDrgm factors) prd π
+    mediate
+    (λ x₁ x₂ f, begin cases f, dsimp, simp end)
+    @ωfactors
+    ωuniq
+
 /-! #brief Helper for defining homs into a product.
 -/
 @[reducible] definition Product.into {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
@@ -231,13 +259,12 @@ theorem HasAllFiniteProducts.Symmetric {C : Cat.{ℓobj ℓhom}} {c₀ : Final C
     : IsSymmetric C
         (HasAllFiniteProducts.Monoidal @C_HasAllFiniteProducts)
         (PairFun.BraidTrans @C_HasAllFiniteProducts)
-:= sorry
-/-
 := IsSymmetric.show
-    { id₁ := begin apply NatTrans.eq, intro c, cases c with c₁ c₂, dsimp, exact sorry end
-    , id₂ := begin exact sorry end
+    { id₁ := begin apply NatTrans.eq, intro c, cases c with c₁ c₂, exact sorry end
+    , id₂ := begin apply NatTrans.eq, intro c, cases c with c₁ c₂, exact sorry end
     }
-    (λ x y z, begin exact sorry end)
--/
+    (λ x y z, begin
+                exact sorry
+              end)
 
 end qp

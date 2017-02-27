@@ -297,44 +297,27 @@ Products in the slice categories.
 @[reducible] definition {ℓ} LeanCat.Slice.HasAllFiniteProducts
     (T : [[LeanCat.{ℓ + 1}]])
     : HasAllFiniteProducts (SliceCat LeanCat.{ℓ + 1} T) SliceCat.Final
-:= sorry
-/-
-:= { prod := λ c₁ c₂, { dom := LeanCat.HasAllPullbacks^.pull c₁^.hom c₂^.hom
-                      , hom := c₁^.hom ∘∘ LeanCat.HasAllPullbacks^.π₁ c₁^.hom c₂^.hom
-                      }
-   , is_prod
-      := λ c₁ c₂, { is_cone
-                     := { proj := λ b, bool.cases_on b
-                                        { hom := LeanCat.HasAllPullbacks^.π₂ c₁^.hom c₂^.hom
-                                        , triangle := begin apply funext, intro ab, dsimp, exact sorry end
+:= { prod := λ c₁ c₂
+             , Product.show (bool.pick c₁ c₂)
+                { dom := LeanCat.HasAllPullbacks c₁^.hom c₂^.hom
+                , hom := c₁^.hom ∘∘ Pullback.π₁ (LeanCat.HasAllPullbacks c₁^.hom c₂^.hom)
+                }
+                (λ b, bool.cases_on b
+                       { hom := Pullback.π₂ (LeanCat.HasAllPullbacks c₁^.hom c₂^.hom)
+                       , triangle := begin apply funext, intro ab, dsimp, exact sorry end
+                       }
+                       { hom := Pullback.π₁ (LeanCat.HasAllPullbacks c₁^.hom c₂^.hom)
+                       , triangle := begin apply funext, intro ab, dsimp, exact sorry end
+                       })
+                (λ cone, { hom := λ cn, { elt_of := { fst := (cone^.proj bool.tt)^.hom cn
+                                                    , snd := (cone^.proj bool.ff)^.hom cn
+                                                    }
+                                        , has_property := sorry
                                         }
-                                        { hom := LeanCat.HasAllPullbacks^.π₁ c₁^.hom c₂^.hom
-                                        , triangle := begin apply funext, intro ab, dsimp, exact sorry end
-                                        }
-                        , triangle := λ b₁ b₂ f
-                                      , begin
-                                          cases f with b,
-                                          cases b,
-                                          { apply SliceCat.Hom.eq, apply funext, intro ab, apply rfl },
-                                          { apply SliceCat.Hom.eq, apply funext, intro ab, apply rfl }
-                                        end
-                        }
-                  , is_final
-                     := { final
-                           := λ cone
-                              , { mediate
-                                   := { hom := λ cn, { elt_of := { fst := (cone^.is_cone^.proj bool.tt)^.hom cn
-                                                                 , snd := (cone^.is_cone^.proj bool.ff)^.hom cn
-                                                                 }
-                                                     , has_property := sorry
-                                                     }
-                                      , triangle := sorry
-                                      }
-                                , factor := sorry
-                                }
-                        , uniq := λ x h, sorry
-                        }
-                  }
+                         , triangle := sorry
+                         })
+                sorry
+                sorry
    , prod_id_left₁ := λ U, { hom := λ ab, ab^.elt_of^.snd
                            , triangle := begin apply funext, intro ab, exact sorry end
                            }
@@ -358,7 +341,6 @@ Products in the slice categories.
                            , id₂ := begin apply SliceCat.Hom.eq, apply funext, intro u, apply rfl end
                            }
    }
--/
 
 /-! #brief Slices of Lean categories are cartesian monoidal.
 -/

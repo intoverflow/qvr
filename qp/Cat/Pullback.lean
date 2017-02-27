@@ -141,6 +141,18 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
     (λ cone x, begin cases x, { apply ωcone_a }, { apply ωcone_b }, { dsimp, rw cone^.triangle Hom.a, dsimp, rw [ωcone_a, C^.circ_assoc] } end)
     ωuniq
 
+/-! #brief Homs into a pullback.
+-/
+@[reducible] definition Pullback.into {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    {ga : a →→ z} {gb : b →→ z}
+    (pb : Pullback ga gb)
+    {c : [[C]]}
+    (fa : c →→ a) (fb : c →→ b)
+    (ωsquare : ga ∘∘ fa = gb ∘∘ fb)
+    : C^.hom c pb
+:= Limit.mediate pb (Pullback.show_cone ga gb c fa fb ωsquare)
+
 /-! #brief Projection from a pullback.
 -/
 @[reducible] definition Pullback.π₁ {C : Cat.{ℓobj ℓhom}}
@@ -188,6 +200,25 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
     {a z : [[C]]} (ga : a →→ z)
     : HasAllPullbacksAlong C ga
 := λ b gb, C_HasAllPullbacks ga gb
+
+/-! #brief Base change functor.
+-/
+@[reducible] definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : [[C]]} (bx : c₁ →→ c₂)
+    (bx_HasPullbacksAlong : HasAllPullbacksAlong C bx)
+    : SliceCat C c₂ ⇉⇉ SliceCat C c₁
+:= { obj := λ x, { dom := bx_HasPullbacksAlong x^.hom
+                 , hom := Pullback.π₁ (bx_HasPullbacksAlong x^.hom)
+                 }
+   , hom := λ x y f, { hom := Pullback.into (bx_HasPullbacksAlong y^.hom)
+                               (Pullback.π₁ (bx_HasPullbacksAlong x^.hom))
+                               (f^.hom ∘∘ Pullback.π₂ (bx_HasPullbacksAlong x^.hom))
+                               begin exact sorry end
+                     , triangle := begin exact sorry end
+                     }
+   , hom_id := λ x, begin apply SliceCat.Hom.eq, exact sorry end
+   , hom_circ := λ x y z g f, begin apply SliceCat.Hom.eq, exact sorry end
+   }
 
 /-
 /-! #brief A helper for the helper for proving one has a pullback square.
