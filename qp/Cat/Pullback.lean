@@ -14,6 +14,10 @@ universe variables ℓobj ℓhom
 
 
 
+/- ----------------------------------------------------------------------------
+The co-span category.
+---------------------------------------------------------------------------- -/
+
 /-! #brief An object in CoSpanCat.
 -/
 inductive CoSpanCat.Obj : Type | a | b | z
@@ -99,6 +103,12 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
     : (CoSpanDrgm fa fb)^.hom CoSpanCat.Hom.b = fb
 := rfl
 
+
+
+/- ----------------------------------------------------------------------------
+Pullbacks.
+---------------------------------------------------------------------------- -/
+
 /-! #brief A pullback is a limit of a cospan diagram.
 -/
 @[reducible] definition Pullback {C : Cat.{ℓobj ℓhom}}
@@ -171,6 +181,12 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
     : C^.hom pb b
 := pb^.proj CoSpanCat.Obj.b
 
+
+
+/- ----------------------------------------------------------------------------
+Categories with pullbacks.
+---------------------------------------------------------------------------- -/
+
 /-! #brief A category with all pullbacks.
 -/
 @[reducible] definition HasAllPullbacks (C : Cat.{ℓobj ℓhom})
@@ -200,6 +216,12 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
     {a z : [[C]]} (ga : a →→ z)
     : HasAllPullbacksAlong C ga
 := λ b gb, C_HasAllPullbacks ga gb
+
+
+
+/- ----------------------------------------------------------------------------
+The base change functor.
+---------------------------------------------------------------------------- -/
 
 /-! #brief Base change functor.
 -/
