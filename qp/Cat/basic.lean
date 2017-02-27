@@ -101,7 +101,7 @@ structure NatTrans
 
 -- A natural transformation.
 -- \rightarrowtail\rightarrowtail
-infix `↣↣` : 110 := λ {C : Cat} {D : Cat} (F₁ F₂ : C ⇉⇉ D), NatTrans F₁ F₂
+infix `↣↣` : 110 := /- λ {C : Cat} {D : Cat} (F₁ F₂ : C ⇉⇉ D),-/ NatTrans /- F₁ F₂ -/
 
 /-! #brief Every natural transformation can be treated as a function on objects.
 -/
@@ -305,9 +305,9 @@ theorem NatTrans.heq
 -- Composition of natural transformations.
 -- \Diamond\Diamond
 infixl `◇◇` : 150
-:= λ {C : Cat} {D : Cat} {F G H : C ⇉⇉ D}
+:= /- λ {C : Cat} {D : Cat} {F G H : C ⇉⇉ D}
      (ηGH : G ↣↣ H) (ηFG : F ↣↣ G)
-   , NatTrans.comp ηGH ηFG
+   ,-/ NatTrans.comp /- ηGH ηFG -/
 
 /-! #brief Composition of natural transformations is associative.
 -/
@@ -913,9 +913,9 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ x y z g f, rfl
    }
 
-/-! #brief The category of Lean terms in Type {ℓ} and functions between them.
+/-! #brief The category of Sort terms in Sort ℓ and functions between them.
 -/
-@[reducible] definition {ℓ} LeanCat : Cat.{ℓ ℓ}
+@[reducible] definition {ℓ} SortCat : Cat.{ℓ ℓ}
 := { obj := Sort.{ℓ}
    , hom := λ X Y, X → Y
    , id := λ X x, x
@@ -927,7 +927,35 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief The category of propositions and implications between them.
 -/
-@[reducible] definition PropCat : Cat.{0 0} := LeanCat.{0}
+@[reducible] definition PropCat : Cat.{0 0} := SortCat.{0}
+
+/-! #brief The category of types and functions between them.
+-/
+@[reducible] definition {ℓ} LeanCat : Cat.{(ℓ + 1) (ℓ + 1)} := SortCat.{ℓ + 1}
+
+/-! #brief pempty is an initial object in LeanCat.
+-/
+@[reducible] definition {ℓ} LeanCat.Init
+    : Init LeanCat.{ℓ}
+:= { obj := pempty.{ℓ + 1}
+   , init := λ A, pempty.elim
+   , uniq := λ A f, begin
+                      apply pfunext, intro e,
+                      exact pempty.elim e
+                    end
+   }
+
+/-! #brief punit is a final object in LeanCat.
+-/
+@[reducible] definition {ℓ} LeanCat.Final
+    : Final LeanCat.{ℓ}
+:= { obj := punit.{ℓ + 1}
+   , final := λ A a, punit.star
+   , uniq := λ A f, begin
+                      apply pfunext, intro a,
+                      apply punit.uniq
+                    end
+   }
 
 /-! #brief The category of Lean terms in finite types.
 -/
@@ -944,7 +972,7 @@ infixr `××` : 130 := ProdCat
 /-! #brief The functor from CatCat to LeanCat.
 -/
 @[reducible] definition CatCat.toLean
-    : CatCat.{ℓobj ℓhom} ⇉⇉ LeanCat.{ℓobj + 1}
+    : CatCat.{ℓobj ℓhom} ⇉⇉ LeanCat.{ℓobj}
 := { obj := λ C, [[C]]
    , hom := λ C D F x, F x
    , hom_id := λ C, rfl
@@ -954,7 +982,7 @@ infixr `××` : 130 := ProdCat
 /-! #brief The Hom functor to LeanCat.
 -/
 @[reducible] definition HomFun (C : Cat.{ℓobj ℓhom})
-    : {{C}}⁻¹ ×× C ⇉⇉ LeanCat.{ℓhom}
+    : {{C}}⁻¹ ×× C ⇉⇉ SortCat.{ℓhom}
 := { obj := λ x, x^.fst →→ x^.snd
    , hom := λ x y fg c, fg^.snd ∘∘ c ∘∘ fg^.fst
    , hom_id := λ x, begin apply pfunext, intro f, simp, simp end
@@ -1211,6 +1239,33 @@ theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
    , circ_assoc := λ x y z w h g f, begin apply SliceCat.Hom.eq, dsimp, rw C^.circ_assoc end
    , circ_id_left := λ x y f, begin apply SliceCat.Hom.eq, dsimp, simp end
    , circ_id_right := λ x y f, begin apply SliceCat.Hom.eq, dsimp, simp end
+   }
+
+/-! #brief The Slice functor.
+-/
+@[reducible] definition SliceFun (C : Cat.{ℓobj ℓhom})
+    : C ⇉⇉ CatCat
+:= { obj := λ c, SliceCat C c
+   , hom := λ x y f, { obj := λ x, { dom := x^.dom
+                                   , hom := f ∘∘ x^.hom
+                                   }
+                     , hom := λ x y f, { hom := f^.hom
+                                       , triangle := begin dsimp, rw [f^.triangle, C^.circ_assoc] end
+                                       }
+                     , hom_id := λ x, begin apply SliceCat.Hom.eq, apply rfl end
+                     , hom_circ := λ x y z g f, begin apply SliceCat.Hom.eq, apply rfl end
+                     }
+   , hom_id := λ x, begin
+                      apply Fun.eq,
+                      { intro x₀, dsimp, simp, cases x₀, apply rfl },
+                      { intros x₀ x₁ f, dsimp, cases f, exact sorry }
+                    end
+   , hom_circ := λ x y z g f
+                 , begin
+                     apply Fun.eq,
+                     { intro x₀, dsimp, rw [C^.circ_assoc] },
+                     { intros x₀ x₁ f, dsimp, cases f, exact sorry }
+                   end
    }
 
 /-! #brief The functor from the slice category to the global category.

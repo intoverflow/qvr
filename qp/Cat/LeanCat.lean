@@ -1,3 +1,7 @@
+/- --- OLD
+
+
+
 /- ----------------------------------------------------------------------------
 Properties of LeanCat.
 ---------------------------------------------------------------------------- -/
@@ -5,8 +9,9 @@ Properties of LeanCat.
 import .basic
 import .Cone
 import .Monoidal
-import .Product
 import .Pullback
+import .DepProduct
+import .Product
 import .Fun
 
 namespace qp
@@ -39,7 +44,7 @@ inductive {ℓ₁ ℓ₂} Lift (T : Type ℓ₁) : Type (max ℓ₁ ℓ₂)
 /-! #brief The lifting functor.
 -/
 @[reducible] definition {ℓ₁ ℓ₂} LiftFun
-    : LeanCat.{ℓ₁ + 1} ⇉⇉ LeanCat.{(max ℓ₁ ℓ₂) + 1}
+    : LeanCat.{ℓ₁} ⇉⇉ LeanCat.{max ℓ₁ ℓ₂}
 := { obj := Lift.{ℓ₁ ℓ₂}
    , hom := @Lift.fun
    , hom_id
@@ -106,8 +111,8 @@ Limits.
 /-! #brief For certain type levels, LeanCat has all limits.
 -/
 definition LeanCat.HasAllLimits
-    : HasAllLimits.{ℓobj ℓhom} LeanCat.{ℓobj + 1}
-:= λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ LeanCat.{ℓobj + 1})
+    : HasAllLimits.{ℓobj ℓhom} LeanCat.{ℓobj}
+:= λ {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ LeanCat.{ℓobj})
    , Limit.show F
       { g : ∀ (b : [[B]]), F b // ∀ {b₁ b₂ : [[B]]} (f : b₁ →→ b₂), g b₂ = (F ↗ f) (g b₁) }
       (λ b g, g^.elt_of b)
@@ -128,7 +133,7 @@ Initial and final objects.
 -/
 @[reducible] definition {ℓ} LeanCat.Init
     : Init LeanCat.{ℓ}
-:= { obj := pempty.{ℓ}
+:= { obj := pempty.{ℓ + 1}
    , init := λ A, pempty.elim
    , uniq := λ A f, begin
                       apply pfunext, intro e,
@@ -140,7 +145,7 @@ Initial and final objects.
 -/
 @[reducible] definition {ℓ} LeanCat.Final
     : Final LeanCat.{ℓ}
-:= { obj := punit.{ℓ}
+:= { obj := punit.{ℓ + 1}
    , final := λ A a, punit.star
    , uniq := λ A f, begin
                       apply pfunext, intro a,
@@ -157,9 +162,9 @@ Pullbacks.
 /-! #brief The Lean categories have all pullbacks.
 -/
 @[reducible] definition {ℓ} LeanCat.HasAllPullbacks
-    : HasAllPullbacks LeanCat.{ℓ + 1}
+    : HasAllPullbacks LeanCat.{ℓ}
 := λ A B Z ga gb
-   , @Pullback.show LeanCat.{ℓ + 1} A B Z ga gb
+   , @Pullback.show LeanCat.{ℓ} A B Z ga gb
       { ab : A × B // ga ab^.fst = gb ab^.snd }
       (λ ab, ab^.elt_of^.fst)
       (λ ab, ab^.elt_of^.snd)
@@ -176,49 +181,66 @@ Pullbacks.
 
 
 /- ----------------------------------------------------------------------------
+Dependent products.
+---------------------------------------------------------------------------- -/
+
+/-! #brief The Lean categories have dependent products.
+-/
+@[reducible] definition {ℓ} LeanCat.HasAllDepProducts
+    : HasAllDepProducts @LeanCat.HasAllPullbacks.{ℓ}
+:= λ x y base
+   , { dprod := begin end
+     , adj := begin end
+     }
+
+
+
+/- ----------------------------------------------------------------------------
 Products.
 ---------------------------------------------------------------------------- -/
 
 /-! #brief The Lean categories have all products from the next-lower Lean category.
 -/
 @[reducible] definition {ℓ} LeanCat.HasAllProducts
-    : HasAllProducts.{ℓ} LeanCat.{ℓ + 1}
-:= @HasAllLimits.HasAllProducts.{ℓ} LeanCat.{ℓ + 1} @LeanCat.HasAllLimits.{ℓ (ℓ + 1)}
+    : HasAllProducts.{ℓ} LeanCat.{ℓ}
+:= @HasAllLimits.HasAllProducts.{ℓ} LeanCat.{ℓ} @LeanCat.HasAllLimits.{ℓ (ℓ + 1)}
 
-/-! #brief The finite product type.
--/
-definition {ℓ} LeanCat.Prod
-    : list [[LeanCat.{ℓ + 1}]] → [[LeanCat.{ℓ + 1}]]
-| list.nil := punit
-| (T :: TS) := prod T (LeanCat.Prod TS)
+namespace OLD_OLD
+    /-! #brief The finite product type.
+    -/
+    definition {ℓ} LeanCat.Prod
+        : list [[LeanCat.{ℓ}]] → [[LeanCat.{ℓ}]]
+    | list.nil := punit
+    | (T :: TS) := prod T (LeanCat.Prod TS)
 
-/-! #brief Projection from the product type.
--/
-@[reducible] definition {ℓ} LeanCat.Prod.π
-    : ∀ {factors : list [[LeanCat.{ℓ + 1}]]}
-        (n : fin (list.length factors))
-        (p : LeanCat.Prod factors)
-        , list.get factors n
-| list.nil n p := fin.zero_elim n
-| (T :: TT) (fin.mk 0 ω) (prod.mk t p) := t
-| (T :: TT) (fin.mk (nat.succ n) ω) (prod.mk t p)
-:= LeanCat.Prod.π { val := n, is_lt := sorry } p
+    /-! #brief Projection from the product type.
+    -/
+    @[reducible] definition {ℓ} LeanCat.Prod.π
+        : ∀ {factors : list [[LeanCat.{ℓ}]]}
+            (n : fin (list.length factors))
+            (p : LeanCat.Prod factors)
+            , list.get factors n
+    | list.nil n p := fin.zero_elim n
+    | (T :: TT) (fin.mk 0 ω) (prod.mk t p) := t
+    | (T :: TT) (fin.mk (nat.succ n) ω) (prod.mk t p)
+    := LeanCat.Prod.π { val := n, is_lt := sorry } p
 
-/-! #brief Construct a LeanCat.Prod by providing the factors.
--/
-@[reducible] definition {ℓ} LeanCat.Prod.mk
-    : ∀ {factors : list [[LeanCat.{ℓ + 1}]]}
-        (p : ∀ (n : fin (list.length factors)), list.get factors n)
-      , LeanCat.Prod factors
-| list.nil p := punit.star
-| (f :: fs) p := { fst := p { val := 0, is_lt := sorry }
-                 , snd := @LeanCat.Prod.mk fs (λ n, cast sorry (p { val := nat.succ n^.val, is_lt := sorry }))
-                 }
+    /-! #brief Construct a LeanCat.Prod by providing the factors.
+    -/
+    @[reducible] definition {ℓ} LeanCat.Prod.mk
+        : ∀ {factors : list [[LeanCat.{ℓ}]]}
+            (p : ∀ (n : fin (list.length factors)), list.get factors n)
+        , LeanCat.Prod factors
+    | list.nil p := punit.star
+    | (f :: fs) p := { fst := p { val := 0, is_lt := sorry }
+                    , snd := @LeanCat.Prod.mk fs (λ n, cast sorry (p { val := nat.succ n^.val, is_lt := sorry }))
+                    }
+end OLD_OLD
 
 /-! #brief The Lean categories have all finite products.
 -/
 @[reducible] definition {ℓ} LeanCat.HasAllFiniteProducts
-    : @HasAllFiniteProducts LeanCat.{ℓ + 1} LeanCat.Final
+    : @HasAllFiniteProducts LeanCat.{ℓ} LeanCat.Final
 := { prod
       := λ c₁ c₂, { obj := { obj := prod c₁ c₂
                         , proj := λ b, begin cases b, apply prod.snd, apply prod.fst end
@@ -249,7 +271,7 @@ definition {ℓ} LeanCat.Prod
 /-! #brief The Lean categories are cartesian monoidal.
 -/
 @[reducible] definition {ℓ} LeanCat.CartesianMonoidal
-    : IsMonoidal LeanCat.{ℓ + 1}
+    : IsMonoidal LeanCat.{ℓ}
                  (PairFun LeanCat.HasAllFiniteProducts)
                  punit.{ℓ + 1}
 := HasAllFiniteProducts.Monoidal LeanCat.HasAllFiniteProducts
@@ -257,7 +279,7 @@ definition {ℓ} LeanCat.Prod
 /-! #brief The Lean categories are cartesian monoidal.
 -/
 @[reducible] definition {ℓ} LeanCat.CartesianSymmetric
-    : IsSymmetric LeanCat.{ℓ + 1}
+    : IsSymmetric LeanCat.{ℓ}
                   LeanCat.CartesianMonoidal
                   (PairFun.BraidTrans LeanCat.HasAllFiniteProducts)
 := HasAllFiniteProducts.Symmetric LeanCat.HasAllFiniteProducts
@@ -266,14 +288,14 @@ definition {ℓ} LeanCat.Prod
 -/
 @[reducible] definition {ℓ} LeanCat.InternalHom
     : [[LeanCat.{ℓ}]] → LeanCat.{ℓ} ⇉⇉ LeanCat.{ℓ}
-:= λ y, HomFun.{ℓ ℓ} LeanCat.{ℓ} □□ LeftProdFun y LeanCat.{ℓ}
+:= λ y, HomFun.{(ℓ + 1) (ℓ + 1)} LeanCat.{ℓ} □□ LeftProdFun y LeanCat.{ℓ}
 
 /-! #brief The Lean categories are cartesian closed.
 -/
 @[reducible] definition {ℓ} LeanCat.CartesianClosed
-    : IsClosedMonoidal LeanCat.{ℓ + 1}
+    : IsClosedMonoidal LeanCat.{ℓ}
                        LeanCat.CartesianSymmetric.{ℓ}
-                       LeanCat.InternalHom.{ℓ + 1}
+                       LeanCat.InternalHom.{ℓ}
 := λ X, { counit
            := { component := λ Y fx, fx^.fst fx^.snd
               , transport := λ Y₁ Y₂ f , begin apply funext, intro gx, apply rfl end
@@ -295,8 +317,8 @@ Products in the slice categories.
 /-! #brief Slices of Lean categories have all finite products.
 -/
 @[reducible] definition {ℓ} LeanCat.Slice.HasAllFiniteProducts
-    (T : [[LeanCat.{ℓ + 1}]])
-    : HasAllFiniteProducts (SliceCat LeanCat.{ℓ + 1} T) SliceCat.Final
+    (T : [[LeanCat.{ℓ}]])
+    : HasAllFiniteProducts (SliceCat LeanCat.{ℓ} T) SliceCat.Final
 := { prod := λ c₁ c₂
              , Product.show (bool.pick c₁ c₂)
                 { dom := LeanCat.HasAllPullbacks c₁^.hom c₂^.hom
@@ -345,17 +367,17 @@ Products in the slice categories.
 /-! #brief Slices of Lean categories are cartesian monoidal.
 -/
 @[reducible] definition {ℓ} LeanCat.Slice.CartesianMonoidal
-    (T : [[LeanCat.{ℓ + 1}]])
-    : IsMonoidal (SliceCat LeanCat.{ℓ + 1} T)
+    (T : [[LeanCat.{ℓ}]])
+    : IsMonoidal (SliceCat LeanCat.{ℓ} T)
                  (PairFun (LeanCat.Slice.HasAllFiniteProducts T))
-                 { dom := T, hom := LeanCat^.id T }
+                 SliceCat.Final^.obj
 := HasAllFiniteProducts.Monoidal (LeanCat.Slice.HasAllFiniteProducts T)
 
 /-! #brief Slices of Lean categories are cartesian monoidal.
 -/
 @[reducible] definition {ℓ} LeanCat.Slice.CartesianSymmetric
-    (T : [[LeanCat.{ℓ + 1}]])
-    : IsSymmetric (SliceCat LeanCat.{ℓ + 1} T)
+    (T : [[LeanCat.{ℓ}]])
+    : IsSymmetric (SliceCat LeanCat.{ℓ} T)
                   (LeanCat.Slice.CartesianMonoidal T)
                   (PairFun.BraidTrans (LeanCat.Slice.HasAllFiniteProducts T))
 := HasAllFiniteProducts.Symmetric (LeanCat.Slice.HasAllFiniteProducts T)
@@ -368,3 +390,5 @@ Products in the slice categories.
 := λ y, sorry
 
 end qp
+
+---- OLD -/

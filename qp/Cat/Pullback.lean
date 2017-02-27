@@ -4,10 +4,6 @@ Pullbacks.
 
 import .basic
 import .Cone
-import ..Qvr.basic
-import ..Qvr.FreeCat
-import ..Qvr.FreeFrgtAdj
-import ..util
 
 namespace qp
 universe variables ℓobj ℓhom
@@ -226,15 +222,15 @@ The base change functor.
 /-! #brief Base change functor.
 -/
 @[reducible] definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
-    {c₁ c₂ : [[C]]} (bx : c₁ →→ c₂)
-    (bx_HasPullbacksAlong : HasAllPullbacksAlong C bx)
+    {c₁ c₂ : [[C]]} {base : c₁ →→ c₂}
+    (base_HasPullbacksAlong : HasAllPullbacksAlong C base)
     : SliceCat C c₂ ⇉⇉ SliceCat C c₁
-:= { obj := λ x, { dom := bx_HasPullbacksAlong x^.hom
-                 , hom := Pullback.π₁ (bx_HasPullbacksAlong x^.hom)
+:= { obj := λ x, { dom := base_HasPullbacksAlong x^.hom
+                 , hom := Pullback.π₁ (base_HasPullbacksAlong x^.hom)
                  }
-   , hom := λ x y f, { hom := Pullback.into (bx_HasPullbacksAlong y^.hom)
-                               (Pullback.π₁ (bx_HasPullbacksAlong x^.hom))
-                               (f^.hom ∘∘ Pullback.π₂ (bx_HasPullbacksAlong x^.hom))
+   , hom := λ x y f, { hom := Pullback.into (base_HasPullbacksAlong y^.hom)
+                               (Pullback.π₁ (base_HasPullbacksAlong x^.hom))
+                               (f^.hom ∘∘ Pullback.π₂ (base_HasPullbacksAlong x^.hom))
                                begin exact sorry end
                      , triangle := begin exact sorry end
                      }
