@@ -99,17 +99,97 @@ inductive CoSpanCat.Hom : CoSpanCat.Obj → CoSpanCat.Obj → Type
     : (CoSpanDrgm fa fb)^.hom CoSpanCat.Hom.b = fb
 := rfl
 
--- A pullback is a limit of a cospan diagram.
-structure IsPullback {C : Cat.{ℓobj ℓhom}}
+/-! #brief A pullback is a limit of a cospan diagram.
+-/
+@[reducible] definition Pullback {C : Cat.{ℓobj ℓhom}}
     {a b z : [[C]]}
     (ga : a →→ z) (gb : b →→ z)
-    {x : [[C]]}
-    (fa : x →→ a) (fb : x →→ b)
     : Type (max 1 ℓobj ℓhom)
-:= (is_limit : IsLimit (CoSpanDrgm ga gb) x)
-   (proj_a : is_limit^.proj CoSpanCat.Obj.a = fa)
-   (proj_b : is_limit^.proj CoSpanCat.Obj.b = fb)
+:= Limit (CoSpanDrgm ga gb)
 
+/-! #brief Helper for the helper for building a pullback.
+-/
+@[reducible] definition Pullback.show_cone {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    (ga : a →→ z) (gb : b →→ z)
+    (pb : [[C]])
+    (π₁ : pb →→ a) (π₂ : pb →→ b)
+    (ωtriangle : ga ∘∘ π₁ = gb ∘∘ π₂)
+    : Cone (CoSpanDrgm ga gb)
+:= { obj := pb
+   , proj := λ x, CoSpanCat.Obj.cases_on x π₁ π₂ (ga ∘∘ π₁)
+   , triangle := λ x₁ x₂ f, begin cases f, { simp }, { simp }, { exact ωtriangle } end
+   }
+
+/-! #brief Helper for building a pullback.
+-/
+@[reducible] definition Pullback.show {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    (ga : a →→ z) (gb : b →→ z)
+    (pb : [[C]])
+    (π₁ : pb →→ a) (π₂ : pb →→ b)
+    (mediate : ∀ (cone : Cone (CoSpanDrgm ga gb)), C^.hom cone pb)
+    (ωtriangle : ga ∘∘ π₁ = gb ∘∘ π₂)
+    (ωcone_a : ∀ (cone : Cone (CoSpanDrgm ga gb)), cone^.proj CoSpanCat.Obj.a = π₁ ∘∘ mediate cone)
+    (ωcone_b : ∀ (cone : Cone (CoSpanDrgm ga gb)), cone^.proj CoSpanCat.Obj.b = π₂ ∘∘ mediate cone)
+    (ωuniq : ∀ (cone : Cone (CoSpanDrgm ga gb)) (h : ConeHom cone (Pullback.show_cone ga gb pb π₁ π₂ ωtriangle)), h^.mediate = mediate cone)
+    : Pullback ga gb
+:= Limit.show (CoSpanDrgm ga gb) pb
+    (λ x, CoSpanCat.Obj.cases_on x π₁ π₂ (ga ∘∘ π₁))
+    mediate
+    (λ x₁ x₂ f, begin cases f, { simp }, { simp }, { exact ωtriangle } end)
+    (λ cone x, begin cases x, { apply ωcone_a }, { apply ωcone_b }, { dsimp, rw cone^.triangle Hom.a, dsimp, rw [ωcone_a, C^.circ_assoc] } end)
+    ωuniq
+
+/-! #brief Projection from a pullback.
+-/
+@[reducible] definition Pullback.π₁ {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    {ga : a →→ z} {gb : b →→ z}
+    (pb : Pullback ga gb)
+    : C^.hom pb a
+:= pb^.proj CoSpanCat.Obj.a
+
+/-! #brief Projection from a pullback.
+-/
+@[reducible] definition Pullback.π₂ {C : Cat.{ℓobj ℓhom}}
+    {a b z : [[C]]}
+    {ga : a →→ z} {gb : b →→ z}
+    (pb : Pullback ga gb)
+    : C^.hom pb b
+:= pb^.proj CoSpanCat.Obj.b
+
+/-! #brief A category with all pullbacks.
+-/
+@[reducible] definition HasAllPullbacks (C : Cat.{ℓobj ℓhom})
+    : Type (max 1 ℓobj ℓhom)
+:= ∀ {a b z : [[C]]} (ga : a →→ z) (gb : b →→ z)
+   , Pullback ga gb
+
+/-! #brief Categories with all limits have all pullbacks.
+-/
+@[reducible] definition HasAllLimits.HasAllPullbacks {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllLimits : HasAllLimits C)
+    : HasAllPullbacks C
+:= λ a b z ga gb, C_HasAllLimits (CoSpanDrgm ga gb)
+
+/-! #brief A category with all pullbacks along a given hom.
+-/
+@[reducible] definition HasAllPullbacksAlong (C : Cat.{ℓobj ℓhom})
+    {a z : [[C]]} (ga : a →→ z)
+    : Type (max 1 ℓobj ℓhom)
+:= ∀ {b : [[C]]} (gb : b →→ z)
+   , Pullback ga gb
+
+/-! #brief A category with all pullbacks has all pullbacks along every hom.
+-/
+@[reducible] definition HasAllPullbacks.HasAllPullbacksAlong {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllPullbacks : HasAllPullbacks C)
+    {a z : [[C]]} (ga : a →→ z)
+    : HasAllPullbacksAlong C ga
+:= λ b gb, C_HasAllPullbacks ga gb
+
+/-
 /-! #brief A helper for the helper for proving one has a pullback square.
 -/
 @[reducible] definition IsPullback.show_cone {C : Cat.{ℓobj ℓhom}}
@@ -174,5 +254,6 @@ structure IsPullback {C : Cat.{ℓobj ℓhom}}
    , proj_a := rfl
    , proj_b := rfl
    }
+-/
 
 end qp

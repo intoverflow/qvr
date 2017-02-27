@@ -15,85 +15,39 @@ Cones.
 ---------------------------------------------------------------------------- -/
 
 -- A cone of a functor.
-structure IsCone
+structure Cone
     {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
-    (c : [[C]])
     : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
-:= (proj : ∀ (x : [[B]]), c →→ F x)
+:= (obj : [[C]])
+   (proj : ∀ (x : [[B]]), obj →→ F x)
    (triangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
                , proj x₂ = (F ↗ f) ∘∘ proj x₁)
 
--- Boxed version of IsCone.
-structure BxCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+/-! #brief Every cone can be used as an object.
+-/
+@[reducible] instance Cone.has_coe_to_obj
+    {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
-    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
-:= (cone : [[C]])
-   (is_cone : IsCone F cone)
+    : has_coe (Cone F) [[C]]
+:= { coe := Cone.obj
+   }
 
 -- A homomorphism between cones.
 structure ConeHom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
-    {c₁ : [[C]]} (cone₁ : IsCone F c₁)
-    {c₂ : [[C]]} (cone₂ : IsCone F c₂)
+    (c₁ c₂ : Cone F)
     : Sort (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
-:= (mediate : c₁ →→ c₂)
+:= (mediate : C^.hom c₁ c₂)
    (factor : ∀ {x : [[B]]}
-             , IsCone.proj cone₁ x = IsCone.proj cone₂ x ∘∘ mediate)
-
-/-! #brief Every cone can be treated as a function on objects.
--/
-@[reducible] instance IsCone.has_coe_to_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c : [[C]]}
-    : has_coe_to_fun (IsCone F c)
-:= { F := λ is_cone, ∀ (x : [[B]]), c →→ F x
-   , coe := IsCone.proj
-   }
-
-/-! #brief Every IsCone can be used as a BxCone.
--/
-@[reducible] instance IsCone.has_coe_to_HasCone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c : [[C]]}
-    : has_coe (IsCone F c) (BxCone F)
-:= { coe := BxCone.mk c
-   }
-
-/-! #brief Every BxCone can be used as an object.
--/
-@[reducible] instance BxCone.has_coe_to_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    : has_coe (BxCone F) [[C]]
-:= { coe := BxCone.cone
-   }
-
---/-! #brief Every BxCone can be treated as a function on objects.
----/
-@[reducible] instance BxCone.has_coe_to_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    : has_coe_to_fun (BxCone F)
-:= { F := λ has_cone, ∀ (x : [[B]]), has_cone^.cone →→ F x
-   , coe := λ has_cone, has_cone^.is_cone^.proj
-   }
-
-/-! #brief Every ConeHom can be used as a hom.
--/
-@[reducible] instance ConeHom.has_coe_to_hom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c₁ : [[C]]} (cone₁ : IsCone F c₁)
-    {c₂ : [[C]]} (cone₂ : IsCone F c₂)
-    : has_coe (ConeHom cone₁ cone₂) (c₁ →→ c₂)
-:= { coe := ConeHom.mediate
-   }
+             , c₁^.proj x = c₂^.proj x ∘∘ mediate)
 
 /-! #brief Helper lemma for proving quality of ConeHoms.
 -/
 theorem ConeHom.eq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
-    {c₁ : [[C]]} (cone₁ : IsCone F c₁)
-    {c₂ : [[C]]} (cone₂ : IsCone F c₂)
-    : ∀ (h₁ h₂ : ConeHom cone₁ cone₂)
+    (c₁ c₂ : Cone F)
+    : ∀ (h₁ h₂ : ConeHom c₁ c₂)
         (ωmediate : h₁^.mediate = h₂^.mediate)
       , h₁ = h₂
 | (ConeHom.mk m f₁) (ConeHom.mk .m f₂) (eq.refl .m)
@@ -108,57 +62,54 @@ ConeHoms are morphisms of cones.
 /-! #brief The identity ConeHom.
 -/
 @[reducible] definition ConeHom.id {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c : [[C]]} (cone : IsCone F c)
-    : ConeHom cone cone
-:= { mediate := ⟨⟨c⟩⟩
+    {F : B ⇉⇉ C} (c : Cone F)
+    : ConeHom c c
+:= { mediate := ⟨⟨c^.obj⟩⟩
    , factor := λ x, by simp
    }
 
 /-! #brief Composition of ConeHoms.
 -/
 @[reducible] definition ConeHom.comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c₁ : [[C]]} {cone₁ : IsCone F c₁}
-    {c₂ : [[C]]} {cone₂ : IsCone F c₂}
-    {c₃ : [[C]]} {cone₃ : IsCone F c₃}
-    (g : ConeHom cone₂ cone₃) (f : ConeHom cone₁ cone₂)
-    : ConeHom cone₁ cone₃
+    {F : B ⇉⇉ C} {c₁ c₂ c₃ : Cone F}
+    (g : ConeHom c₂ c₃) (f : ConeHom c₁ c₂)
+    : ConeHom c₁ c₃
 := { mediate := g^.mediate ∘∘ f^.mediate
-   , factor := λ x, begin simp [Cat.circ_assoc], rw -g^.factor, apply f^.factor end
+   , factor
+      := λ x
+         , begin
+             --refine eq.trans _ (eq.symm C^.circ_assoc), rw -g^.factor, apply f^.factor end
+             calc c₁^.proj x
+                      = c₂^.proj x ∘∘ f^.mediate                 : f^.factor
+                  ... = (c₃^.proj x ∘∘ g^.mediate) ∘∘ f^.mediate : begin rw [g^.factor], apply rfl end
+                  ... = c₃^.proj x∘∘(g^.mediate∘∘f^.mediate)     : by rw C^.circ_assoc
+           end
    }
 
 /-! #brief Composition of ConeHoms is associative.
 -/
 @[simp] theorem ConeHom.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
-    {c₁ : [[C]]} {cone₁ : IsCone F c₁}
-    {c₂ : [[C]]} {cone₂ : IsCone F c₂}
-    {c₃ : [[C]]} {cone₃ : IsCone F c₃}
-    {c₄ : [[C]]} {cone₄ : IsCone F c₄}
-    {h : ConeHom cone₃ cone₄} {g : ConeHom cone₂ cone₃} {f : ConeHom cone₁ cone₂}
+    {c₁ c₂ c₃ c₄ : Cone F}
+    {h : ConeHom c₃ c₄} {g : ConeHom c₂ c₃} {f : ConeHom c₁ c₂}
     : ConeHom.comp h (ConeHom.comp g f) = ConeHom.comp (ConeHom.comp h g) f
 := begin apply ConeHom.eq, simp [Cat.circ_assoc] end
 
 /-! #brief ConeHom.id is a left-identity for ConeHom.comp.
 -/
 @[simp] theorem ConeHom.comp_id_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c₁ : [[C]]} {cone₁ : IsCone F c₁}
-    {c₂ : [[C]]} {cone₂ : IsCone F c₂}
-    {f : ConeHom cone₁ cone₂}
-    : ConeHom.comp (ConeHom.id cone₂) f = f
-:= begin apply ConeHom.eq, simp end
+    {F : B ⇉⇉ C} {c₁ c₂ : Cone F}
+    {f : ConeHom c₁ c₂}
+    : ConeHom.comp (ConeHom.id c₂) f = f
+:= begin apply ConeHom.eq, simp, apply Cat.circ_id_left end
 
 /-! #brief ConeHom.id is a right-identity for ConeHom.comp.
 -/
 @[simp] theorem ConeHom.comp_id_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {c₁ : [[C]]} {cone₁ : IsCone F c₁}
-    {c₂ : [[C]]} {cone₂ : IsCone F c₂}
-    {f : ConeHom cone₁ cone₂}
-    : ConeHom.comp f (ConeHom.id cone₁) = f
-:= begin apply ConeHom.eq, simp end
+    {F : B ⇉⇉ C} {c₁ c₂ : Cone F}
+    {f : ConeHom c₁ c₂}
+    : ConeHom.comp f (ConeHom.id c₁) = f
+:= begin apply ConeHom.eq, simp, apply Cat.circ_id_right end
 
 
 
@@ -171,39 +122,13 @@ The category of cones.
 @[reducible] definition ConeCat {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     : Cat
-:= { obj := BxCone F
-   , hom := λ cone₁ cone₂, ConeHom cone₁^.is_cone cone₂^.is_cone
-   , id := λ cone, ConeHom.id cone^.is_cone
-   , circ := λ cone₁ cone₂ cone₃, ConeHom.comp
-   , circ_assoc := λ cone₁ cone₂ cone₃ cone₄ h g f, ConeHom.comp_assoc
-   , circ_id_left := λ cone₁ cone₂ f, ConeHom.comp_id_left
-   , circ_id_right := λ cone₁ cone₂ f, ConeHom.comp_id_right
-   }
-
-/-! #brief Every object in ConeCat can be used as an object in the codomain.
--/
-@[reducible] instance ConeCat.obj_has_coe_to_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    : has_coe [[ConeCat F]] [[C]]
-:= { coe := BxCone.cone
-   }
-
---/-! #brief Every object in ConeCat can be treated as a function on objects of the domain.
----/
-@[reducible] instance ConeCat.obj_has_coe_to_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    : has_coe_to_fun [[ConeCat F]]
-:= { F := λ has_cone, ∀ (x : [[B]]), has_cone^.cone →→ F x
-   , coe := λ has_cone, has_cone^.is_cone^.proj
-   }
-
-/-! #brief Every hom in ConeCat can be used as a hom in the codomain.
--/
-@[reducible] instance ConeCat.hom_has_coe_to_hom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C}
-    {cone₁ cone₂ : [[ConeCat F]]}
-    : has_coe ((ConeCat F)^.hom cone₁ cone₂) (C^.hom cone₁ cone₂)
-:= { coe := ConeHom.mediate
+:= { obj := Cone F
+   , hom := λ c₁ c₂, ConeHom c₁ c₂
+   , id := λ c, ConeHom.id c
+   , circ := λ c₁ c₂ c₃, ConeHom.comp
+   , circ_assoc := λ c₁ c₂ c₃ c₄ h g f, ConeHom.comp_assoc
+   , circ_id_left := λ c₁ c₂ f, ConeHom.comp_id_left
+   , circ_id_right := λ c₁ c₂ f, ConeHom.comp_id_right
    }
 
 
@@ -212,93 +137,113 @@ The category of cones.
 Limits.
 ---------------------------------------------------------------------------- -/
 
--- A limit of a functor.
-structure IsLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+/-! #brief A limit of a functor.
+-/
+@[reducible] definition Limit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= Final (ConeCat F)
+
+/-! #brief Helper for building a limit.
+-/
+@[reducible] definition Limit.show {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     (c : [[C]])
-    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
-:= (is_cone : IsCone F c)
-   (is_final : IsFinal (ConeCat F) (BxCone.mk c is_cone))
+    (proj : ∀ (x : [[B]]), c →→ F x)
+    (mediate : ∀ (cone : Cone F), C^.hom cone c)
+    (ωtriangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂), proj x₂ = (F ↗ f) ∘∘ proj x₁)
+    (ωfactor : ∀ (cone : Cone F) {x : [[B]]}, cone^.proj x = proj x ∘∘ mediate cone)
+    (ωuniq : ∀ (cone : Cone F) (h : ConeHom cone (Cone.mk c proj @ωtriangle)), h^.mediate = mediate cone)
+    : Limit F
+:= { obj := { obj := c
+            , proj := proj
+            , triangle := @ωtriangle
+            }
+   , final := λ cone, { mediate := mediate cone
+                      , factor := @ωfactor cone
+                      }
+   , uniq := λ cone h, begin apply ConeHom.eq, apply ωuniq end
+   }
+
+/-! #brief Every limit can be used as a cone.
+-/
+@[reducible] definition Limit.has_coe_to_cone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : has_coe (Limit F) (Cone F)
+:= { coe := Final.obj
+   }
+
+/-! #brief Every limit can be used as an object.
+-/
+@[reducible] instance Limit.has_coe_to_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : has_coe (Limit F) [[C]]
+:= { coe := λ x, x^.obj^.obj
+   }
 
 /-! #brief The map from the limit to the image of the diagram.
 -/
-@[reducible] definition IsLimit.proj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    (c_limit : IsLimit F c)
+@[reducible] definition Limit.proj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (l : Limit F)
     (x : [[B]])
-    : c →→ F x
-:= IsCone.proj (IsLimit.is_cone c_limit) x
+    : C^.hom l (F x)
+:= l^.obj^.proj x
 
-/-! #brief IsLimit.proj satisfies the triangle equation.
+/-! #brief Limit.proj satisfies the triangle equation.
 -/
-theorem IsLimit.triangle {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    (c_limit : IsLimit F c)
+theorem Limit.triangle {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} (c : Limit F)
     {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
-    : IsLimit.proj c_limit x₂ = (F ↗ f) ∘∘ IsLimit.proj c_limit x₁
-:= IsCone.triangle (IsLimit.is_cone c_limit) f
-
-/-! #brief The mediating map (in the ConeCat) from a cone to the limit.
--/
-@[reducible] definition IsLimit.mediate_cone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    (c_limit : IsLimit F c)
-    {c' : [[C]]} (c'_cone : IsCone F c')
-    : ConeHom c'_cone c_limit^.is_cone
-:= IsFinal.final (IsLimit.is_final c_limit)
-    { cone := c'
-    , is_cone := c'_cone
-    }
+    : Limit.proj c x₂ = (F ↗ f) ∘∘ Limit.proj c x₁
+:= Cone.triangle c f
 
 /-! #brief The mediating map (in C) from a cone to the limit.
 -/
-@[reducible] definition IsLimit.mediate {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    (c_limit : IsLimit F c)
-    {c' : [[C]]} (cone : IsCone F c')
-    : c' →→ c
-:= ConeHom.mediate (IsLimit.mediate_cone c_limit cone)
+@[reducible] definition Limit.mediate {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : Limit F) (c' : Cone F)
+    : C^.hom c' c
+:= (c^.final c')^.mediate
 
 /-! #brief The mediating map has the usual factoring property.
 -/
-theorem IsLimit.mediate_factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    (c_limit : IsLimit F c)
-    {c' : [[C]]} (cone : IsCone F c')
+theorem Limit.mediate_factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : Limit F) (c' : Cone F)
     {x : [[B]]}
-    : IsCone.proj cone x = IsLimit.proj c_limit x ∘∘ IsLimit.mediate c_limit cone
+    : c'^.proj x = Limit.proj c x ∘∘ Limit.mediate c c'
   := by apply ConeHom.factor
 
 /-! #brief The mediating map is unique among maps which factor.
 -/
-theorem IsLimit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c : [[C]]}
-    (c_limit : IsLimit F c)
-    {c' : [[C]]} (cone : IsCone F c')
-    {f : c' →→ c}
-    {ωf : ∀ {x : [[B]]}, IsCone.proj cone x = IsLimit.proj c_limit x ∘∘ f}
-    : f = IsLimit.mediate c_limit cone
+theorem Limit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : Limit F) (c' : Cone F)
+    {f : C^.hom c' c}
+    (ωf : ∀ {x : [[B]]}, c'^.proj x = Limit.proj c x ∘∘ f)
+    : f = Limit.mediate c c'
 := begin
      dsimp,
      assert lem₁ : f = ConeHom.mediate { mediate := f, factor := @ωf },
      { apply rfl },
      rw lem₁,
      apply congr_arg,
-     apply @IsFinal.uniq _ _ (IsLimit.is_final c_limit) (BxCone.mk c' cone)
+     apply c^.uniq
    end
 
 /-! #brief Limits are unique up to isomorphism.
 -/
-@[reducible] definition IsLimit.iso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    {F : B ⇉⇉ C} {c₁ c₂ : [[C]]}
-    (c₁_limit : IsLimit F c₁)
-    (c₂_limit : IsLimit F c₂)
-    : Iso (IsLimit.mediate c₂_limit c₁_limit^.is_cone)
-          (IsLimit.mediate c₁_limit c₂_limit^.is_cone)
-:= let iso := IsFinal.iso c₁_limit^.is_final c₂_limit^.is_final
+@[reducible] definition Limit.Iso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c₁ c₂ : Limit F)
+    : Iso (Limit.mediate c₂ c₁)
+          (Limit.mediate c₁ c₂)
+:= let iso := Final.Iso c₁ c₂
    in { id₁ := congr_arg ConeHom.mediate iso^.id₁
       , id₂ := congr_arg ConeHom.mediate iso^.id₂
       }
+
 
 
 /- ----------------------------------------------------------------------------
@@ -310,31 +255,29 @@ structure PreservesLimits {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ �
     (F : C ⇉⇉ D)
     : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃) + 1)
 := (limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (D : Fun B C)
-              (c : [[C]])
-              (c_limit : IsLimit D c)
-            , IsLimit (F □□ D) (F c))
+              (c : Limit D)
+            , Limit (F □□ D))
+   (limit_eq : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (D : Fun B C)
+                 (c : Limit D)
+               , (limit D c)^.obj^.obj = F c)
 
--- A witness that a category has all limits.
-structure HasAllLimits
+/-! #brief A witness that a category has all limits.
+-/
+@[reducible] definition HasAllLimits
     (C : Cat.{ℓobj₂ ℓhom₂})
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
-:= (limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
-              (F : B ⇉⇉ C)
-            , [[C]])
-   (is_limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
-                 (F : B ⇉⇉ C)
-               , IsLimit F (limit F))
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
+     (F : B ⇉⇉ C)
+   , Limit F
 
--- A witness that a category has all finite limits.
-structure HasAllFiniteLimits
+/-! #brief A witness that a category has all finite limits.
+-/
+@[reducible] definition HasAllFiniteLimits
     (C : Cat.{ℓobj₂ ℓhom₂})
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)
-:= (limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (B_Fin : Cat.Fin B)
-              (F : B ⇉⇉ C)
-            , [[C]])
-   (is_limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (B_Fin : Cat.Fin B)
-                 (F : B ⇉⇉ C)
-               , IsLimit F (limit B_Fin F))
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (B_Fin : Cat.Fin B)
+     (F : B ⇉⇉ C)
+   , Limit F
 
 /-! #brief Categories with all limits have all (finite) limits.
 -/
@@ -342,9 +285,7 @@ definition HasAllLimits.HasAllFiniteLimits
     (C : Cat.{ℓobj₂ ℓhom₂})
     (C_HasAllLimits : HasAllLimits C)
     : HasAllFiniteLimits C
-:= { limit := λ B B_Fin F, C_HasAllLimits^.limit F
-   , is_limit := λ B B_Fin F, C_HasAllLimits^.is_limit F
-   }
+:= λ B B_Fin F, C_HasAllLimits F
 
 
 
@@ -355,30 +296,27 @@ Some important limits.
 /-! #brief The limit of the empty diagram, if it exists, is final.
 -/
 @[reducible] definition EmptyCat.init.limit_final (C : Cat.{ℓobj₁ ℓhom₁})
-    (l : [[C]])
-    (l_limit : IsLimit (EmptyCat.init.{ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂} C) l)
-    : IsFinal C l
-:= { final
-      := λ c
-         , IsLimit.mediate l_limit
-            { proj := λ x, pempty.elim x
-            , triangle := λ x₁ x₂ f, pempty.elim f
-            }
-   , uniq
-      := λ x h
-         , begin
-             apply IsLimit.mediate_uniq,
-             intro e, apply pempty.elim e
-           end
-   }
+    (fin : Limit (EmptyCat.init.{ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂} C))
+    : Final C
+:= let mcone : [[C]] → Cone (EmptyCat.init C)
+            := λ c, { obj := c
+                    , proj := λ x, pempty.elim x
+                    , triangle := λ x₁ x₂ f, pempty.elim f
+                    }
+   in { obj := fin
+      , final := λ c, Limit.mediate fin (mcone c)
+      , uniq := λ c h, begin
+                         apply Limit.mediate_uniq fin (mcone c),
+                         intro e, apply pempty.elim e
+                       end
+      }
 
 /-! #brief Every category with finite limits has a final object.
 -/
 @[reducible] definition HasAllFiniteLimits.HasFinal (C : Cat.{ℓobj₁ ℓhom₁})
     (C_HasAllFiniteLimits : HasAllFiniteLimits C)
-    : IsFinal C (C_HasAllFiniteLimits^.limit EmptyCat.Fin (EmptyCat.init C))
+    : Final C
 := EmptyCat.init.limit_final C
-    (C_HasAllFiniteLimits^.limit EmptyCat.Fin (EmptyCat.init C))
-    (C_HasAllFiniteLimits^.is_limit EmptyCat.Fin (EmptyCat.init C))
+    (C_HasAllFiniteLimits EmptyCat.Fin (EmptyCat.init C))
 
 end qp

@@ -10,7 +10,7 @@ namespace qp
 universe variables ℓobj ℓhom
 
 
-
+/-
 -- A subobject classifier.
 structure SubObjClass (C : Cat.{ℓobj ℓhom})
     {t : [[C]]} (t_final : IsFinal C t)
@@ -25,5 +25,6 @@ structure SubObjClass (C : Cat.{ℓobj ℓhom})
    (char_uniq : ∀ {u x : [[C]]} (f : u →→ x) (f_monic : IsMonic f) (char' : x →→ Ω)
                   (ω : IsPullback char' true f (t_final u))
                 , char' = char f f_monic)
+-/
 
 end qp

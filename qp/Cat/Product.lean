@@ -28,412 +28,168 @@ Products.
    , hom_circ := λ m n p g f, begin cases f, cases g, dsimp, simp, apply rfl end
    }
 
-/-! #brief A product is a limit of a finite product diagram.
+/-! #brief A product is a limit of a product diagram.
 -/
-@[reducible] definition IsProduct {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+@[reducible] definition Product {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (factors : A → [[C]])
-    (x : [[C]])
     : Type (max (ℓ + 1) ℓobj ℓhom)
-:= IsLimit (ProductDrgm factors) x
+:= Limit (ProductDrgm factors)
 
 /-! #brief Helper for defining homs into a product.
 -/
-@[reducible] definition IsProduct.into {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
-    {c₀ x : [[C]]}
+@[reducible] definition Product.into {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     {factors : A → [[C]]}
-    (x_IsProduct : IsProduct factors x)
+    (x : Product factors)
+    {c₀ : [[C]]}
     (homs : ∀ (a : A), c₀ →→ factors a)
-    : c₀ →→ x
-:= IsLimit.mediate x_IsProduct
-     { proj := homs
+    : C^.hom c₀ x
+:= Limit.mediate x
+     { obj := c₀
+     , proj := homs
      , triangle := λ x₁ x₂ f, begin cases f, simp end
      }
 
--- A category with all products.
-structure HasAllProducts (C : Cat.{ℓobj ℓhom})
+/-! #brief A category with all products.
+-/
+@[reducible] definition HasAllProducts (C : Cat.{ℓobj ℓhom})
     : Type (max (ℓ + 1) ℓobj ℓhom)
-:= (prod : ∀ {A : Type ℓ}, (A → [[C]]) → [[C]])
-   (is_prod : ∀ {A : Type ℓ} (factors : A → [[C]])
-              , IsProduct factors (prod factors))
+:= ∀ {A : Type ℓ} (factors : A → [[C]])
+   , Product factors
 
 /-! #brief Categories with all limits have all products.
 -/
 @[reducible] definition HasAllLimits.HasAllProducts {C : Cat.{ℓobj ℓhom}}
     (C_HasAllLimits : HasAllLimits.{ℓ (ℓ + 1) ℓobj ℓhom} C)
     : HasAllProducts.{ℓ ℓobj ℓhom} C
-:= { prod := λ A factors, C_HasAllLimits^.limit (ProductDrgm factors)
-   , is_prod := λ A factors, C_HasAllLimits^.is_limit (ProductDrgm factors)
-   }
+:= λ A factors, C_HasAllLimits (ProductDrgm factors)
+
+/-! #brief Categories with all products have final objects.
+-/
+@[reducible] definition HasAllProducts.Final {C : Cat.{ℓobj ℓhom}}
+    (C_HasAllProducts : HasAllProducts C)
+    : Final C
+:= let xcone : [[C]] → Cone (ProductDrgm pempty.elim)
+            := λ x, { obj := x
+                    , proj := λ e, pempty.elim e
+                    , triangle := λ e₁ e₂ f, pempty.elim e₁
+                    }
+   in { obj := (C_HasAllProducts pempty.elim)
+      , final := λ x, Limit.mediate (C_HasAllProducts pempty.elim) (xcone x)
+      , uniq := λ x h
+                , begin
+                    apply Limit.mediate_uniq (C_HasAllProducts pempty.elim) (xcone x),
+                    intro e, apply pempty.elim e
+                  end
+      }
+
+
+/- ----------------------------------------------------------------------------
+Finite products.
+---------------------------------------------------------------------------- -/
 
 -- A category with all finite products.
 structure HasAllFiniteProducts (C : Cat.{ℓobj ℓhom})
+    (c₀ : Final C)
     : Type (max 1 ℓobj ℓhom)
-:= (prod : list [[C]] → [[C]])
-   (is_prod : ∀ (factors : list [[C]])
-              , IsProduct (list.get factors) (prod factors))
+:= (prod : ∀ (c₁ c₂ : [[C]]), Product (bool.pick c₁ c₂))
+   (prod_id_left₁ : ∀ (c : [[C]]), C^.hom (prod c₀ c) c)
+   (prod_id_left₂ : ∀ (c : [[C]]), C^.hom c (prod c₀ c))
+   (prod_id_left : ∀ (c : [[C]]), Iso (prod_id_left₁ c) (prod_id_left₂ c))
+   (prod_id_right₁ : ∀ (c : [[C]]), C^.hom (prod c c₀) c)
+   (prod_id_right₂ : ∀ (c : [[C]]), C^.hom c (prod c c₀))
+   (prod_id_right : ∀ (c : [[C]]), Iso (prod_id_right₁ c) (prod_id_right₂ c))
 
 /-! #brief Categories with all products have all finite products.
 -/
-@[reducible] definition HasAllProducts.HasAllFiniteProducts {C : Cat.{ℓobj ℓhom}}
+@[reducible] definition HasAllProducts.HasAllFiniteProducts
+    {C : Cat.{ℓobj ℓhom}}
     (C_HasAllProducts : HasAllProducts.{0 ℓobj ℓhom} C)
-    : HasAllFiniteProducts.{ℓobj ℓhom} C
-:= { prod := λ factors, C_HasAllProducts^.prod (list.get factors)
-   , is_prod := λ factors, C_HasAllProducts^.is_prod (list.get factors)
+    : HasAllFiniteProducts C (HasAllProducts.Final @C_HasAllProducts)
+:= { prod := λ c₁ c₂, C_HasAllProducts (bool.pick c₁ c₂)
+   , prod_id_left₁ := λ c, Limit.proj (C_HasAllProducts (bool.pick (HasAllProducts.Final @C_HasAllProducts) c)) bool.ff
+   , prod_id_left₂ := λ c, Product.into (C_HasAllProducts (bool.pick (HasAllProducts.Final @C_HasAllProducts) c))
+                            (λ b, begin cases b, exact ⟨⟨c⟩⟩, exact (HasAllProducts.Final @C_HasAllProducts)^.final c, end)
+   , prod_id_left := λ c, { id₁ := sorry
+                          , id₂ := sorry
+                          }
+   , prod_id_right₁ := λ c, Limit.proj (C_HasAllProducts (bool.pick c (HasAllProducts.Final @C_HasAllProducts))) bool.tt
+   , prod_id_right₂ := λ c, Product.into (C_HasAllProducts (bool.pick c (HasAllProducts.Final @C_HasAllProducts)))
+                             (λ b, begin cases b, exact (HasAllProducts.Final @C_HasAllProducts)^.final c, exact ⟨⟨c⟩⟩ end)
+   , prod_id_right := λ c, { id₁ := sorry
+                           , id₂ := sorry
+                           }
    }
 
-/-! #brief Categories with all finite limits have all finite products.
+/-! #brief A hom into a pair.
 -/
-@[reducible] definition HasAllFiniteLimits.HasAllFiniteProducts {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteLimits : HasAllFiniteLimits.{0 1 ℓobj ℓhom} C)
-    : HasAllFiniteProducts.{ℓobj ℓhom} C
-:= { prod
-      := λ factors
-         , C_HasAllFiniteLimits^.limit (ObjCat.Fin (fin.FinType (list.length factors)))
-            (ProductDrgm (list.get factors))
-   , is_prod
-      := λ factors
-         , C_HasAllFiniteLimits^.is_limit (ObjCat.Fin (fin.FinType (list.length factors)))
-            (ProductDrgm (list.get factors))
-   }
+@[reducible] definition HasAllFiniteProducts.into {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
+    {c₀ c₁ c₂ : [[C]]}
+    (f₁ : c₀ →→ c₁) (f₂ : c₀ →→ c₂)
+    : c₀ →→ C_HasAllFiniteProducts^.prod c₁ c₂
+:= Product.into (C_HasAllFiniteProducts^.prod c₁ c₂) (λ (b : bool), begin cases b, exact f₂, exact f₁ end)
 
-/-! #brief Categories with finite products have final objects.
+/-! #brief Projection out of a product.
 -/
-@[reducible] definition HasAllFiniteProducts.Final {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    : IsFinal C (C_HasAllFiniteProducts^.prod [])
-:= { final := λ c, IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [])
-                    { proj := λ n, fin.zero_elim n
-                    , triangle := λ x₁ x₂ f, fin.zero_elim x₁
-                    }
-   , uniq := λ c h, begin apply IsLimit.mediate_uniq, intro x, exact fin.zero_elim x end
-   }
+@[reducible] definition HasAllFiniteProducts.π₁ {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
+    {c₁ c₂ : [[C]]}
+    : C^.hom (C_HasAllFiniteProducts^.prod c₁ c₂) c₁
+:= Limit.proj (C_HasAllFiniteProducts^.prod c₁ c₂) bool.tt
 
-
-
-/- ----------------------------------------------------------------------------
-Isomorphisms between products.
-
-In particular,
-* prod [X₁, ..., Xn] ≅ prod (σ [X₁, ..., Xn]) for any permutation σ
-* prod [X₁, ..., Xn, prod [Y₁, ..., Ym], Z₁, ..., Zp]
-   ≅ prod [X₁, ..., Xn, Y₁, ..., Ym, Z₁, ..., Zp]
-* prod [X₁, ..., Xn, prod [], Z₁, ..., Zp]
-   ≅ prod [X₁, ..., Xn, Z₁, ..., Zp]
-* prod [X₁] ≅ X₁
----------------------------------------------------------------------------- -/
-
-/-! #brief Permutation of products.
+/-! #brief Projection out of a product.
 -/
-definition HasAllFiniteProducts.perm_limit {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors : list [[C]])
-    {perm : fin (list.length factors) → fin (list.length factors)}
-    {perm_inv : fin (list.length factors) → fin (list.length factors)}
-    (perm_iso : function.isomorphism perm perm_inv)
-    : IsProduct (list.get factors)
-                (C_HasAllFiniteProducts^.prod (list.perm factors perm_iso))
-:= { is_cone
-      := { proj
-            := λ n, let n' : fin (list.length (list.perm factors perm_iso))
-                          := cast (by rw list.perm.length) (perm_inv n) in
-                    let h := IsLimit.proj (C_HasAllFiniteProducts^.is_prod (list.perm factors perm_iso)) n'
-                    in cast begin
-                              assert ω : list.get (list.perm factors perm_iso) n' = list.get factors n,
-                              { exact sorry },
-                              dsimp, rw ω
-                            end
-                        h
-         , triangle
-            := λ n₁ n₂ f, begin cases f, simp end
-         }
-   , is_final
-      := { final := sorry
-         , uniq := sorry
-         }
-   }
+@[reducible] definition HasAllFiniteProducts.π₂ {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
+    {c₁ c₂ : [[C]]}
+    : C^.hom (C_HasAllFiniteProducts^.prod c₁ c₂) c₂
+:= Limit.proj (C_HasAllFiniteProducts^.prod c₁ c₂) bool.ff
 
-/-! #brief The un-permuting hom.
+/-! #brief The pair functor.
 -/
-definition HasAllFiniteProducts.unperm {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors : list [[C]])
-    {perm : fin (list.length factors) → fin (list.length factors)}
-    {perm_inv : fin (list.length factors) → fin (list.length factors)}
-    (perm_iso : function.isomorphism perm perm_inv)
-    : C_HasAllFiniteProducts^.prod (list.perm factors perm_iso)
-       →→ C_HasAllFiniteProducts^.prod factors
-:= IsLimit.mediate (C_HasAllFiniteProducts^.is_prod factors)
-    (HasAllFiniteProducts.perm_limit C_HasAllFiniteProducts factors perm_iso)^.is_cone
-
-/-! #brief The permuting hom.
--/
-definition HasAllFiniteProducts.perm {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors : list [[C]])
-    {perm : fin (list.length factors) → fin (list.length factors)}
-    {perm_inv : fin (list.length factors) → fin (list.length factors)}
-    (perm_iso : function.isomorphism perm perm_inv)
-    : C_HasAllFiniteProducts^.prod factors
-       →→ C_HasAllFiniteProducts^.prod (list.perm factors perm_iso)
-:= IsLimit.mediate (HasAllFiniteProducts.perm_limit C_HasAllFiniteProducts factors perm_iso)
-    (C_HasAllFiniteProducts^.is_prod factors)^.is_cone
-
-/-! #brief Permuting and unpermuting of products are isomorphisms.
-
-prod [X₁, ..., Xn] ≅ prod (σ [X₁, ..., Xn]) for any permutation σ of [1,...,n].
--/
-@[reducible] definition HasAllFiniteProducts.unpermute_permute_iso {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors : list [[C]])
-    {perm : fin (list.length factors) → fin (list.length factors)}
-    {perm_inv : fin (list.length factors) → fin (list.length factors)}
-    (perm_iso : function.isomorphism perm perm_inv)
-    : Iso (HasAllFiniteProducts.unperm C_HasAllFiniteProducts factors perm_iso)
-          (HasAllFiniteProducts.perm C_HasAllFiniteProducts factors perm_iso)
-:= IsLimit.iso (HasAllFiniteProducts.perm_limit C_HasAllFiniteProducts factors perm_iso)
-               (C_HasAllFiniteProducts^.is_prod factors)
-
-/-! #brief Flattening of products of products.
--/
-definition HasAllFiniteProducts.flat_limit {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₂ factors₃ : list [[C]])
-    : IsProduct (list.get (factors₁ ++ factors₂ ++ factors₃))
-                (C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod factors₂] ++ factors₃))
-:= { is_cone
-      := { proj
-            := λ n
-               , let lim := C_HasAllFiniteProducts^.is_prod (factors₁ ++ [C_HasAllFiniteProducts^.prod factors₂] ++ factors₃)
-                 in if ω₁ : n^.val < list.length factors₁
-                     then cast sorry (IsLimit.proj lim { val := n^.val, is_lt := sorry })
-                     else if ω₂ : n^.val < list.length factors₁ + list.length factors₂
-                           then let foo₁ : C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod factors₂] ++ factors₃) →→ C_HasAllFiniteProducts^.prod factors₂
-                                 := cast sorry (IsLimit.proj lim { val := list.length factors₁, is_lt := sorry }) in
-                                let foo₂ : C_HasAllFiniteProducts^.prod factors₂ →→ list.get (factors₁ ++ factors₂ ++ factors₃) n
-                                 := cast sorry (IsLimit.proj (C_HasAllFiniteProducts^.is_prod factors₂) { val := n^.val - list.length factors₁, is_lt := sorry })
-                                in foo₂ ∘∘ foo₁
-                           else cast sorry (IsLimit.proj lim { val := n^.val - list.length factors₂ + 1, is_lt := sorry })
-         , triangle
-            := λ n₁ n₂ f, begin cases f, simp end
-         }
-   , is_final
-      := { final := sorry
-         , uniq := sorry
-         }
-   }
-
-/-! #brief The flattening hom.
--/
-definition HasAllFiniteProducts.flatten {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₂ factors₃ : list [[C]])
-    : C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod factors₂] ++ factors₃)
-       →→ C_HasAllFiniteProducts^.prod (factors₁ ++ factors₂ ++ factors₃)
-:= IsLimit.mediate (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₂ ++ factors₃))
-    (HasAllFiniteProducts.flat_limit C_HasAllFiniteProducts factors₁ factors₂ factors₃)^.is_cone
-
-/-! #brief The exploding hom.
--/
-definition HasAllFiniteProducts.explode {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₂ factors₃ : list [[C]])
-    : C_HasAllFiniteProducts^.prod (factors₁ ++ factors₂ ++ factors₃)
-       →→ C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod factors₂] ++ factors₃)
-:= IsLimit.mediate (HasAllFiniteProducts.flat_limit C_HasAllFiniteProducts factors₁ factors₂ factors₃)
-     ((C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₂ ++ factors₃))^.is_cone)
-
-/-! #brief Explosion and flattening of products are isomorphisms.
-
-prod [X₁, ..., Xn, prod [Y₁, ..., Ym], Z₁, ..., Zp]
- ≅ prod [X₁, ..., Xn, Y₁, ..., Ym, Z₁, ..., Zp]
--/
-@[reducible] definition HasAllFiniteProducts.flatten_explode_iso {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₂ factors₃ : list [[C]])
-    : Iso (HasAllFiniteProducts.flatten C_HasAllFiniteProducts factors₁ factors₂ factors₃)
-          (HasAllFiniteProducts.explode C_HasAllFiniteProducts factors₁ factors₂ factors₃)
-:= IsLimit.iso (HasAllFiniteProducts.flat_limit C_HasAllFiniteProducts factors₁ factors₂ factors₃)
-               (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₂ ++ factors₃))
-
-/-! #brief Flattening of products of empty products.
--/
-definition HasAllFiniteProducts.unit_limit {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₃ : list [[C]])
-    : IsProduct (list.get (factors₁ ++ factors₃))
-                (C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃))
-:= { is_cone
-      := { proj
-            := λ n
-               , let lim := C_HasAllFiniteProducts^.is_prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
-                 in if ω₁ : n^.val < list.length factors₁
-                     then cast sorry (IsLimit.proj lim { val := n^.val, is_lt := sorry })
-                     else cast sorry (IsLimit.proj lim { val := n^.val - list.length factors₁, is_lt := sorry })
-         , triangle
-            := λ n₁ n₂ f, begin cases f, simp end
-         }
-   , is_final
-      := { final := sorry
-         , uniq := sorry
-         }
-   }
-
-/-! #brief The unit-dropping hom.
--/
-definition HasAllFiniteProducts.unit_drop {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₃ : list [[C]])
-    : C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
-       →→ C_HasAllFiniteProducts^.prod (factors₁ ++ factors₃)
-:= IsLimit.mediate (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₃))
-    (HasAllFiniteProducts.unit_limit C_HasAllFiniteProducts factors₁ factors₃)^.is_cone
-
-/-! #brief The unit-inserting hom.
--/
-definition HasAllFiniteProducts.unit_insert {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₃ : list [[C]])
-    : C_HasAllFiniteProducts^.prod (factors₁ ++ factors₃)
-       →→ C_HasAllFiniteProducts^.prod (factors₁ ++ [C_HasAllFiniteProducts^.prod [] ] ++ factors₃)
-:= IsLimit.mediate (HasAllFiniteProducts.unit_limit C_HasAllFiniteProducts factors₁ factors₃)
-    (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₃))^.is_cone
-
-/-! #brief Dropping and insertion of units of products are isomorphisms.
-
-prod [X₁, ..., Xn, prod [], Z₁, ..., Zp]
- ≅ prod [X₁, ..., Xn, Z₁, ..., Zp]
--/
-@[reducible] definition HasAllFiniteProducts.unit_drop_insert_iso {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (factors₁ factors₃ : list [[C]])
-    : Iso (HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts factors₁ factors₃)
-          (HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts factors₁ factors₃)
-:= IsLimit.iso (HasAllFiniteProducts.unit_limit C_HasAllFiniteProducts factors₁ factors₃)
-               (C_HasAllFiniteProducts^.is_prod (factors₁ ++ factors₃))
-
-/-! #brief Singleton products.
--/
-definition HasAllFiniteProducts.singleton_limit {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (x : [[C]])
-    : IsProduct (list.get [x]) x
-:= { is_cone
-      := { proj := λ n, match n with
-                          | (fin.mk 0 ωn) := ⟨⟨x⟩⟩
-                          | (fin.mk (nat.succ n) ωn) := false.cases_on _ begin cases ωn, cases a end
-                        end
-         , triangle
-            := λ n₁ n₂ f, begin cases f, simp end
-         }
-   , is_final
-      := { final := sorry
-         , uniq := sorry
-         }
-   }
-
-/-! #brief The singleton unboxing hom.
--/
-definition HasAllFiniteProducts.singleton_unbox {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (x : [[C]])
-    : C_HasAllFiniteProducts^.prod [x] →→ x
-:= IsLimit.mediate (HasAllFiniteProducts.singleton_limit C_HasAllFiniteProducts x)
-    (C_HasAllFiniteProducts^.is_prod [x])^.is_cone
-
-/-! #brief The singleton boxing hom.
--/
-definition HasAllFiniteProducts.singleton_box {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (x : [[C]])
-    : x →→ C_HasAllFiniteProducts^.prod [x]
-:= IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [x])
-    (HasAllFiniteProducts.singleton_limit C_HasAllFiniteProducts x)^.is_cone
-
-/-! #brief Unboxing and boxing are isomorphisms.
-
-prod [X₁] ≅ X₁
--/
-@[reducible] definition HasAllFiniteProducts.singleton_unbox_box_iso {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    (x : [[C]])
-    : Iso (HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x)
-          (HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x)
-:= IsLimit.iso (C_HasAllFiniteProducts^.is_prod [x])
-               (HasAllFiniteProducts.singleton_limit C_HasAllFiniteProducts x)
-
-
-
-/- ----------------------------------------------------------------------------
-The pair functor.
----------------------------------------------------------------------------- -/
-
-/-! #brief Helper for the pairwise product functor.
--/
-definition HasAllFiniteProducts.PairFun_helper {C : Cat.{ℓobj ℓhom}}
-    {xy₁ xy₂ : [[C ×× C]]}
-    (f : (C ×× C)^.hom xy₁ xy₂)
-    : ∀ (n : fin 2)
-      , ProductDrgm (list.get [xy₁^.fst, xy₁^.snd]) n
-         →→ ProductDrgm (list.get [xy₂^.fst, xy₂^.snd]) n
-| (fin.mk 0 ω) := f^.fst
-| (fin.mk 1 ω) := f^.snd
-| (fin.mk (nat.succ (nat.succ n)) ω) := false.cases_on _ begin cases ω, cases a, cases a end
-
-/-! #brief The pairwise product functor.
--/
-@[reducible] definition HasAllFiniteProducts.PairFun {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+@[reducible] definition PairFun {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
     : C ×× C ⇉⇉ C
-:= { obj := λ xy, C_HasAllFiniteProducts^.prod [xy^.fst, xy^.snd]
-   , hom
-      := λ xy₁ xy₂ f
-         , IsLimit.mediate (C_HasAllFiniteProducts^.is_prod [xy₂^.fst, xy₂^.snd])
-            { proj := λ n, HasAllFiniteProducts.PairFun_helper f n
-                            ∘∘ IsLimit.proj (C_HasAllFiniteProducts^.is_prod [xy₁^.fst, xy₁^.snd]) n
-            , triangle := λ z₁ z₂ g, begin cases g, simp end
-            }
-   , hom_id
-      := λ xy
-         , begin
-             apply eq.symm, apply IsLimit.mediate_uniq, simp,
-             intro n,
-             cases n with n ωn,
-             cases n with n, { apply Cat.circ_id_left },
-             cases n with n, { apply Cat.circ_id_left },
-             cases ωn, cases a, cases a
-           end
-   , hom_circ := begin exact sorry end
+:= { obj := λ c, C_HasAllFiniteProducts^.prod c^.fst c^.snd
+   , hom := λ c₁ c₂ f, Product.into (C_HasAllFiniteProducts^.prod c₂^.fst c₂^.snd)
+                        (λ b, bool.cases_on b
+                                (f^.snd ∘∘ Limit.proj (C_HasAllFiniteProducts^.prod (c₁^.fst) (c₁^.snd)) ff)
+                                (f^.fst ∘∘ Limit.proj (C_HasAllFiniteProducts^.prod (c₁^.fst) (c₁^.snd)) tt))
+   , hom_id := λ c, sorry
+   , hom_circ := λ x y z g f, sorry
    }
 
-/-! #brief The pairwise product functor.
+/-! #brief Braiding the pair functor
 -/
-@[reducible] definition HasAllFiniteProducts.PairFun.BraidTrans {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    : HasAllFiniteProducts.PairFun C_HasAllFiniteProducts
-       ↣↣ HasAllFiniteProducts.PairFun C_HasAllFiniteProducts □□ ProdCat.flip
-:= { component := λ c, cast sorry (HasAllFiniteProducts.perm C_HasAllFiniteProducts [c^.fst, c^.snd] fin.minus_perm.iso)
+@[reducible] definition PairFun.BraidTrans {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
+    : PairFun C_HasAllFiniteProducts
+       ↣↣ PairFun C_HasAllFiniteProducts □□ ProdCat.flip
+:= { component := λ c, HasAllFiniteProducts.into C_HasAllFiniteProducts
+                        (HasAllFiniteProducts.π₂ C_HasAllFiniteProducts)
+                        (HasAllFiniteProducts.π₁ C_HasAllFiniteProducts)
    , transport := λ x y f, sorry
    }
 
-/- ----------------------------------------------------------------------------
-Cartesian monoidal categories.
----------------------------------------------------------------------------- -/
-
 /-! #brief Every category with all finite products is a cartesian monoidal category.
 -/
-@[reducible] definition HasAllFiniteProducts.Monoidal {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
-    : IsMonoidal C
-       (HasAllFiniteProducts.PairFun C_HasAllFiniteProducts)
-       (C_HasAllFiniteProducts^.prod [])
+@[reducible] definition HasAllFiniteProducts.Monoidal {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
+    : IsMonoidal C (PairFun C_HasAllFiniteProducts) c₀
 := { assoc_left
-      := { component := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
-                                ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
+      := { component := λ xyz, HasAllFiniteProducts.into C_HasAllFiniteProducts
+                                (HasAllFiniteProducts.into C_HasAllFiniteProducts
+                                  (HasAllFiniteProducts.π₁ C_HasAllFiniteProducts)
+                                  (HasAllFiniteProducts.π₁ C_HasAllFiniteProducts ∘∘ HasAllFiniteProducts.π₂ C_HasAllFiniteProducts))
+                                (HasAllFiniteProducts.π₂ C_HasAllFiniteProducts ∘∘ HasAllFiniteProducts.π₂ C_HasAllFiniteProducts)
          , transport := λ xyz₁ xyz₂ f, sorry
          }
    , assoc_right
-      := { component := λ xyz, HasAllFiniteProducts.explode C_HasAllFiniteProducts [xyz^.fst] [xyz^.snd^.fst, xyz^.snd^.snd] []
-                                ∘∘ HasAllFiniteProducts.flatten C_HasAllFiniteProducts [] [xyz^.fst, xyz^.snd^.fst] [xyz^.snd^.snd]
+      := { component := λ xyz, HasAllFiniteProducts.into C_HasAllFiniteProducts
+                                (HasAllFiniteProducts.π₁ C_HasAllFiniteProducts ∘∘ HasAllFiniteProducts.π₁ C_HasAllFiniteProducts)
+                                (HasAllFiniteProducts.into C_HasAllFiniteProducts
+                                  (HasAllFiniteProducts.π₂ C_HasAllFiniteProducts ∘∘ HasAllFiniteProducts.π₁ C_HasAllFiniteProducts)
+                                  (HasAllFiniteProducts.π₂ C_HasAllFiniteProducts))
          , transport := λ xyz₁ xyz₂ f, sorry
          }
    , assoc_iso :=
@@ -443,42 +199,45 @@ Cartesian monoidal categories.
                 (λ x, sorry)
       }
    , left_unitor
-      := { component := λ x, HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x
-                              ∘∘ HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts [] [x]
-         , transport := begin exact sorry end
+      := { component := C_HasAllFiniteProducts^.prod_id_left₁
+         , transport := λ x y f, begin exact sorry end
          }
    , left_unitor_inv
-      := { component := λ x, HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts [] [x]
-                              ∘∘ HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x
+      := { component := C_HasAllFiniteProducts^.prod_id_left₂
          , transport := begin exact sorry end
          }
-   , left_unitor_iso := begin exact sorry end
+   , left_unitor_iso := { id₁ := begin apply NatTrans.eq, intro c, apply (C_HasAllFiniteProducts^.prod_id_left c)^.id₁ end
+                        , id₂ := begin apply NatTrans.eq, intro c, apply (C_HasAllFiniteProducts^.prod_id_left c)^.id₂ end
+                        }
    , right_unitor
-      := { component := λ x, HasAllFiniteProducts.singleton_unbox C_HasAllFiniteProducts x
-                              ∘∘ HasAllFiniteProducts.unit_drop C_HasAllFiniteProducts [x] []
+      := { component := C_HasAllFiniteProducts^.prod_id_right₁
          , transport := begin exact sorry end
          }
    , right_unitor_inv
-      := { component := λ x, HasAllFiniteProducts.unit_insert C_HasAllFiniteProducts [x] []
-                              ∘∘ HasAllFiniteProducts.singleton_box C_HasAllFiniteProducts x
+      := { component := C_HasAllFiniteProducts^.prod_id_right₂
          , transport := begin exact sorry end
          }
-   , right_unitor_iso := begin exact sorry end
+   , right_unitor_iso := { id₁ := begin apply NatTrans.eq, intro c, apply (C_HasAllFiniteProducts^.prod_id_right c)^.id₁ end
+                         , id₂ := begin apply NatTrans.eq, intro c, apply (C_HasAllFiniteProducts^.prod_id_right c)^.id₂ end
+                         }
    , triangle := begin exact sorry end
    , pentagon := begin exact sorry end
    }
 
 /-! #brief Cartesian monoidal categories are symmetric.
 -/
-theorem HasAllFiniteProducts.Symmetric {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllFiniteProducts : HasAllFiniteProducts C)
+theorem HasAllFiniteProducts.Symmetric {C : Cat.{ℓobj ℓhom}} {c₀ : Final C}
+    (C_HasAllFiniteProducts : HasAllFiniteProducts C c₀)
     : IsSymmetric C
-        (HasAllFiniteProducts.Monoidal C_HasAllFiniteProducts)
-        (HasAllFiniteProducts.PairFun.BraidTrans C_HasAllFiniteProducts)
+        (HasAllFiniteProducts.Monoidal @C_HasAllFiniteProducts)
+        (PairFun.BraidTrans @C_HasAllFiniteProducts)
+:= sorry
+/-
 := IsSymmetric.show
     { id₁ := begin apply NatTrans.eq, intro c, cases c with c₁ c₂, dsimp, exact sorry end
     , id₂ := begin exact sorry end
     }
     (λ x y z, begin exact sorry end)
+-/
 
 end qp

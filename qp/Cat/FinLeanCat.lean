@@ -18,12 +18,12 @@ Initial and final objects.
 
 /-! #brief pempty is an initial object in FinLeanCat.
 -/
-@[reducible] definition FinLeanCat.init
-    : IsInit FinLeanCat.{ℓ}
-             { T := pempty.{ℓ + 1}
-             , is_finite := pempty.FinType
-             }
-:= { init := λ A, pempty.elim
+@[reducible] definition FinLeanCat.Init
+    : Init FinLeanCat.{ℓ}
+:= { obj := { T := pempty.{ℓ + 1}
+            , is_finite := pempty.FinType
+            }
+   , init := λ A, pempty.elim
    , uniq := λ A f, begin
                       apply pfunext, intro e,
                       exact pempty.elim e
@@ -32,12 +32,12 @@ Initial and final objects.
 
 /-! #brief punit is a final object in FinLeanCat.
 -/
-@[reducible] definition FinLeanCat.final
-    : IsFinal FinLeanCat.{ℓ}
-              { T := punit.{ℓ + 1}
-              , is_finite := punit.FinType
-              }
-:= { final := λ A a, punit.star
+@[reducible] definition FinLeanCat.Final
+    : Final FinLeanCat.{ℓ}
+:= { obj := { T := punit.{ℓ + 1}
+            , is_finite := punit.FinType
+            }
+   , final := λ A a, punit.star
    , uniq := λ A f, begin
                       apply pfunext, intro a,
                       apply punit.uniq
@@ -101,6 +101,7 @@ Subobject classifier.
     : f (FinLeanCat.monic_inv f f_monic b ωb) = b
 := sorry
 
+/-
 /-! #brief FinLeanCat has a subobject classifier.
 -/
 @[reducible] definition FinLeanCat.SubObjClass
@@ -140,5 +141,6 @@ Subobject classifier.
              exact sorry
            end
    }
+-/
 
 end qp

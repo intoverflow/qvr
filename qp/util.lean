@@ -43,6 +43,21 @@ theorem {ℓ} punit.uniq
 -/
 inductive {ℓ} pbool : Type ℓ | ff | tt
 
+/-! #brief Chooser.
+-/
+@[reducible] definition {ℓ} bool.pick {A : Type ℓ} : A → A → bool → A
+| a₁ a₂ bool.tt := a₁
+| a₁ a₂ bool.ff := a₂
+
+/-! #brief Dependent chooser.
+-/
+@[reducible] definition {ℓ} bool.dpick {A₁ A₂ : Type ℓ}
+    : ∀ (a₁ : A₁) (a₂ : A₂) (b : bool), bool.pick A₁ A₂ b
+| a₁ a₂ bool.tt := a₁
+| a₁ a₂ bool.ff := a₂
+
+
+
 
 namespace function
 -- An isomorphism pair.

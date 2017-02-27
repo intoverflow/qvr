@@ -577,19 +577,17 @@ Initial and final objects.
 ---------------------------------------------------------------------------- -/
 
 -- An initial object.
-structure IsInit (C : Cat.{ℓobj ℓhom})
-    (x : [[C]])
+structure Init (C : Cat.{ℓobj ℓhom})
     : Type (max ℓobj ℓhom)
-:= (init : ∀ (y : [[C]]), x →→ y)
-   (uniq : ∀ {y : [[C]]} (h : x →→ y), h = init y)
+:= (obj : [[C]])
+   (init : ∀ (y : [[C]]), obj →→ y)
+   (uniq : ∀ {y : [[C]]} (h : obj →→ y), h = init y)
 
-/-! #brief Every initial object can be treated as a function on objects.
+/-! #brief Every initial object can be treated as an object.
 -/
-@[reducible] instance IsInit.has_coe_to_fun {C : Cat.{ℓobj ℓhom}}
-    {x : [[C]]}
-    : has_coe_to_fun (IsInit C x)
-:= { F := λ x_init, ∀ (y : [[C]]), x →→ y
-   , coe := λ x_init y, x_init^.init y
+@[reducible] instance Init.has_coe_to_obj {C : Cat.{ℓobj ℓhom}}
+    : has_coe (Init C) [[C]]
+:= { coe := Init.obj
    }
 
 /-! #brief Initial objects are unique up to isomorphism.
@@ -599,28 +597,25 @@ given f₁₂ : x₁ →→ x₂, f₂₁ : x₂ →→ x₁ an iso pair,
 we have (by IsInit.uniq) that f₁₂ = x₁_init x₂,
 and f₂₁ = x₂_init x₁.
 -/
-definition IsInit.iso {C : Cat.{ℓobj ℓhom}}
-    {x₁ : [[C]]} (x₁_init : IsInit C x₁)
-    {x₂ : [[C]]} (x₂_init : IsInit C x₂)
-    : Iso (x₁_init x₂) (x₂_init x₁)
-:= { id₁ := begin dsimp, rw (x₁_init^.uniq ⟨⟨x₁⟩⟩), apply x₁_init^.uniq end
-   , id₂ := begin dsimp, rw (x₂_init^.uniq ⟨⟨x₂⟩⟩), apply x₂_init^.uniq end
+definition Init.Iso {C : Cat.{ℓobj ℓhom}}
+    (x₁ x₂ : Init C)
+    : Iso (x₁^.init x₂) (x₂^.init x₁)
+:= { id₁ := begin dsimp, rw (x₁^.uniq ⟨⟨x₁^.obj⟩⟩), apply x₁^.uniq end
+   , id₂ := begin dsimp, rw (x₂^.uniq ⟨⟨x₂⟩⟩), apply x₂^.uniq end
    }
 
 -- A final object.
-structure IsFinal (C : Cat.{ℓobj ℓhom})
-    (y : [[C]])
+structure Final (C : Cat.{ℓobj ℓhom})
     : Type (max ℓobj ℓhom)
-:= (final : ∀ (x : [[C]]), x →→ y)
-   (uniq : ∀ {x : [[C]]} (h : x →→ y), h = final x)
+:= (obj : [[C]])
+   (final : ∀ (x : [[C]]), x →→ obj)
+   (uniq : ∀ {x : [[C]]} (h : x →→ obj), h = final x)
 
-/-! #brief Every final object can be treated as a function on objects.
+/-! #brief Every final object can be treated as an objects.
 -/
-@[reducible] instance IsFinal.has_coe_to_fun {C : Cat.{ℓobj ℓhom}}
-    {y : [[C]]}
-    : has_coe_to_fun (IsFinal C y)
-:= { F := λ y_final, ∀ (x : [[C]]), x →→ y
-   , coe := λ y_final x, y_final^.final x
+@[reducible] instance IsFinal.has_coe_to_obj {C : Cat.{ℓobj ℓhom}}
+    : has_coe (Final C) [[C]]
+:= { coe := Final.obj
    }
 
 /-! #brief Final objects are unique up to isomorphism.
@@ -630,12 +625,11 @@ given f₁₂ : x₁ →→ x₂, f₂₁ : x₂ →→ x₁ an iso pair,
 we have (by IsFinal.uniq) that f₁₂ = x₂_final x₁,
 and f₂₁ = x₁_final x₂.
 -/
-definition IsFinal.iso {C : Cat.{ℓobj ℓhom}}
-    {x₁ : [[C]]} (x₁_final : IsFinal C x₁)
-    {x₂ : [[C]]} (x₂_final : IsFinal C x₂)
-    : Iso (x₂_final x₁) (x₁_final x₂)
-:= { id₁ := begin dsimp, rw (x₁_final^.uniq ⟨⟨x₁⟩⟩), apply x₁_final^.uniq end
-   , id₂ := begin dsimp, rw (x₂_final^.uniq ⟨⟨x₂⟩⟩), apply x₂_final^.uniq end
+definition Final.Iso {C : Cat.{ℓobj ℓhom}}
+    (x₁ x₂ : Final C)
+    : Iso (x₂^.final x₁) (x₁^.final x₂)
+:= { id₁ := begin dsimp, rw (x₁^.uniq ⟨⟨x₁⟩⟩), apply x₁^.uniq end
+   , id₂ := begin dsimp, rw (x₂^.uniq ⟨⟨x₂^.obj⟩⟩), apply x₂^.uniq end
    }
 
 
@@ -1103,9 +1097,10 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
 
 /-! #brief EmptyCat is initial in CatCat.
 -/
-@[reducible] definition EmptyCat.IsInitial
-    : IsInit CatCat.{ℓobj ℓhom} EmptyCat.{ℓobj ℓhom}
-:= { init := EmptyCat.init
+@[reducible] definition CatCat.Init
+    : Init CatCat.{ℓobj ℓhom}
+:= { obj := EmptyCat.{ℓobj ℓhom}
+   , init := EmptyCat.init
    , uniq
       := λ C F
          , begin
@@ -1147,9 +1142,10 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
 
 /-! #brief StarCat is final in CatCat.
 -/
-@[reducible] definition StarCat.IsFinal
-    : IsFinal CatCat.{ℓobj ℓhom} StarCat.{ℓobj ℓhom}
-:= { final := StarCat.final
+@[reducible] definition CatCat.Final
+    : Final CatCat.{ℓobj ℓhom}
+:= { obj := StarCat.{ℓobj ℓhom}
+   , final := StarCat.final
    , uniq
       := λ C F
          , begin
@@ -1225,6 +1221,23 @@ theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
    , hom := λ x y f, f^.hom
    , hom_id := λ x, rfl
    , hom_circ := λ x y z g f, rfl
+   }
+
+/-! #brief Final objects in slice categories.
+-/
+@[reducible] definition SliceCat.Final {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    : Final (SliceCat C c)
+:= { obj := { dom := c, hom := ⟨⟨c⟩⟩ }
+   , final := λ x, { hom := x^.hom
+                   , triangle := by simp
+                   }
+   , uniq := λ x h
+             , begin
+                 apply SliceCat.Hom.eq,
+                 apply eq.symm,
+                 apply eq.trans h^.triangle,
+                 simp
+               end
    }
 
 end qp
