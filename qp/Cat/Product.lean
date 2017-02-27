@@ -14,7 +14,7 @@ universe variables ℓ ℓobj ℓhom
 
 
 /- ----------------------------------------------------------------------------
-Products.
+Product diagrams.
 ---------------------------------------------------------------------------- -/
 
 /-! #brief Construct a product diagram.
@@ -27,6 +27,12 @@ Products.
    , hom_id := λ m, rfl
    , hom_circ := λ m n p g f, begin cases f, cases g, dsimp, simp, apply rfl end
    }
+
+
+
+/- ----------------------------------------------------------------------------
+Products.
+---------------------------------------------------------------------------- -/
 
 /-! #brief A product is a limit of a product diagram.
 -/
@@ -77,6 +83,12 @@ Products.
      , triangle := λ x₁ x₂ f, begin cases f, simp end
      }
 
+
+
+/- ----------------------------------------------------------------------------
+Categories with products.
+---------------------------------------------------------------------------- -/
+
 /-! #brief A category with all products.
 -/
 @[reducible] definition HasAllProducts (C : Cat.{ℓobj ℓhom})
@@ -109,6 +121,7 @@ Products.
                     intro e, apply pempty.elim e
                   end
       }
+
 
 
 /- ----------------------------------------------------------------------------
@@ -172,6 +185,12 @@ structure HasAllFiniteProducts (C : Cat.{ℓobj ℓhom})
     {c₁ c₂ : [[C]]}
     : C^.hom (C_HasAllFiniteProducts^.prod c₁ c₂) c₂
 := Limit.proj (C_HasAllFiniteProducts^.prod c₁ c₂) bool.ff
+
+
+
+/- ----------------------------------------------------------------------------
+The pair functor.
+---------------------------------------------------------------------------- -/
 
 /-! #brief The pair functor.
 -/
