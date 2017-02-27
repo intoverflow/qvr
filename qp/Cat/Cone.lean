@@ -247,7 +247,7 @@ theorem Limit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ �
 
 
 /- ----------------------------------------------------------------------------
-More definitions about limits.
+Preservation of limits by functors.
 ---------------------------------------------------------------------------- -/
 
 -- Notion of when a functor preserves limits.
@@ -260,6 +260,12 @@ structure PreservesLimits {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ �
    (limit_eq : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (D : Fun B C)
                  (c : Limit D)
                , (limit D c)^.obj^.obj = F c)
+
+
+
+/- ----------------------------------------------------------------------------
+Categories with limits.
+---------------------------------------------------------------------------- -/
 
 /-! #brief A witness that a category has all limits.
 -/
@@ -290,7 +296,7 @@ definition HasAllLimits.HasAllFiniteLimits
 
 
 /- ----------------------------------------------------------------------------
-Some important limits.
+Final objects as limits.
 ---------------------------------------------------------------------------- -/
 
 /-! #brief The limit of the empty diagram, if it exists, is final.
