@@ -12,6 +12,15 @@ definition {ℓ₁ ℓ₂} pfunext {A : Sort ℓ₁} {B : A → Sort ℓ₂}
     : f₁ = f₂
 := sorry
 
+/-! #brief Equality helper for prod.
+-/
+theorem {ℓ₁ ℓ₂} prod.eq {A : Type ℓ₁} {B : Type ℓ₂}
+    : ∀ {ab₁ ab₂ : prod A B}
+      , ab₁^.fst = ab₂^.fst
+      → ab₁^.snd = ab₂^.snd
+      → ab₁ = ab₂
+| (prod.mk a b) (prod.mk .a .b) (eq.refl .a) (eq.refl .b) := rfl
+
 /-! #brief Equality helper for pprod.
 -/
 theorem {ℓ₁ ℓ₂} pprod.eq {A : Sort ℓ₁} {B : Sort ℓ₂}
