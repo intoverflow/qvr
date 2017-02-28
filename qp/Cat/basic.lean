@@ -444,6 +444,19 @@ infix `◇□` : 150
 
 
 /- ----------------------------------------------------------------------------
+Isomorphisms of categories.
+---------------------------------------------------------------------------- -/
+
+-- An isomorphism of categories.
+structure CatIso {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}}
+    (F₁₂ : C₁ ⇉⇉ C₂)
+    (F₂₁ : C₂ ⇉⇉ C₁)
+    : Prop
+:= (id₁ : F₂₁ □□ F₁₂ = Fun.id C₁)
+   (id₂ : F₁₂ □□ F₂₁ = Fun.id C₂)
+
+
+/- ----------------------------------------------------------------------------
 Natural isomorphisms.
 ---------------------------------------------------------------------------- -/
 
@@ -1268,16 +1281,6 @@ theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
                    end
    }
 
-/-! #brief The functor from the slice category to the global category.
--/
-@[reducible] definition UnsliceFun {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
-    : SliceCat C c ⇉⇉ C
-:= { obj := λ x, x^.dom
-   , hom := λ x y f, f^.hom
-   , hom_id := λ x, rfl
-   , hom_circ := λ x y z g f, rfl
-   }
-
 /-! #brief Final objects in slice categories.
 -/
 @[reducible] definition SliceCat.Final {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
@@ -1293,6 +1296,45 @@ theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
                  apply eq.trans h^.triangle,
                  simp
                end
+   }
+
+/-! #brief The functor from the slice category to the global category.
+-/
+@[reducible] definition UnsliceFun {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    : SliceCat C c ⇉⇉ C
+:= { obj := λ x, x^.dom
+   , hom := λ x y f, f^.hom
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
+   }
+
+/-! #brief SliceCat C final is iso to C.
+-/
+@[reducible] definition SliceFinalFun {C : Cat.{ℓobj ℓhom}}
+    (fin : Final C)
+    : C ⇉⇉ SliceCat C fin^.obj
+:= { obj := λ c, { dom := c, hom := fin^.final c }
+   , hom := λ c₁ c₂ f, { hom := f
+                       , triangle := eq.symm (fin^.uniq _)
+                       }
+   , hom_id := λ c, begin apply SliceCat.Hom.eq, apply rfl end
+   , hom_circ := λ c₁ c₂ c₃ g f, begin apply SliceCat.Hom.eq, apply rfl end
+   }
+
+/-! #brief UnsliceFun and SliceFinalFun form an isomorphism.
+-/
+definition Unslice_SliceFinal.Iso {C : Cat.{ℓobj ℓhom}} {fin : Final C}
+    : CatIso UnsliceFun (SliceFinalFun fin)
+:= { id₁ := begin
+              apply Fun.eq,
+              { intro X, cases X, apply congr_arg (SliceCat.Obj.mk dom), exact eq.symm (fin^.uniq _) },
+              { intros X Y f, cases f with f ωXhom, dsimp, exact sorry }
+            end
+   , id₂ := begin
+              apply Fun.eq,
+              { intro X, apply rfl },
+              { intros X Y f, apply heq.refl }
+            end
    }
 
 end qp
