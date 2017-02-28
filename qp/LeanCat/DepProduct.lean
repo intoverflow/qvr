@@ -77,7 +77,7 @@ Dependent products.
                                                        }               
                                          , triangle := begin apply funext, intro x, apply rfl end
                                          }
-                     , transport := λ X Y f, begin apply SliceCat.Hom.eq, apply funext, intro x, dsimp /- true because of f^.triangle -/ exact sorry end
+                     , transport := λ X Y f, begin apply SliceCat.Hom.eq, apply funext, intro x, /- true because of f^.triangle -/ exact sorry end
                      }
            , counit := { component := λ X, { hom := λ t₀t₁σ, let t₀ := t₀t₁σ^.elt_of^.fst in
                                                              let ωt₀ := t₀t₁σ^.has_property in
