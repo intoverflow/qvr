@@ -61,6 +61,68 @@ Dependent products.
            end
    }
 
+/-! #brief Component of unit adjoint of dependent product and base change.
+-/
+@[reducible] definition {ℓ} LeanCat.BaseChangeDepProd_Unit.component
+    {T₀ T₁ : [[LeanCat.{ℓ}]]} (base : T₀ → T₁)
+    (X : [[SliceCat LeanCat T₁]])
+    : (SliceCat LeanCat T₁)^.hom
+        X
+        ((LeanCat.DepProdFun base □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base)) X)
+:= { hom
+      := λ x
+         , { fst := X^.hom x
+           , snd
+              := λ t₀
+                 , { elt_of
+                      := { elt_of := { fst := t₀^.elt_of
+                                     , snd := x
+                                     }
+                         , has_property := t₀^.has_property
+                         }
+                   , has_property := rfl
+                   }
+                 }
+   , triangle
+      := begin
+           apply funext,
+           intro x,
+           apply rfl
+         end
+   }
+
+/-! #brief Transport of unit adjoint of dependent product and base change.
+-/
+@[reducible] definition {ℓ} LeanCat.BaseChangeDepProd_Unit.transport
+    {T₀ T₁ : [[LeanCat.{ℓ}]]} (base : T₀ → T₁)
+    : ∀ {X Y : [[SliceCat LeanCat T₁]]} {f : (SliceCat LeanCat T₁)^.hom X Y}
+      , (SliceCat LeanCat T₁)^.circ (LeanCat.BaseChangeDepProd_Unit.component base Y) f
+         = (SliceCat LeanCat T₁)^.circ
+             ((LeanCat.DepProdFun base □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base))^.hom f)
+             (LeanCat.BaseChangeDepProd_Unit.component base X)
+| (SliceCat.Obj.mk X Xhom) (SliceCat.Obj.mk Y Yhom) (SliceCat.Hom.mk f ωXhom)
+:= sorry
+/- begin
+     dsimp at ωXhom,
+     apply SliceCat.Hom.eq,
+     apply funext,
+     intro x,
+     dsimp,
+     refine sigma.eq _ _,
+     { dsimp, rw ωXhom },
+     { apply funext,
+       intro t₀,
+       cases t₀ with t₀ ωt₀,
+       apply subtype.eq,
+       apply subtype.eq,
+       apply prod.eq,
+       { exact sorry -- equals t₀
+       },
+       { exact sorry -- equals f x
+       }
+     }
+   end -/
+
 /-! #brief Unit adjoint of dependent product and base change.
 -/
 @[reducible] definition {ℓ} LeanCat.BaseChangeDepProd_Unit
@@ -68,43 +130,37 @@ Dependent products.
     : Fun.id (SliceCat LeanCat T₁)
        ↣↣ LeanCat.DepProdFun base
            □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base)
-:= { component
-      := λ X, { hom := λ x, { fst := X^.hom x
-                            , snd := λ t₀, { elt_of
-                                              := { elt_of := { fst := t₀^.elt_of
-                                                             , snd := x
-                                                             }
-                                                 , has_property := t₀^.has_property
-                                                 }
-                                           , has_property := rfl
-                                           }
-                            }
-              , triangle
-                 := begin
-                      apply funext,
-                      intro x,
-                      apply rfl
-                    end
-              }
-   , transport
-      := λ X Y f
-         , begin
-             apply SliceCat.Hom.eq, apply funext,
+:= { component := LeanCat.BaseChangeDepProd_Unit.component base
+   , transport := λ X Y f, LeanCat.BaseChangeDepProd_Unit.transport base
+/-
+      := begin --λ X Y f
+         --, begin
+             cases X with X Xhom,
+             cases Y with Y Yhom,
+             cases f with f f_triangle,
+             dsimp at f,
+             dsimp at f_triangle,
+             apply SliceCat.Hom.eq,
+             apply funext,
              intro x,
+             /-
+             subst f_triangle,
+             apply congr_arg (sigma.mk (Yhom (f x))),
+             apply funext,
+             intro t₀,
+             cases t₀ with t₀ ωt₀,
+             apply rfl
+             -/
              refine sigma.eq _ _,
-             { dsimp, rw f^.triangle },
-             { apply funext,
+             { subst f_triangle },
+             { subst f_triangle,
+               apply funext,
                intro t₀,
                cases t₀ with t₀ ωt₀,
-               apply subtype.eq,
-               apply subtype.eq,
-               apply prod.eq,
-               { exact sorry -- this is equal to t₀
-               },
-               { exact sorry -- this is equal to f x
-               }
+               apply rfl
              }
            end
+-/
    }
 
 /-! #brief Co-unit adjoint of dependent product and base change.
