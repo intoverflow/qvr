@@ -132,35 +132,6 @@ Dependent products.
            □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base)
 := { component := LeanCat.BaseChangeDepProd_Unit.component base
    , transport := λ X Y f, LeanCat.BaseChangeDepProd_Unit.transport base
-/-
-      := begin --λ X Y f
-         --, begin
-             cases X with X Xhom,
-             cases Y with Y Yhom,
-             cases f with f f_triangle,
-             dsimp at f,
-             dsimp at f_triangle,
-             apply SliceCat.Hom.eq,
-             apply funext,
-             intro x,
-             /-
-             subst f_triangle,
-             apply congr_arg (sigma.mk (Yhom (f x))),
-             apply funext,
-             intro t₀,
-             cases t₀ with t₀ ωt₀,
-             apply rfl
-             -/
-             refine sigma.eq _ _,
-             { subst f_triangle },
-             { subst f_triangle,
-               apply funext,
-               intro t₀,
-               cases t₀ with t₀ ωt₀,
-               apply rfl
-             }
-           end
--/
    }
 
 /-! #brief Co-unit adjoint of dependent product and base change.
@@ -196,6 +167,40 @@ Dependent products.
            end
    }
 
+/-! #brief The Lean categories have dependent products.
+-/
+@[reducible] definition {ℓ} LeanCat.BaseChange_DepProd.Adj
+    {T₀ T₁ : [[LeanCat.{ℓ}]]}
+    (base : LeanCat^.hom T₀ T₁)
+    : LeanCat.BaseChangeFun base ⊣ LeanCat.DepProdFun base
+:= { unit := LeanCat.BaseChangeDepProd_Unit base
+   , counit := LeanCat.BaseChangeDepProd_CoUnit base
+   , id_left
+      := λ X
+         , begin
+             apply SliceCat.Hom.eq,
+             apply funext,
+             intro t₀x,
+             cases t₀x with t₀x ωt₀,
+             cases t₀x with t₀ x,
+             apply subtype.eq,
+             apply rfl
+           end
+   , id_right
+      := λ X
+         , begin
+             apply SliceCat.Hom.eq,
+             apply funext,
+             intro t₁σ,
+             cases t₁σ with t₁ σ,
+             apply congr_arg (sigma.mk t₁),
+             apply funext,
+             intro t₀,
+             cases t₀ with t₀ ωt₀,
+             apply subtype.eq,
+             exact rfl
+           end
+   }
 
 /-! #brief The Lean categories have dependent products.
 -/
@@ -203,35 +208,7 @@ Dependent products.
     : HasAllDepProducts @LeanCat.HasAllPullbacks.{ℓ}
 := λ T₀ T₁ base
    , { dprod := LeanCat.DepProdFun base
-     , adj
-        := { unit := LeanCat.BaseChangeDepProd_Unit base
-           , counit := LeanCat.BaseChangeDepProd_CoUnit base
-           , id_left
-              := λ X
-                 , begin
-                     apply SliceCat.Hom.eq,
-                     apply funext,
-                     intro t₀x,
-                     cases t₀x with t₀x ωt₀,
-                     cases t₀x with t₀ x,
-                     apply subtype.eq,
-                     apply rfl
-                   end
-           , id_right
-              := λ X
-                 , begin
-                     apply SliceCat.Hom.eq,
-                     apply funext,
-                     intro t₁σ,
-                     cases t₁σ with t₁ σ,
-                     apply congr_arg (sigma.mk t₁),
-                     apply funext,
-                     intro t₀,
-                     cases t₀ with t₀ ωt₀,
-                     apply subtype.eq,
-                     exact rfl
-                   end
-           }
+     , adj := LeanCat.BaseChange_DepProd.Adj base
      }
 
 end qp

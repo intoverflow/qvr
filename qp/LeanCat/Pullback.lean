@@ -31,4 +31,21 @@ Pullbacks.
       (λ cone, rfl)
       (λ cone h, begin apply funext, intro cn, dsimp, exact sorry end)
 
+/-! #brief The Lean categories have all pullbacks along all homs.
+-/
+@[reducible] definition {ℓ} LeanCat.HasAllPullbacksAlong
+    {T₀ T₁ : [[LeanCat.{ℓ}]]}
+    (base : LeanCat^.hom T₀ T₁)
+    : HasAllPullbacksAlong LeanCat base
+:= @HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base
+
+/-! #brief The Lean categories have base change functors.
+-/
+@[reducible] definition {ℓ} LeanCat.BaseChangeFun
+    {T₀ T₁ : [[LeanCat.{ℓ}]]}
+    (base : LeanCat^.hom T₀ T₁)
+    : SliceCat LeanCat T₁ ⇉⇉ SliceCat LeanCat T₀
+:= BaseChangeFun (@LeanCat.HasAllPullbacksAlong _ _ base)
+
+
 end qp

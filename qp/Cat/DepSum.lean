@@ -15,27 +15,42 @@ universe variables ℓobj ℓhom
 Dependent sums.
 ---------------------------------------------------------------------------- -/
 
--- A dependent sum.
-structure DepSum (C : Cat.{ℓobj ℓhom})
+/-! #brief The dependent sum functor.
+-/
+@[reducible] definition DepSumFun {C : Cat.{ℓobj ℓhom}}
     {x y : [[C]]}
     {base : x →→ y}
     (base_HasPullbacksAlong : HasAllPullbacksAlong C base)
-    : Type ((max ℓobj ℓhom) + 1)
-:= (dsum : SliceCat C x ⇉⇉ SliceCat C y)
-   (adj : dsum ⊣ BaseChangeFun @base_HasPullbacksAlong)
+    : SliceCat C x ⇉⇉ SliceCat C y
+:= SliceFun C ↗ base
 
-
-
-/- ----------------------------------------------------------------------------
-Categories with dependent sums.
----------------------------------------------------------------------------- -/
-
-/-! #brief A category with dependent sums.
+/-! #brief The dependent sum is left-adjoint to base change.
 -/
-@[reducible] definition HasAllDepSums {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllPullbacks : HasAllPullbacks C)
-    : Type ((max ℓobj ℓhom) + 1)
-:= ∀ {x y : [[C]]} (base : x →→ y)
-   , DepSum C (@HasAllPullbacks.HasAllPullbacksAlong C @C_HasAllPullbacks x y base)
+@[reducible] definition DepSum_BaseChange.Adj {C : Cat.{ℓobj ℓhom}}
+    {x y : [[C]]}
+    {base : x →→ y}
+    (base_HasPullbacksAlong : HasAllPullbacksAlong C base)
+    : DepSumFun @base_HasPullbacksAlong ⊣ BaseChangeFun @base_HasPullbacksAlong
+:= { unit := { component
+                := λ X
+                   , { hom := Pullback.into
+                               (base_HasPullbacksAlong (base∘∘X^.hom))
+                               X^.hom
+                               ⟨⟨X^.dom⟩⟩
+                               begin dsimp, simp end
+                     , triangle := sorry
+                     }
+             , transport := λ X Y f, begin apply SliceCat.Hom.eq, exact sorry end
+             }
+   , counit := { component
+                  := λ X
+                     , { hom := Pullback.π₂ (base_HasPullbacksAlong X^.hom)
+                       , triangle := begin exact sorry end
+                       }
+               , transport := begin exact sorry end
+               }
+   , id_left := begin exact sorry end
+   , id_right := begin exact sorry end
+   }
 
 end qp
