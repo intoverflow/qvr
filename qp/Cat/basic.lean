@@ -6,7 +6,7 @@ properties.
 import ..util
 
 namespace qp
-universe variables ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄
+universe variables ℓ ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄
 
 
 
@@ -75,19 +75,9 @@ infix `⇉⇉` : 120 := Fun
    , coe := λ G x, G^.obj x
    }
 
-/-! #brief Every functor can be treated as a function on homs.
--/
-/-
-instance Fun.hom_has_coe_to_fun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    : has_coe_to_fun (C ⇉⇉ D)
-:= { F := λ G, ∀ {x y : [[C]]} (f : x →→ y), G x →→ G y
-   , coe := λ G x y f, G^.hom f
-   }
--/
-
 -- Action of a functor on a hom.
 -- \nearrow
-infix `↗` : 100 := λ {C : Cat} {D : Cat} (F : C ⇉⇉ D) {x y : [[C]]} (f : x →→ y), F^.hom f
+infix `↗` : 100 := Fun.hom -- λ {C : Cat} {D : Cat} (F : C ⇉⇉ D) {x y : [[C]]} (f : x →→ y), F^.hom f
 
 -- A natural transformation between functors.
 structure NatTrans
@@ -101,7 +91,7 @@ structure NatTrans
 
 -- A natural transformation.
 -- \rightarrowtail\rightarrowtail
-infix `↣↣` : 110 := /- λ {C : Cat} {D : Cat} (F₁ F₂ : C ⇉⇉ D),-/ NatTrans /- F₁ F₂ -/
+infix `↣↣` : 110 := NatTrans
 
 /-! #brief Every natural transformation can be treated as a function on objects.
 -/
@@ -172,30 +162,26 @@ theorem Fun.heq
 
 /-! #brief The identity functor.
 -/
-@[reducible] definition Fun.id (C : Cat.{ℓobj ℓhom}) : Fun.{ℓobj ℓhom ℓobj ℓhom} C C
+definition Fun.id (C : Cat.{ℓobj ℓhom}) : Fun.{ℓobj ℓhom ℓobj ℓhom} C C
 := { obj := λ x, x
    , hom := λ x y f, f
    , hom_id := λ x, rfl
    , hom_circ := λ x y z g f, rfl
    }
 
-/-! #brief Action of the identity functor on objects.
--/
-@[simp] theorem Fun.id.on_obj {C : Cat.{ℓobj ℓhom}}
-    {c : [[C]]}
+@[simp] theorem Fun.id.simp_obj {C : Cat.{ℓobj ℓhom}}
+    (c : [[C]])
     : Fun.id C c = c
 := rfl
 
-/-! #brief Action of the identity functor on homs.
--/
-@[simp] theorem Fun.id.on_hom {C : Cat.{ℓobj ℓhom}}
-    {c₁ c₂ : [[C]]} {f : c₁ →→ c₂}
+@[simp] theorem Fun.id.simp_hom {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : [[C]]} (f : c₁ →→ c₂)
     : Fun.id C ↗ f = f
 := rfl
 
 /-! #brief Composition of functors.
 -/
-@[reducible] definition Fun.comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+definition Fun.comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (G : C ⇉⇉ D) (F : B ⇉⇉ C)
     : B ⇉⇉ D
 := { obj := λ x, G (F x)
@@ -208,26 +194,48 @@ theorem Fun.heq
 -- \Box\Box
 infixl `□□` : 150 := Fun.comp
 
+@[simp] theorem Fun.comp.simp_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (G : C ⇉⇉ D) (F : B ⇉⇉ C) (x : [[B]])
+    : (G □□ F) x = G (F x)
+:= rfl
+
+@[simp] theorem Fun.comp.simp_hom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (G : C ⇉⇉ D) (F : B ⇉⇉ C) {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
+    : (G □□ F) ↗ f = G ↗ (F ↗ f)
+:= rfl
+
 /-! #brief Composition of functors is associative.
 -/
 theorem Fun.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}} {E : Cat.{ℓobj₄ ℓhom₄}}
     {H : D ⇉⇉ E} {G : C ⇉⇉ D} {F : B ⇉⇉ C}
     : H □□ (G □□ F) = (H □□ G) □□ F
-:= rfl
+:= begin
+     apply Fun.eq,
+     { intro b, repeat {rw [Fun.comp.simp_obj]} },
+     { intros x y f, repeat {rw [Fun.comp.simp_hom]}, apply heq.refl }
+   end
 
 /-! #brief The identity functor is a left-identity for composition.
 -/
 @[simp] theorem Fun.comp_id_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : C ⇉⇉ D}
     : Fun.id D □□ F = F
-:= begin cases F, apply rfl end
+:= begin
+     apply Fun.eq,
+     { intro x, rw [Fun.comp.simp_obj, Fun.id.simp_obj] },
+     { intros x y f, rw [Fun.comp.simp_hom, Fun.id.simp_hom], apply heq.refl }
+   end
 
 /-! #brief The identity functor is a right-identity for composition.
 -/
 @[simp] theorem Fun.comp_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : C ⇉⇉ D}
     : F □□ Fun.id C = F
-:= begin cases F, apply rfl end
+:= begin
+     apply Fun.eq,
+     { intro x, rw [Fun.comp.simp_obj, Fun.id.simp_obj] },
+     { intros x y f, rw [Fun.comp.simp_hom, Fun.id.simp_hom], apply heq.refl }
+   end
 
 
 
@@ -274,7 +282,7 @@ theorem NatTrans.heq
 
 /-! #brief The identity natural transformation.
 -/
-@[reducible] definition NatTrans.id {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+definition NatTrans.id {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : C ⇉⇉ D)
     : F ↣↣ F
 := { component := λ x, ⟨⟨F x⟩⟩
@@ -285,9 +293,14 @@ theorem NatTrans.heq
                    ... = (F ↗ f) ∘∘ ⟨⟨F x⟩⟩ : eq.symm D^.circ_id_right
    }
 
-/-! #brief Composition of natural transformations.
+@[simp] theorem NatTrans.id.simp_component {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : C ⇉⇉ D) (x : [[C]])
+    : (NatTrans.id F) x = ⟨⟨F x⟩⟩
+:= rfl
+
+/-! #brief Vertical composition of natural transformations.
 -/
-@[reducible] definition NatTrans.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+definition NatTrans.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F G H : C ⇉⇉ D}
     (ηGH : G ↣↣ H) (ηFG : F ↣↣ G)
     : F ↣↣ H
@@ -304,10 +317,14 @@ theorem NatTrans.heq
 
 -- Composition of natural transformations.
 -- \Diamond\Diamond
-infixl `◇◇` : 150
-:= /- λ {C : Cat} {D : Cat} {F G H : C ⇉⇉ D}
-     (ηGH : G ↣↣ H) (ηFG : F ↣↣ G)
-   ,-/ NatTrans.comp /- ηGH ηFG -/
+infixl `◇◇` : 150 := NatTrans.comp
+
+@[simp] theorem NatTrans.comp.simp_component {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F G H : C ⇉⇉ D}
+    (ηGH : G ↣↣ H) (ηFG : F ↣↣ G)
+    (x : [[C]])
+    : (ηGH ◇◇ ηFG) x = ηGH x ∘∘ ηFG x
+:= rfl
 
 /-! #brief Composition of natural transformations is associative.
 -/
@@ -318,7 +335,8 @@ theorem NatTrans.comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
 := begin
      apply NatTrans.eq,
      intro x,
-     apply D^.circ_assoc
+     repeat { rw [NatTrans.comp.simp_component] },
+     apply Cat.circ_assoc
    end
 
 /-! #brief The identity natural transformation is a left-identity for composition.
@@ -329,7 +347,8 @@ theorem NatTrans.comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
 := begin
      apply NatTrans.eq,
      intro x,
-     apply D^.circ_id_left
+     rw [NatTrans.comp.simp_component, NatTrans.id.simp_component],
+     simp
    end
 
 /-! #brief The identity natural transformation is a right-identity for composition.
@@ -340,12 +359,13 @@ theorem NatTrans.comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
 := begin
      apply NatTrans.eq,
      intro x,
-     apply D^.circ_id_right
+     rw [NatTrans.comp.simp_component, NatTrans.id.simp_component],
+     simp
    end
 
 /-! #brief Natural transformations can be composed with functors on the left.
 -/
-@[reducible] definition NatTrans.fun_comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+definition NatTrans.fun_comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     {F₁ F₂ : B ⇉⇉ C}
     (G : C ⇉⇉ D) (η : F₁ ↣↣ F₂)
     : (G □□ F₁) ↣↣ (G □□ F₂)
@@ -365,6 +385,13 @@ infix `□◇` : 150
      {F₁ F₂ : B ⇉⇉ C}
      (G : C ⇉⇉ D) (η : F₁ ↣↣ F₂)
    , NatTrans.fun_comp G η
+
+@[simp] theorem NatTrans.fun_comp.simp_component {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {F₁ F₂ : B ⇉⇉ C}
+    (G : C ⇉⇉ D) (η : F₁ ↣↣ F₂)
+    (x : [[B]])
+    : (G □◇ η) x = G ↗ (η x)
+:= rfl
 
 /-! #brief Fun.id is a left-identity for NatTrans.fun_comp.
 -/
@@ -386,20 +413,24 @@ infix `□◇` : 150
 := begin
      apply NatTrans.eq,
      intro x,
-     dsimp,
-     simp
+     simp,
+     apply rfl
    end
 
 /-! #brief NatTrans.fun_comp distributes over Fun.comp.
 -/
-@[simp] theorem NatTrans.fun_comp_dist_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}} {E : Cat.{ℓobj₄ ℓhom₄}}
+theorem NatTrans.fun_comp_dist_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}} {E : Cat.{ℓobj₄ ℓhom₄}}
     {H : D ⇉⇉ E} {G : C ⇉⇉ D} {F₁ F₂ : B ⇉⇉ C} {η : F₁ ↣↣ F₂}
     : H □◇ (G □◇ η) = (H □□ G) □◇ η
-:= by simp
+:= begin
+     apply NatTrans.eq,
+     intro x,
+     apply rfl
+   end
 
 /-! #brief Natural transformations can be composed with functors on the right.
 -/
-@[reducible] definition NatTrans.comp_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+definition NatTrans.comp_fun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     {G₁ G₂ : C ⇉⇉ D}
     (η : G₁ ↣↣ G₂) (F : B ⇉⇉ C)
     : (G₁ □□ F) ↣↣ (G₂ □□ F)
@@ -415,12 +446,23 @@ infix `◇□` : 150
      (η : G₁ ↣↣ G₂) (F : B ⇉⇉ C)
    , NatTrans.comp_fun η F
 
+@[simp] theorem NatTrans.comp_fun.simp_component {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {G₁ G₂ : C ⇉⇉ D}
+    (η : G₁ ↣↣ G₂) (F : B ⇉⇉ C)
+    (x : [[B]])
+    : (η ◇□ F) x = η (F x)
+:= rfl
+
 /-! #brief Functors composed with NatTrans.id on the left get absorbed.
 -/
 @[simp] theorem NatTrans.comp_fun_id_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     {G : C ⇉⇉ D} {F : B ⇉⇉ C}
     : NatTrans.id G ◇□ F = NatTrans.id (G □□ F)
-:= by simp
+:= begin
+     apply NatTrans.eq,
+     intro x,
+     apply rfl
+   end
 
 /-! #brief Fun.id is a right-identity for NatTrans.comp_fun.
 -/
@@ -431,15 +473,142 @@ infix `◇□` : 150
      apply NatTrans.heq rfl rfl,
      { simp },
      { simp },
-     { intros x₁ x₂ ωx, cases ωx, dsimp, simp }
+     { intros x₁ x₂ ωx, cases ωx, apply heq.refl }
    end
 
 /-! #brief NatTrans.comp_fun distributes over Fun.comp.
 -/
-@[simp] theorem NatTrans.comp_fun_dist_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}} {E : Cat.{ℓobj₄ ℓhom₄}}
+theorem NatTrans.comp_fun_dist_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}} {E : Cat.{ℓobj₄ ℓhom₄}}
     {H₁ H₂ : D ⇉⇉ E} {G : C ⇉⇉ D} {F : B ⇉⇉ C} {η : H₁ ↣↣ H₂}
     : (η ◇□ G) ◇□ F = η ◇□ (G □□ F)
-:= by simp
+:= begin
+     apply NatTrans.eq,
+     intro x,
+     apply rfl
+   end
+
+
+
+/- ----------------------------------------------------------------------------
+Boxed homs.
+---------------------------------------------------------------------------- -/
+
+namespace Cat
+-- A hom in a category, boxed up with its domain and codomain.
+structure BxHom (C : Cat.{ℓobj ℓhom}) : Type (max ℓobj ℓhom)
+:= (dom : [[C]])
+   (codom : [[C]])
+   (hom : dom →→ codom)
+
+/-! #brief An equality helper for `BxHom.
+-/
+theorem BxHom.eq {C : Cat}
+  : ∀ (h₁ h₂ : BxHom C)
+    , h₁^.dom   =  h₂^.dom
+    → h₁^.codom =  h₂^.codom
+    → h₁^.hom   == h₂^.hom
+    → h₁ = h₂
+| (BxHom.mk dom₁ codom₁ hom₁)
+  (BxHom.mk .dom₁ .codom₁ .hom₁)
+  (eq.refl .dom₁) (eq.refl .codom₁) (heq.refl .hom₁)
+  := rfl
+end Cat
+
+
+
+/- ----------------------------------------------------------------------------
+Finite categories.
+---------------------------------------------------------------------------- -/
+
+-- A finite category.
+class Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type ((max ℓobj ℓhom) + 1)
+:= (obj : FinType [[C]])
+   (hom : ∀ (x y : [[C]]), FinType (x →→ y))
+
+
+
+/- ----------------------------------------------------------------------------
+Some important categories.
+---------------------------------------------------------------------------- -/
+
+/-! #brief The category of categories at level {ℓobj ℓhom} and functors between them.
+-/
+@[reducible] definition CatCat : Cat.{((max ℓobj ℓhom) + 1) ((max ℓobj ℓhom) + 1)}
+:= { obj := Cat.{ℓobj ℓhom}
+   , hom := Fun.{ℓobj ℓhom ℓobj ℓhom}
+   , id := Fun.id
+   , circ := @Fun.comp
+   , circ_assoc := @Fun.comp_assoc
+   , circ_id_left := @Fun.comp_id_left
+   , circ_id_right := @Fun.comp_id_right
+   }
+
+/-! #brief The category of functors and natural transformations between them.
+-/
+@[reducible] definition FunCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
+    : Cat--.{((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1) ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)}
+:= { obj := C ⇉⇉ D
+   , hom := NatTrans
+   , id := NatTrans.id
+   , circ := @NatTrans.comp _ _
+   , circ_assoc := @NatTrans.comp_assoc _ _
+   , circ_id_left := @NatTrans.comp_id_left _ _
+   , circ_id_right := @NatTrans.comp_id_right _ _
+   }
+
+/-! #brief The opposite category.
+-/
+@[reducible] definition OpCat (C : Cat.{ℓobj ℓhom}) : Cat.{ℓobj ℓhom}
+:= { obj := [[C]]
+   , hom := λ x y, y →→ x
+   , id := λ x, ⟨⟨x⟩⟩
+   , circ := λ x y z g f, f ∘∘ g
+   , circ_assoc := λ x y z w h g f, eq.symm C^.circ_assoc
+   , circ_id_left := λ x y f, C^.circ_id_right
+   , circ_id_right := λ x y f, C^.circ_id_left
+   }
+
+-- The opposite category.
+-- {{}}\inv
+notation `{{` C `}}⁻¹` := OpCat C
+
+/-! #brief The opposite functor.
+-/
+definition OpFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : C ⇉⇉ D)
+    : {{C}}⁻¹ ⇉⇉ {{D}}⁻¹
+:= { obj := F^.obj
+   , hom := λ x y f, F^.hom f
+   , hom_id := λ x, F^.hom_id
+   , hom_circ := λ x y z g f, F^.hom_circ
+   }
+
+/-! #brief OpFun maps the identity functor to the identity functor.
+-/
+@[simp] theorem OpFun.id {C : Cat.{ℓobj ℓhom}}
+    : OpFun (Fun.id C) = Fun.id ({{C}}⁻¹)
+:= begin
+     apply Fun.eq,
+     { intro c, exact rfl },
+     { intros x y f, apply heq.refl }
+   end
+
+/-! #brief OpFun distributes over functor composition.
+-/
+theorem OpFun.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    {g : D ⇉⇉ E} {f : C ⇉⇉ D}
+    : OpFun (g □□ f) = OpFun g □□ OpFun f
+:= begin
+     apply Fun.eq,
+     { intro c, exact rfl },
+     { intros x y f, apply heq.refl }
+   end
+
+/-! #brief The presheaf category.
+-/
+@[reducible] definition PreShCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
+    : Cat
+:= FunCat {{C}}⁻¹ D
 
 
 
@@ -585,64 +754,141 @@ theorem Fun.of_iso {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂
    }
 
 
+
 /- ----------------------------------------------------------------------------
 Initial and final objects.
 ---------------------------------------------------------------------------- -/
-
--- An initial object.
-structure Init (C : Cat.{ℓobj ℓhom})
-    : Type (max ℓobj ℓhom)
-:= (obj : [[C]])
-   (init : ∀ (y : [[C]]), obj →→ y)
-   (uniq : ∀ {y : [[C]]} (h : obj →→ y), h = init y)
-
-/-! #brief Every initial object can be treated as an object.
--/
-@[reducible] instance Init.has_coe_to_obj {C : Cat.{ℓobj ℓhom}}
-    : has_coe (Init C) [[C]]
-:= { coe := Init.obj
-   }
-
-/-! #brief Initial objects are unique up to isomorphism.
-
-Note that the isomorphism is actually unique: indeed,
-given f₁₂ : x₁ →→ x₂, f₂₁ : x₂ →→ x₁ an iso pair,
-we have (by IsInit.uniq) that f₁₂ = x₁_init x₂,
-and f₂₁ = x₂_init x₁.
--/
-definition Init.Iso {C : Cat.{ℓobj ℓhom}}
-    (x₁ x₂ : Init C)
-    : Iso (x₁^.init x₂) (x₂^.init x₁)
-:= { id₁ := begin dsimp, rw (x₁^.uniq ⟨⟨x₁^.obj⟩⟩), apply x₁^.uniq end
-   , id₂ := begin dsimp, rw (x₂^.uniq ⟨⟨x₂⟩⟩), apply x₂^.uniq end
-   }
 
 -- A final object.
 structure Final (C : Cat.{ℓobj ℓhom})
     : Type (max ℓobj ℓhom)
 := (obj : [[C]])
-   (final : ∀ (x : [[C]]), x →→ obj)
-   (uniq : ∀ {x : [[C]]} (h : x →→ obj), h = final x)
+   (hom : ∀ {x : [[C]]}, x →→ obj)
+   (uniq : ∀ {x : [[C]]} (h : x →→ obj), h = hom)
 
 /-! #brief Every final object can be treated as an objects.
 -/
-@[reducible] instance IsFinal.has_coe_to_obj {C : Cat.{ℓobj ℓhom}}
+@[reducible] instance Final.has_coe_to_obj {C : Cat.{ℓobj ℓhom}}
     : has_coe (Final C) [[C]]
 := { coe := Final.obj
    }
 
 /-! #brief Final objects are unique up to isomorphism.
-
-Note that the isomorphism is actually unique: indeed,
-given f₁₂ : x₁ →→ x₂, f₂₁ : x₂ →→ x₁ an iso pair,
-we have (by IsFinal.uniq) that f₁₂ = x₂_final x₁,
-and f₂₁ = x₁_final x₂.
 -/
 definition Final.Iso {C : Cat.{ℓobj ℓhom}}
     (x₁ x₂ : Final C)
-    : Iso (x₂^.final x₁) (x₁^.final x₂)
-:= { id₁ := begin dsimp, rw (x₁^.uniq ⟨⟨x₁⟩⟩), apply x₁^.uniq end
+    : Iso x₂^.hom x₁^.hom
+:= { id₁ := begin dsimp, rw (x₁^.uniq ⟨⟨x₁^.obj⟩⟩), apply x₁^.uniq end
    , id₂ := begin dsimp, rw (x₂^.uniq ⟨⟨x₂^.obj⟩⟩), apply x₂^.uniq end
+   }
+
+/-! #brief Final objects are unique up to unique isomorphism.
+-/
+definition Final.Iso.uniq {C : Cat.{ℓobj ℓhom}}
+    {x₁ x₂ : Final C}
+    {f₁₂ : x₁^.obj →→ x₂^.obj} {f₂₁ : x₂^.obj →→ x₁^.obj}
+    (f_iso : Iso f₁₂ f₂₁)
+    : f₁₂ = x₂^.hom ∧ f₂₁ = x₁^.hom
+:= and.intro (x₂^.uniq _) (x₁^.uniq _)
+
+
+/-! #brief A category with a final object.
+-/
+class HasFinal (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= (final : Final C)
+
+/-! #brief The final object.
+-/
+definition final (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : [[C]]
+:= (HasFinal.final C)^.obj
+
+/-! #brief The final hom.
+-/
+definition final_hom {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    {x : [[C]]}
+    : x →→ final C
+:= (HasFinal.final C)^.hom
+
+/-! #brief The final hom is unique.
+-/
+@[simp] theorem final_hom.uniq {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    {x : [[C]]}
+    (f : x →→ final C)
+    : f = final_hom
+:= by apply (HasFinal.final C)^.uniq
+
+/-! #brief Final objects are unique up to isomorphism.
+-/
+theorem final.Iso {C : Cat.{ℓobj ℓhom}}
+    (C_HasFinal₁ C_HasFinal₂ : HasFinal C)
+    : Iso (@final_hom C C_HasFinal₁ _)
+          (@final_hom C C_HasFinal₂ _)
+:= Final.Iso _ _
+
+
+/-! #brief An initial object.
+-/
+definition Init (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= Final {{C}}⁻¹
+
+/-! #brief Every initial object can be treated as an objects.
+-/
+@[reducible] instance Init.has_coe_to_obj {C : Cat.{ℓobj ℓhom}}
+    : has_coe (Init C) [[C]]
+:= Final.has_coe_to_obj
+
+/-! #brief Initial objects are unique up to isomorphism.
+-/
+definition Init.Iso {C : Cat.{ℓobj ℓhom}}
+    (x₁ x₂ : Init C)
+    : Iso x₂^.hom x₁^.hom
+:= Final.Iso x₁ x₂
+
+
+/-! #brief A category with an initial object.
+-/
+class HasInit (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= (init : Init C)
+
+/-! #brief The initial object.
+-/
+definition init (C : Cat.{ℓobj ℓhom})
+    [C_HasInit : HasInit C]
+    : [[C]]
+:= by apply (HasInit.init C)^.obj
+
+/-! #brief The initial hom.
+-/
+definition init_hom {C : Cat.{ℓobj ℓhom}}
+    [C_HasInit : HasInit C]
+    {x : [[C]]}
+    : init C →→ x
+:= (HasInit.init C)^.hom
+
+/-! #brief The initial hom is unique.
+-/
+@[simp] theorem init_hom.uniq {C : Cat.{ℓobj ℓhom}}
+    [C_HasInit : HasInit C]
+    {x : [[C]]}
+    (f : init C →→ x)
+    : f = init_hom
+:= by apply (HasInit.init C)^.uniq
+
+/-! #brief Initial objects are unique up to isomorphism.
+-/
+theorem init.Iso {C : Cat.{ℓobj ℓhom}}
+    (C_HasInit₁ C_HasInit₂ : HasInit C)
+    : Iso (@init_hom C C_HasInit₁ _)
+          (@init_hom C C_HasInit₂ _)
+:= { id₁ := begin unfold init_hom, apply (Init.Iso _ _)^.id₁ end
+   , id₂ := begin unfold init_hom, apply (Init.Iso _ _)^.id₁ end
    }
 
 
@@ -675,7 +921,7 @@ notation L `⊣` R := Adj L R
     {L : C ⇉⇉ D} {R : D ⇉⇉ C} (adj : L ⊣ R)
     {c : [[C]]} {d : [[D]]}   (f : L c →→ d)
     : c →→ R d
-  := (R ↗ f) ∘∘ adj^.unit c
+:= (R ↗ f) ∘∘ adj^.unit c
 
 /-! #brief The left adjoint of a hom.
 -/
@@ -683,7 +929,7 @@ notation L `⊣` R := Adj L R
     {L : C ⇉⇉ D} {R : D ⇉⇉ C} (adj : L ⊣ R)
     {c : [[C]]} {d : [[D]]}   (f : c →→ R d)
     : L c →→ d
-  := adj^.counit d ∘∘ (L ↗ f)
+:= adj^.counit d ∘∘ (L ↗ f)
 
 /-! #brief right_adj and left_adj are inverses of one another.
 -/
@@ -691,14 +937,17 @@ notation L `⊣` R := Adj L R
     {L : C ⇉⇉ D} {R : D ⇉⇉ C} {adj : L ⊣ R}
     {c : [[C]]} {d : [[D]]}   {f : c →→ R d}
     : Adj.right_adj adj (Adj.left_adj adj f) = f
-:= begin
-     dsimp,
-     rw R^.hom_circ,
-     rw -C^.circ_assoc,
-     rw -adj^.unit^.transport,
-     rw C^.circ_assoc,
-     rw adj^.id_right,
-     rw C^.circ_id_left
+:= let foo := adj^.unit in
+   begin
+     unfold Adj.right_adj,
+     unfold Adj.left_adj,
+     calc (R ↗ adj^.counit d ∘∘ (L ↗ f)) ∘∘ adj^.unit c
+              = ((R ↗ adj^.counit d) ∘∘ (R ↗ (L ↗ f))) ∘∘ adj^.unit c : by rw R^.hom_circ
+          ... = (R ↗ adj^.counit d) ∘∘ ((R ↗ (L ↗ f))) ∘∘ adj^.unit c : by rw -C^.circ_assoc
+          ... = (R ↗ adj^.counit d) ∘∘ (adj^.unit (R d) ∘∘ f)         : sorry -- by rw -adj^.unit^.transport
+          ... = ((R ↗ adj^.counit d) ∘∘ adj^.unit (R d)) ∘∘ f         : by rw C^.circ_assoc
+          ... = ⟨⟨R d⟩⟩ ∘∘ f                                          : begin rw adj^.id_right, apply rfl end
+          ... = f                                                     : C^.circ_id_left
    end
 
 /-! #brief left_adj and right_adj are inverses of one another.
@@ -708,105 +957,22 @@ notation L `⊣` R := Adj L R
     {c : [[C]]} {d : [[D]]}   {f : L c →→ d}
     : Adj.left_adj adj (Adj.right_adj adj f) = f
 := begin
-     dsimp,
-     rw L^.hom_circ,
-     rw D^.circ_assoc,
-     rw adj^.counit^.transport,
-     rw -D^.circ_assoc,
-     rw adj^.id_left,
-     rw D^.circ_id_right
+     unfold Adj.right_adj,
+     unfold Adj.left_adj,
+     calc adj^.counit d ∘∘ (L ↗ ((R ↗ f) ∘∘ adj^.unit c))
+              = adj^.counit d ∘∘ ((L ↗ (R ↗ f)) ∘∘ (L ↗ (adj^.unit c))) : begin rw L^.hom_circ, apply rfl end
+          ... = (adj^.counit d ∘∘ (L ↗ (R ↗ f))) ∘∘ (L ↗ (adj^.unit c)) : by rw D^.circ_assoc
+          ... = f ∘∘ adj^.counit (L c) ∘∘ (L ↗ (adj^.unit c))           : sorry -- by rw adj^.counit^.transport
+          ... = f ∘∘ (adj^.counit (L c) ∘∘ (L ↗ (adj^.unit c)))         : by rw -D^.circ_assoc
+          ... = f ∘∘ ⟨⟨L c⟩⟩                                            : begin rw -adj^.id_left, apply rfl end
+          ... = f                                                       : D^.circ_id_right
    end
 
 
 
 /- ----------------------------------------------------------------------------
-Boxed homs.
+Product categories.
 ---------------------------------------------------------------------------- -/
-
-namespace Cat
--- A hom in a category, boxed up with its domain and codomain.
-structure BxHom (C : Cat.{ℓobj ℓhom}) : Type (max ℓobj ℓhom)
-:= (dom : [[C]])
-   (codom : [[C]])
-   (hom : dom →→ codom)
-
-/-! #brief An equality helper for `BxHom.
--/
-theorem BxHom.eq {C : Cat}
-  : ∀ (h₁ h₂ : BxHom C)
-    , h₁^.dom   =  h₂^.dom
-    → h₁^.codom =  h₂^.codom
-    → h₁^.hom   == h₂^.hom
-    → h₁ = h₂
-| (BxHom.mk dom₁ codom₁ hom₁)
-  (BxHom.mk .dom₁ .codom₁ .hom₁)
-  (eq.refl .dom₁) (eq.refl .codom₁) (heq.refl .hom₁)
-  := rfl
-end Cat
-
-
-
-/- ----------------------------------------------------------------------------
-Finite categories.
----------------------------------------------------------------------------- -/
-
--- A finite category.
-structure Cat.Fin (C : Cat.{ℓobj ℓhom}) : Type ((max ℓobj ℓhom) + 1)
-:= (obj : FinType [[C]])
-   (hom : ∀ (x y : [[C]]), FinType (x →→ y))
-
-
-
-/- ----------------------------------------------------------------------------
-Some important categories.
----------------------------------------------------------------------------- -/
-
-/-! #brief The category of categories at level {ℓobj ℓhom} and functors between them.
--/
-@[reducible] definition CatCat : Cat.{((max ℓobj ℓhom) + 1) ((max ℓobj ℓhom) + 1)}
-:= { obj := Cat.{ℓobj ℓhom}
-   , hom := Fun.{ℓobj ℓhom ℓobj ℓhom}
-   , id := Fun.id
-   , circ := @Fun.comp
-   , circ_assoc := @Fun.comp_assoc
-   , circ_id_left := @Fun.comp_id_left
-   , circ_id_right := @Fun.comp_id_right
-   }
-
-/-! #brief The category of functors and natural transformations between them.
--/
-@[reducible] definition FunCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
-    : Cat--.{((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1) ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂) + 1)}
-:= { obj := C ⇉⇉ D
-   , hom := NatTrans
-   , id := NatTrans.id
-   , circ := @NatTrans.comp _ _
-   , circ_assoc := @NatTrans.comp_assoc _ _
-   , circ_id_left := @NatTrans.comp_id_left _ _
-   , circ_id_right := @NatTrans.comp_id_right _ _
-   }
-
-/-! #brief The opposite category.
--/
-@[reducible] definition OpCat (C : Cat.{ℓobj ℓhom}) : Cat.{ℓobj ℓhom}
-:= { obj := [[C]]
-   , hom := λ x y, y →→ x
-   , id := λ x, ⟨⟨x⟩⟩
-   , circ := λ x y z g f, f ∘∘ g
-   , circ_assoc := λ x y z w h g f, eq.symm C^.circ_assoc
-   , circ_id_left := λ x y f, C^.circ_id_right
-   , circ_id_right := λ x y f, C^.circ_id_left
-   }
-
--- The opposite category.
--- {{}}\inv
-notation `{{` C `}}⁻¹` := OpCat C
-
-/-! #brief The presheaf category.
--/
-@[reducible] definition PreShCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
-    : Cat
-:= FunCat {{C}}⁻¹ D
 
 /-! #brief The product category.
 -/
@@ -829,7 +995,7 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief Left-projection functor from the ProdCat.
 -/
-@[reducible] definition ProdCat.fst (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
+definition ProdCat.π₁Fun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     : C ×× D ⇉⇉ C
 := { obj := λ x, x^.fst
    , hom := λ x y f, f^.fst
@@ -837,9 +1003,19 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ x y z g f, rfl
    }
 
+@[simp] theorem ProdCat.π₁Fun.simp_obj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (cd : [[C ×× D]])
+    : @ProdCat.π₁Fun C D cd = cd^.fst
+:= rfl
+
+@[simp] theorem ProdCat.π₁Fun.simp_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {cd₁ cd₂ : [[C ×× D]]} (f : (C ×× D)^.hom cd₁ cd₂)
+    : @ProdCat.π₁Fun C D ↗ f = f^.fst
+:= rfl
+
 /-! #brief Right-projection functor from the ProdCat.
 -/
-@[reducible] definition ProdCat.snd (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂})
+definition ProdCat.π₂Fun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     : C ×× D ⇉⇉ D
 := { obj := λ x, x^.snd
    , hom := λ x y f, f^.snd
@@ -847,15 +1023,35 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ x y z g f, rfl
    }
 
+@[simp] theorem ProdCat.π₂Fun.simp_obj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (cd : [[C ×× D]])
+    : @ProdCat.π₂Fun C D cd = cd^.snd
+:= rfl
+
+@[simp] theorem ProdCat.π₂Fun.simp_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {cd₁ cd₂ : [[C ×× D]]} (f : (C ×× D)^.hom cd₁ cd₂)
+    : @ProdCat.π₂Fun C D ↗ f = f^.snd
+:= rfl
+
 /-! #brief Flip the factors in ProdCat.
 -/
-@[reducible] definition ProdCat.flip {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+definition ProdCat.flip {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     : C ×× D ⇉⇉ D ×× C
-:= { obj := λ x, ⟨x^.snd, x^.fst⟩
-   , hom := λ x y f, ⟨f^.snd, f^.fst⟩
+:= { obj := λ x, { fst := x^.snd, snd := x^.fst }
+   , hom := λ x y f, { fst := f^.snd, snd := f^.fst }
    , hom_id := λ x, rfl
    , hom_circ := λ x y z g f, rfl
    }
+
+@[simp] theorem ProdCat.flip.simp_obj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (cd : [[C ×× D]])
+    : @ProdCat.flip C D cd = { fst := cd^.snd, snd := cd^.fst }
+:= rfl
+
+@[simp] theorem ProdCat.flip.simp_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {cd₁ cd₂ : [[C ×× D]]} (f : (C ×× D)^.hom cd₁ cd₂)
+    : @ProdCat.flip C D ↗ f = { fst := f^.snd, snd := f^.fst }
+:= rfl
 
 /-! #brief Flip is involutive.
 -/
@@ -872,7 +1068,7 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief Flip the arguments of a natural transformation.
 -/
-@[reducible] definition NatTrans.flip 
+definition NatTrans.flip 
     {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     {F₁ : C₁ ×× C₂ ⇉⇉ D} {F₂ : C₂ ×× C₁ ⇉⇉ D}
     (η : F₁ ↣↣ F₂ □□ ProdCat.flip)
@@ -888,9 +1084,17 @@ infixr `××` : 130 := ProdCat
            end
    }
 
+@[simp] theorem NatTrans.flip.simp_component
+    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {F₁ : C₁ ×× C₂ ⇉⇉ D} {F₂ : C₂ ×× C₁ ⇉⇉ D}
+    (η : F₁ ↣↣ F₂ □□ ProdCat.flip)
+    (x : [[C₂ ×× C₁]])
+    : NatTrans.flip η x = pprod.cases_on x (λ c₂ c₁, η ⟨c₁, c₂⟩)
+:= rfl
+
 /-! #brief Un-flip the arguments of a natural transformation.
 -/
-@[reducible] definition NatTrans.unflip 
+definition NatTrans.unflip 
     {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     {F₁ : C₁ ×× C₂ ⇉⇉ D} {F₂ : C₂ ×× C₁ ⇉⇉ D}
     (η : F₁ □□ ProdCat.flip ↣↣ F₂)
@@ -906,9 +1110,17 @@ infixr `××` : 130 := ProdCat
            end
    }
 
+@[simp] theorem NatTrans.unflip.simp_component
+    {C₁ : Cat.{ℓobj₁ ℓhom₁}} {C₂ : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {F₁ : C₁ ×× C₂ ⇉⇉ D} {F₂ : C₂ ×× C₁ ⇉⇉ D}
+    (η : F₁ □□ ProdCat.flip ↣↣ F₂)
+    (x : [[C₁ ×× C₂]])
+    : NatTrans.unflip η x = pprod.cases_on x (λ c₁ c₂, η ⟨c₂, c₁⟩)
+:= rfl
+
 /-! #brief Left-associate ProdCat.
 -/
-@[reducible] definition ProdCat.assoc_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+definition ProdCat.assoc_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
     : C ×× (D ×× E) ⇉⇉ (C ×× D) ×× E
 := { obj := λ x, { fst := { fst := x^.fst, snd := x^.snd^.fst }, snd := x^.snd^.snd }
    , hom := λ x y f, { fst := { fst := f^.fst, snd := f^.snd^.fst }, snd := f^.snd^.snd }
@@ -916,9 +1128,19 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ x y z g f, rfl
    }
 
+@[simp] theorem ProdCat.assoc_left.simp_obj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    (x : [[C ×× (D ×× E)]])
+    : @ProdCat.assoc_left C D E x = { fst := { fst := x^.fst, snd := x^.snd^.fst }, snd := x^.snd^.snd }
+:= rfl
+
+@[simp] theorem ProdCat.assoc_left.simp_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    {x₁ x₂ : [[C ×× (D ×× E)]]} (f : (C ×× (D ×× E))^.hom x₁ x₂)
+    : @ProdCat.assoc_left C D E ↗ f = { fst := { fst := f^.fst, snd := f^.snd^.fst }, snd := f^.snd^.snd }
+:= rfl
+
 /-! #brief Right-associate ProdCat.
 -/
-@[reducible] definition ProdCat.assoc_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+definition ProdCat.assoc_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
     : (C ×× D) ×× E ⇉⇉ C ×× (D ×× E)
 := { obj := λ x, { fst := x^.fst^.fst, snd := { fst := x^.fst^.snd, snd := x^.snd } }
    , hom := λ x y f, { fst := f^.fst^.fst, snd := { fst := f^.fst^.snd, snd := f^.snd } }
@@ -926,9 +1148,25 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ x y z g f, rfl
    }
 
+@[simp] theorem ProdCat.assoc_right.simp_obj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    (x : [[(C ×× D) ×× E]])
+    : @ProdCat.assoc_right C D E x = { fst := x^.fst^.fst, snd := { fst := x^.fst^.snd, snd := x^.snd } }
+:= rfl
+
+@[simp] theorem ProdCat.assoc_right.simp_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}} {E : Cat.{ℓobj₃ ℓhom₃}}
+    {x₁ x₂ : [[(C ×× D) ×× E]]} (f : ((C ×× D) ×× E)^.hom x₁ x₂)
+    : @ProdCat.assoc_right C D E ↗ f = { fst := f^.fst^.fst, snd := { fst := f^.fst^.snd, snd := f^.snd } }
+:= rfl
+
+
+
+/- ----------------------------------------------------------------------------
+SortCat, PropCat, and LeanCat.
+---------------------------------------------------------------------------- -/
+
 /-! #brief The category of Sort terms in Sort ℓ and functions between them.
 -/
-@[reducible] definition {ℓ} SortCat : Cat.{ℓ ℓ}
+@[reducible] definition SortCat : Cat.{ℓ ℓ}
 := { obj := Sort.{ℓ}
    , hom := λ X Y, X → Y
    , id := λ X x, x
@@ -944,14 +1182,14 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief The category of types and functions between them.
 -/
-@[reducible] definition {ℓ} LeanCat : Cat.{(ℓ + 1) (ℓ + 1)} := SortCat.{ℓ + 1}
+@[reducible] definition LeanCat : Cat.{(ℓ + 1) (ℓ + 1)} := SortCat.{ℓ + 1}
 
 /-! #brief pempty is an initial object in LeanCat.
 -/
-@[reducible] definition {ℓ} LeanCat.Init
+@[reducible] definition LeanCat.Init
     : Init LeanCat.{ℓ}
 := { obj := pempty.{ℓ + 1}
-   , init := λ A, pempty.elim
+   , hom := λ A, pempty.elim
    , uniq := λ A f, begin
                       apply pfunext, intro e,
                       exact pempty.elim e
@@ -960,10 +1198,10 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief punit is a final object in LeanCat.
 -/
-@[reducible] definition {ℓ} LeanCat.Final
+@[reducible] definition LeanCat.Final
     : Final LeanCat.{ℓ}
 := { obj := punit.{ℓ + 1}
-   , final := λ A a, punit.star
+   , hom := λ A a, punit.star
    , uniq := λ A f, begin
                       apply pfunext, intro a,
                       apply punit.uniq
@@ -972,7 +1210,7 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief The category of Lean terms in finite types.
 -/
-@[reducible] definition {ℓ} FinLeanCat : Cat.{(ℓ + 1) (ℓ + 1)}
+@[reducible] definition FinLeanCat : Cat.{(ℓ + 1) (ℓ + 1)}
 := { obj := BxFinType.{ℓ}
    , hom := λ X Y, X^.T → Y^.T
    , id := λ X x, x
@@ -984,7 +1222,7 @@ infixr `××` : 130 := ProdCat
 
 /-! #brief The functor from CatCat to LeanCat.
 -/
-@[reducible] definition CatCat.toLean
+definition CatCat.toLean
     : CatCat.{ℓobj ℓhom} ⇉⇉ LeanCat.{ℓobj}
 := { obj := λ C, [[C]]
    , hom := λ C D F x, F x
@@ -992,9 +1230,19 @@ infixr `××` : 130 := ProdCat
    , hom_circ := λ B C D G F, rfl
    }
 
+@[simp] theorem CatCat.toLean.simp_obj
+    (C : [[CatCat.{ℓobj ℓhom}]])
+    : CatCat.toLean C = [[C]]
+:= rfl
+
+@[simp] theorem CatCat.toLean.simp_hom
+    {C₁ C₂ : [[CatCat.{ℓobj ℓhom}]]} (F : (CatCat.{ℓobj ℓhom})^.hom C₁ C₂)
+    : CatCat.toLean ↗ F = F^.obj
+:= rfl
+
 /-! #brief The Hom functor to LeanCat.
 -/
-@[reducible] definition HomFun (C : Cat.{ℓobj ℓhom})
+definition HomFun (C : Cat.{ℓobj ℓhom})
     : {{C}}⁻¹ ×× C ⇉⇉ SortCat.{ℓhom}
 := { obj := λ x, x^.fst →→ x^.snd
    , hom := λ x y fg c, fg^.snd ∘∘ c ∘∘ fg^.fst
@@ -1008,43 +1256,59 @@ infixr `××` : 130 := ProdCat
             end
    }
 
+@[simp] theorem HomFun.simp_obj {C : Cat.{ℓobj ℓhom}}
+    (c : [[{{C}}⁻¹ ×× C]])
+    : HomFun C c = c^.fst →→ c^.snd
+:= rfl
+
+@[simp] theorem HomFun.simp_hom {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : [[{{C}}⁻¹ ×× C]]} (f : ({{C}}⁻¹ ×× C)^.hom c₁ c₂)
+    : HomFun C ↗ f = λ m, f^.snd ∘∘ m ∘∘ f^.fst
+:= rfl
+
+
+
+/- ----------------------------------------------------------------------------
+Categories with no nontrivial homs.
+---------------------------------------------------------------------------- -/
+
 /-! #brief Homs in ObjCat.
 -/
-inductive {ℓ} ObjCat.Hom (A : Type ℓ) : A → A → Type ℓ
-| id : ∀ (a : A), ObjCat.Hom a a
+inductive ObjCatHom (A : Type ℓ) : A → A → Type ℓ
+| id : ∀ (a : A), ObjCatHom a a
 
 /-! #brief Composition in ObjCat.
 -/
-definition {ℓ} ObjCat.Hom.comp {A : Type ℓ}
+definition ObjCatHom.comp {A : Type ℓ}
     : ∀ {x y z : A}
-        (g : ObjCat.Hom A y z)
-        (f : ObjCat.Hom A x y)
-      , ObjCat.Hom A x z
-| x .x y g (ObjCat.Hom.id .x) := g
+        (g : ObjCatHom A y z)
+        (f : ObjCatHom A x y)
+      , ObjCatHom A x z
+| x .x y g (ObjCatHom.id .x) := g
 
-/-! #brief ObjCat.Hom.id is a left identity for ObjCat.Hom.comp.
+/-! #brief ObjCatHom.id is a left identity for ObjCat.Hom.comp.
 -/
-@[simp] theorem {ℓ} ObjCat.Hom.comp_id_left {A : Type ℓ}
+@[simp] theorem ObjCatHom.comp_id_left {A : Type ℓ}
     : ∀ {x y : A}
-        {f : ObjCat.Hom A x y}
-      , ObjCat.Hom.comp (ObjCat.Hom.id y) f = f
-| x .x (ObjCat.Hom.id .x) := rfl
+        {f : ObjCatHom A x y}
+      , ObjCatHom.comp (ObjCatHom.id y) f = f
+| x .x (ObjCatHom.id .x) := rfl
 
-/-! #brief ObjCat.Hom.id is a right identity for ObjCat.Hom.comp.
+/-! #brief ObjCatHom.id is a right identity for ObjCat.Hom.comp.
 -/
-@[simp] theorem {ℓ} ObjCat.Hom.comp_id_right {A : Type ℓ}
+@[simp] theorem ObjCatHom.comp_id_right {A : Type ℓ}
     : ∀ {x y : A}
-        {f : ObjCat.Hom A x y}
-      , ObjCat.Hom.comp f (ObjCat.Hom.id x) = f
-| x .x (ObjCat.Hom.id .x) := rfl
+        {f : ObjCatHom A x y}
+      , ObjCatHom.comp f (ObjCatHom.id x) = f
+| x .x (ObjCatHom.id .x) := rfl
 
 /-! #brief A category with no nontrivial homs.
 -/
-@[reducible] definition {ℓ} ObjCat (A : Type ℓ) : Cat.{ℓ (ℓ + 1)}
+@[reducible] definition ObjCat (A : Type ℓ) : Cat.{ℓ (ℓ + 1)}
 := { obj := A
-   , hom := ObjCat.Hom A
-   , id := ObjCat.Hom.id
-   , circ := λ x y z g f, ObjCat.Hom.comp g f
+   , hom := ObjCatHom A
+   , id := ObjCatHom.id
+   , circ := λ x y z g f, ObjCatHom.comp g f
    , circ_assoc := λ x y z w h g f, begin cases f, cases g, apply rfl end
    , circ_id_left := λ x y f, by simp
    , circ_id_right := λ x y f, by simp
@@ -1052,15 +1316,15 @@ definition {ℓ} ObjCat.Hom.comp {A : Type ℓ}
 
 /-! #brief ObjCat has no nontrivial homs.
 -/
-theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
+theorem ObjCat.hom_trivial {A : Type ℓ}
     : ∀ {x y : [[ObjCat A]]}
         (f : (ObjCat A)^.hom x y)
       , x = y
-| x .x (ObjCat.Hom.id .x) := rfl
+| x .x (ObjCatHom.id .x) := rfl
 
 /-! #brief ObjCat A is finite when A is.
 -/
-@[reducible] definition {ℓ} ObjCat.Fin {A : Type ℓ}
+instance ObjCat.Fin {A : Type ℓ}
     (A_FinType : FinType A)
     : Cat.Fin (ObjCat A)
 := { obj := A_FinType
@@ -1072,7 +1336,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
                     := λ n
                        , begin
                            rw function.injective_of_left_inverse A_FinType^.of_n_of ωnxy,
-                           apply ObjCat.Hom.id
+                           apply ObjCatHom.id
                          end
                  , n_of := λ n, { val := 0, is_lt := by apply nat.less_than_or_equal.refl }
                  , n_of_n := λ n, eq.symm fin.one
@@ -1106,9 +1370,15 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
                  }
    }
 
+
+
+/- ----------------------------------------------------------------------------
+The empty category.
+---------------------------------------------------------------------------- -/
+
 /-! #brief The category with no objects.
 -/
-@[reducible] definition EmptyCat
+definition EmptyCat
     : Cat.{ℓobj ℓhom}
 := { obj := pempty.{ℓobj + 1}
    , hom := λ x y, pempty.{ℓhom}
@@ -1121,7 +1391,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
 
 /-! #brief EmptyCat is finite.
 -/
-@[reducible] definition EmptyCat.Fin : Cat.Fin EmptyCat.{ℓobj ℓhom}
+@[reducible] instance EmptyCat.Fin : Cat.Fin EmptyCat.{ℓobj ℓhom}
 := { obj := pempty.FinType
    , hom := λ x y, pempty.FinType
    }
@@ -1138,10 +1408,10 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
 
 /-! #brief EmptyCat is initial in CatCat.
 -/
-@[reducible] definition CatCat.Init
+definition CatCat.Init
     : Init CatCat.{ℓobj ℓhom}
 := { obj := EmptyCat.{ℓobj ℓhom}
-   , init := EmptyCat.init
+   , hom := EmptyCat.init
    , uniq
       := λ C F
          , begin
@@ -1150,6 +1420,12 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
              { intros x y f, cases f }
            end
    }
+
+
+
+/- ----------------------------------------------------------------------------
+The category with one object.
+---------------------------------------------------------------------------- -/
 
 /-! #brief The category with one object.
 -/
@@ -1166,7 +1442,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
 
 /-! #brief StarCat is finite.
 -/
-@[reducible] definition StarCat.Fin : Cat.Fin StarCat.{ℓobj ℓhom}
+@[reducible] instance StarCat.Fin : Cat.Fin StarCat.{ℓobj ℓhom}
 := { obj := punit.FinType
    , hom := λ x y, punit.FinType
    }
@@ -1186,7 +1462,7 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
 @[reducible] definition CatCat.Final
     : Final CatCat.{ℓobj ℓhom}
 := { obj := StarCat.{ℓobj ℓhom}
-   , final := StarCat.final
+   , hom := StarCat.final
    , uniq
       := λ C F
          , begin
@@ -1199,45 +1475,61 @@ theorem {ℓ} ObjCat.hom_trivial {A : Type ℓ}
            end
    }
 
+
+
+/- ----------------------------------------------------------------------------
+Slice categories.
+---------------------------------------------------------------------------- -/
+
 -- An object in a slice category.
-structure SliceCat.Obj (C : Cat.{ℓobj ℓhom}) (c : [[C]])
+structure SliceObj (C : Cat.{ℓobj ℓhom}) (c : [[C]])
     : Type (max ℓobj ℓhom)
 := (dom : [[C]])
    (hom : dom →→ c)
 
 -- A hom in a slice category.
-structure SliceCat.Hom {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
-    (x y : SliceCat.Obj C c)
+structure SliceHom {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    (x y : SliceObj C c)
     : Type ℓhom
 := (hom : C^.hom x^.dom y^.dom)
    (triangle : x^.hom = y^.hom ∘∘ hom)
 
+/-! #brief Helper for proving equality of slice category homs.
+-/
+theorem SliceHom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    {x y : SliceObj C c}
+    : ∀ {f₁ f₂ : SliceHom x y}
+      , f₁^.hom = f₂^.hom
+      → f₁ = f₂
+| (SliceHom.mk f ω₁) (SliceHom.mk .f ω₂) (eq.refl .f) := rfl
+
 /-! #brief The identity hom in a slice category.
 -/
-@[reducible] definition SliceCat.Hom.id {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
-    (x : SliceCat.Obj C c)
-    : SliceCat.Hom x x
+definition SliceHom.id {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    (x : SliceObj C c)
+    : SliceHom x x
 := { hom := ⟨⟨x^.dom⟩⟩
    , triangle := by simp
    }
 
-/-! #brief Helper for proving equality of slice category homs.
--/
-theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
-    {x y : SliceCat.Obj C c}
-    : ∀ {f₁ f₂ : SliceCat.Hom x y}
-      , f₁^.hom = f₂^.hom
-      → f₁ = f₂
-| (SliceCat.Hom.mk f ω₁) (SliceCat.Hom.mk .f ω₂) (eq.refl .f) := rfl
+@[simp] theorem SliceHom.id.simp_hom {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    (x : SliceObj C c)
+    : (SliceHom.id x)^.hom = ⟨⟨x^.dom⟩⟩
+:= rfl
 
 /-! #brief Composition of homs in a slice category.
 -/
-@[reducible] definition SliceCat.Hom.comp {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
-    {x y z : SliceCat.Obj C c} (g : SliceCat.Hom y z) (f : SliceCat.Hom x y)
-    : SliceCat.Hom x z
+definition SliceHom.comp {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    {x y z : SliceObj C c} (g : SliceHom y z) (f : SliceHom x y)
+    : SliceHom x z
 := { hom := g^.hom ∘∘ f^.hom
    , triangle := by rw [f^.triangle, g^.triangle, C^.circ_assoc]
    }
+
+@[simp] theorem SliceHom.comp.simp_hom {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    {x y z : SliceObj C c} (g : SliceHom y z) (f : SliceHom x y)
+    : (SliceHom.comp g f)^.hom = g^.hom ∘∘ f^.hom
+:= rfl
 
 /-! #brief Slice categories.
 -/
@@ -1245,62 +1537,86 @@ theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
     (C : Cat.{ℓobj ℓhom})
     (c : [[C]])
     : Cat.{(max ℓobj ℓhom) (ℓhom + 1)}
-:= { obj := SliceCat.Obj C c
-   , hom := SliceCat.Hom
-   , id := SliceCat.Hom.id
-   , circ := @SliceCat.Hom.comp C c
-   , circ_assoc := λ x y z w h g f, begin apply SliceCat.Hom.eq, dsimp, rw C^.circ_assoc end
-   , circ_id_left := λ x y f, begin apply SliceCat.Hom.eq, dsimp, simp end
-   , circ_id_right := λ x y f, begin apply SliceCat.Hom.eq, dsimp, simp end
+:= { obj := SliceObj C c
+   , hom := SliceHom
+   , id := SliceHom.id
+   , circ := @SliceHom.comp C c
+   , circ_assoc := λ x y z w h g f, begin apply SliceHom.eq, dsimp, rw C^.circ_assoc end
+   , circ_id_left := λ x y f, begin apply SliceHom.eq, dsimp, simp end
+   , circ_id_right := λ x y f, begin apply SliceHom.eq, dsimp, simp end
    }
 
-/-! #brief The Slice functor.
+/-! #brief Every slice category has a final object.
 -/
-@[reducible] definition SliceFun (C : Cat.{ℓobj ℓhom})
+instance SliceCat.HasFinal {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    : HasFinal (SliceCat C c)
+:= { final
+      := { obj := { dom := c, hom := ⟨⟨c⟩⟩ }
+         , hom := λ x, { hom := x^.hom
+                       , triangle := by simp
+                       }
+         , uniq := λ x h
+                   , begin
+                       apply SliceHom.eq,
+                       apply eq.symm,
+                       apply eq.trans h^.triangle,
+                       simp
+                     end
+         }
+   }
+
+/-! #brief Every hom induces a functor between slice categories.
+-/
+definition SliceFun {C : Cat.{ℓobj ℓhom}}
+    {X Y : [[C]]} (f : X →→ Y)
+    : SliceCat C X ⇉⇉ SliceCat C Y
+:= { obj := λ x, { dom := x^.dom
+                 , hom := f ∘∘ x^.hom
+                 }
+   , hom := λ x y f, { hom := f^.hom
+                     , triangle := begin dsimp, rw [f^.triangle, C^.circ_assoc] end
+                     }
+   , hom_id := λ x, begin apply SliceHom.eq, apply rfl end
+   , hom_circ := λ x y z g f, begin apply SliceHom.eq, apply rfl end
+   }
+
+@[simp] theorem SliceFun.simp_obj_dom {C : Cat.{ℓobj ℓhom}}
+    {X Y : [[C]]} (f : X →→ Y) (x : [[SliceCat C X]])
+    : ((SliceFun f) x)^.dom = x^.dom
+:= rfl
+
+@[simp] theorem SliceFun.simp_obj_hom {C : Cat.{ℓobj ℓhom}}
+    {X Y : [[C]]} (f : X →→ Y) (x : [[SliceCat C X]])
+    : ((SliceFun f) x)^.hom = f ∘∘ x^.hom
+:= rfl
+
+@[simp] theorem SliceFun.simp_hom_hom {C : Cat.{ℓobj ℓhom}}
+    {X Y : [[C]]} (f : X →→ Y) {x₁ x₂ : [[SliceCat C X]]} (g : (SliceCat C X)^.hom x₁ x₂)
+    : ((SliceFun f) ↗ g)^.hom = g^.hom
+:= rfl
+
+/-! #brief The category slicing functor.
+-/
+definition SliceCatFun (C : Cat.{ℓobj ℓhom})
     : C ⇉⇉ CatCat
 := { obj := λ c, SliceCat C c
-   , hom := λ x y f, { obj := λ x, { dom := x^.dom
-                                   , hom := f ∘∘ x^.hom
-                                   }
-                     , hom := λ x y f, { hom := f^.hom
-                                       , triangle := begin dsimp, rw [f^.triangle, C^.circ_assoc] end
-                                       }
-                     , hom_id := λ x, begin apply SliceCat.Hom.eq, apply rfl end
-                     , hom_circ := λ x y z g f, begin apply SliceCat.Hom.eq, apply rfl end
-                     }
+   , hom := λ x y f, SliceFun f
    , hom_id := λ x, begin
                       apply Fun.eq,
-                      { intro x₀, dsimp, simp, cases x₀, apply rfl },
+                      { intro x₀, rw [Fun.id.simp_obj], cases x₀, apply congr_arg (SliceObj.mk dom), simp },
                       { intros x₀ x₁ f, dsimp, cases f, exact sorry }
                     end
    , hom_circ := λ x y z g f
                  , begin
                      apply Fun.eq,
-                     { intro x₀, dsimp, rw [C^.circ_assoc] },
+                     { intro x₀, cases x₀, apply congr_arg (SliceObj.mk dom), rw [-C^.circ_assoc], apply rfl },
                      { intros x₀ x₁ f, dsimp, cases f, exact sorry }
                    end
    }
 
-/-! #brief Final objects in slice categories.
--/
-@[reducible] definition SliceCat.Final {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
-    : Final (SliceCat C c)
-:= { obj := { dom := c, hom := ⟨⟨c⟩⟩ }
-   , final := λ x, { hom := x^.hom
-                   , triangle := by simp
-                   }
-   , uniq := λ x h
-             , begin
-                 apply SliceCat.Hom.eq,
-                 apply eq.symm,
-                 apply eq.trans h^.triangle,
-                 simp
-               end
-   }
-
 /-! #brief The functor from the slice category to the global category.
 -/
-@[reducible] definition UnsliceFun {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+definition UnsliceFun {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
     : SliceCat C c ⇉⇉ C
 := { obj := λ x, x^.dom
    , hom := λ x y f, f^.hom
@@ -1308,26 +1624,37 @@ theorem SliceCat.Hom.eq {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
    , hom_circ := λ x y z g f, rfl
    }
 
+@[simp] theorem UnsliceFun.simp_obj {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    (x : [[SliceCat C c]])
+    : @UnsliceFun C c x = x^.dom
+:= rfl
+
+@[simp] theorem UnsliceFun.simp_hom {C : Cat.{ℓobj ℓhom}} {c : [[C]]}
+    {x₁ x₂ : [[SliceCat C c]]} (f : (SliceCat C c)^.hom x₁ x₂)
+    : @UnsliceFun C c ↗ f = f^.hom
+:= rfl
+
 /-! #brief SliceCat C final is iso to C.
 -/
-@[reducible] definition SliceFinalFun {C : Cat.{ℓobj ℓhom}}
-    (fin : Final C)
-    : C ⇉⇉ SliceCat C fin^.obj
-:= { obj := λ c, { dom := c, hom := fin^.final c }
+@[reducible] definition SliceFinalFun (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : C ⇉⇉ SliceCat C (final C)
+:= { obj := λ c, { dom := c, hom := final_hom }
    , hom := λ c₁ c₂ f, { hom := f
-                       , triangle := eq.symm (fin^.uniq _)
+                       , triangle := eq.symm (final_hom.uniq _)
                        }
-   , hom_id := λ c, begin apply SliceCat.Hom.eq, apply rfl end
-   , hom_circ := λ c₁ c₂ c₃ g f, begin apply SliceCat.Hom.eq, apply rfl end
+   , hom_id := λ c, begin apply SliceHom.eq, apply rfl end
+   , hom_circ := λ c₁ c₂ c₃ g f, begin apply SliceHom.eq, apply rfl end
    }
 
 /-! #brief UnsliceFun and SliceFinalFun form an isomorphism.
 -/
-definition Unslice_SliceFinal.Iso {C : Cat.{ℓobj ℓhom}} {fin : Final C}
-    : CatIso UnsliceFun (SliceFinalFun fin)
+definition Unslice_SliceFinal.Iso {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    : CatIso UnsliceFun (SliceFinalFun C)
 := { id₁ := begin
               apply Fun.eq,
-              { intro X, cases X, apply congr_arg (SliceCat.Obj.mk dom), exact eq.symm (fin^.uniq _) },
+              { intro X, cases X, apply congr_arg (SliceObj.mk dom), exact eq.symm (final_hom.uniq _) },
               { intros X Y f, cases f with f ωXhom, dsimp, exact sorry }
             end
    , id₂ := begin
@@ -1336,5 +1663,39 @@ definition Unslice_SliceFinal.Iso {C : Cat.{ℓobj ℓhom}} {fin : Final C}
               { intros X Y f, apply heq.refl }
             end
    }
+
+
+
+/- ----------------------------------------------------------------------------
+The category of natural numbers.
+---------------------------------------------------------------------------- -/
+
+definition NatCat : Cat
+:= { obj := ℕ
+   , hom := λ x y, { m : ℕ // y = m + x }
+   , id := λ x, { elt_of := 0, has_property := by simp }
+   , circ := λ x y z g f, { elt_of := f^.elt_of + g^.elt_of
+                          , has_property
+                             := begin
+                                  cases g with g ωg, apply eq.trans ωg,
+                                  cases f with f ωf, apply eq.trans (congr_arg (λ f', g + f') ωf),
+                                  simp
+                                end
+                          }
+   , circ_assoc := λ x y z w h g f, begin apply subtype.eq, simp end
+   , circ_id_left := λ x y f, begin apply subtype.eq, simp end
+   , circ_id_right := λ x y f, begin apply subtype.eq, simp end
+   }
+
+-- @[reducible] definition NatCat : Cat
+-- := { obj := ℕ
+--    , hom := λ x y, x ≤ y
+--    , id := nat.le_refl
+--    , circ := λ x y z g f, by calc x   ≤ y : f
+--                                   ... ≤ z : g
+--    , circ_assoc := λ x y z w h g f, rfl
+--    , circ_id_left := λ x y f, by apply proof_irrel
+--    , circ_id_right := λ x y f, by apply proof_irrel
+--    }
 
 end qp

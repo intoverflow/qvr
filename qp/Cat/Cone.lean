@@ -20,9 +20,9 @@ structure Cone
     (F : B ⇉⇉ C)
     : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (obj : [[C]])
-   (proj : ∀ (x : [[B]]), obj →→ F x)
+   (hom : ∀ (x : [[B]]), obj →→ F x)
    (triangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
-               , proj x₂ = (F ↗ f) ∘∘ proj x₁)
+               , hom x₂ = (F ↗ f) ∘∘ hom x₁)
 
 /-! #brief Every cone can be used as an object.
 -/
@@ -40,7 +40,7 @@ structure ConeHom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}
     : Sort (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (mediate : C^.hom c₁ c₂)
    (factor : ∀ {x : [[B]]}
-             , c₁^.proj x = c₂^.proj x ∘∘ mediate)
+             , c₁^.hom x = c₂^.hom x ∘∘ mediate)
 
 /-! #brief Helper lemma for proving quality of ConeHoms.
 -/
@@ -61,16 +61,21 @@ ConeHoms are morphisms of cones.
 
 /-! #brief The identity ConeHom.
 -/
-@[reducible] definition ConeHom.id {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition ConeHom.id {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C} (c : Cone F)
     : ConeHom c c
 := { mediate := ⟨⟨c^.obj⟩⟩
    , factor := λ x, by simp
    }
 
+@[simp] theorem ConeHom.id.simp_mediate {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} (c : Cone F)
+    : (ConeHom.id c)^.mediate = ⟨⟨c^.obj⟩⟩
+:= rfl
+
 /-! #brief Composition of ConeHoms.
 -/
-@[reducible] definition ConeHom.comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition ConeHom.comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C} {c₁ c₂ c₃ : Cone F}
     (g : ConeHom c₂ c₃) (f : ConeHom c₁ c₂)
     : ConeHom c₁ c₃
@@ -78,17 +83,22 @@ ConeHoms are morphisms of cones.
    , factor
       := λ x
          , begin
-             --refine eq.trans _ (eq.symm C^.circ_assoc), rw -g^.factor, apply f^.factor end
-             calc c₁^.proj x
-                      = c₂^.proj x ∘∘ f^.mediate                 : f^.factor
-                  ... = (c₃^.proj x ∘∘ g^.mediate) ∘∘ f^.mediate : begin rw [g^.factor], apply rfl end
-                  ... = c₃^.proj x∘∘(g^.mediate∘∘f^.mediate)     : by rw C^.circ_assoc
+             calc c₁^.hom x
+                      = c₂^.hom x ∘∘ f^.mediate                 : f^.factor
+                  ... = (c₃^.hom x ∘∘ g^.mediate) ∘∘ f^.mediate : begin rw [g^.factor], apply rfl end
+                  ... = c₃^.hom x∘∘(g^.mediate∘∘f^.mediate)     : by rw C^.circ_assoc
            end
    }
 
+@[simp] theorem ConeHom.comp.simp_mediate {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} {c₁ c₂ c₃ : Cone F}
+    (g : ConeHom c₂ c₃) (f : ConeHom c₁ c₂)
+    : (ConeHom.comp g f)^.mediate = g^.mediate ∘∘ f^.mediate
+:= rfl
+
 /-! #brief Composition of ConeHoms is associative.
 -/
-@[simp] theorem ConeHom.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem ConeHom.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
     {c₁ c₂ c₃ c₄ : Cone F}
     {h : ConeHom c₃ c₄} {g : ConeHom c₂ c₃} {f : ConeHom c₁ c₂}
@@ -101,7 +111,12 @@ ConeHoms are morphisms of cones.
     {F : B ⇉⇉ C} {c₁ c₂ : Cone F}
     {f : ConeHom c₁ c₂}
     : ConeHom.comp (ConeHom.id c₂) f = f
-:= begin apply ConeHom.eq, simp, apply Cat.circ_id_left end
+:= begin
+     apply ConeHom.eq,
+     rw [ConeHom.comp.simp_mediate],
+     rw [ConeHom.id.simp_mediate],
+     apply C^.circ_id_left
+   end
 
 /-! #brief ConeHom.id is a right-identity for ConeHom.comp.
 -/
@@ -109,7 +124,12 @@ ConeHoms are morphisms of cones.
     {F : B ⇉⇉ C} {c₁ c₂ : Cone F}
     {f : ConeHom c₁ c₂}
     : ConeHom.comp f (ConeHom.id c₁) = f
-:= begin apply ConeHom.eq, simp, apply Cat.circ_id_right end
+:= begin
+     apply ConeHom.eq,
+     rw [ConeHom.comp.simp_mediate],
+     rw [ConeHom.id.simp_mediate],
+     apply Cat.circ_id_right
+   end
 
 
 
@@ -139,38 +159,32 @@ Limits.
 
 /-! #brief A limit of a functor.
 -/
-@[reducible] definition Limit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition Limit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := Final (ConeCat F)
 
+local attribute [reducible] Limit
+
 /-! #brief Helper for building a limit.
 -/
-@[reducible] definition Limit.show {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition Limit.mk {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (F : B ⇉⇉ C)
     (c : [[C]])
     (proj : ∀ (x : [[B]]), c →→ F x)
-    (mediate : ∀ (cone : Cone F), C^.hom cone c)
+    (univ : ∀ (cone : Cone F), C^.hom cone c)
     (ωtriangle : ∀ {x₁ x₂ : [[B]]} (f : x₁ →→ x₂), proj x₂ = (F ↗ f) ∘∘ proj x₁)
-    (ωfactor : ∀ (cone : Cone F) {x : [[B]]}, cone^.proj x = proj x ∘∘ mediate cone)
-    (ωuniq : ∀ (cone : Cone F) (h : ConeHom cone (Cone.mk c proj @ωtriangle)), h^.mediate = mediate cone)
+    (ωfactor : ∀ (cone : Cone F) {x : [[B]]}, cone^.hom x = proj x ∘∘ univ cone)
+    (ωuniq : ∀ (cone : Cone F) (h : ConeHom cone (Cone.mk c proj @ωtriangle)), h^.mediate = univ cone)
     : Limit F
 := { obj := { obj := c
-            , proj := proj
+            , hom := proj
             , triangle := @ωtriangle
             }
-   , final := λ cone, { mediate := mediate cone
-                      , factor := @ωfactor cone
-                      }
+   , hom := λ cone, { mediate := univ cone
+                    , factor := @ωfactor cone
+                    }
    , uniq := λ cone h, begin apply ConeHom.eq, apply ωuniq end
-   }
-
-/-! #brief Every limit can be used as a cone.
--/
-@[reducible] definition Limit.has_coe_to_cone {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
-    (F : B ⇉⇉ C)
-    : has_coe (Limit F) (Cone F)
-:= { coe := Final.obj
    }
 
 /-! #brief Every limit can be used as an object.
@@ -183,46 +197,46 @@ Limits.
 
 /-! #brief The map from the limit to the image of the diagram.
 -/
-@[reducible] definition Limit.proj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition Limit.proj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
-    (l : Limit F)
+    (c : Limit F)
     (x : [[B]])
-    : C^.hom l (F x)
-:= l^.obj^.proj x
+    : C^.hom c (F x)
+:= c^.obj^.hom x
 
 /-! #brief Limit.proj satisfies the triangle equation.
 -/
-theorem Limit.triangle {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem Limit.proj.triangle {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C} (c : Limit F)
     {x₁ x₂ : [[B]]} (f : x₁ →→ x₂)
     : Limit.proj c x₂ = (F ↗ f) ∘∘ Limit.proj c x₁
-:= Cone.triangle c f
+:= c^.obj^.triangle f
 
-/-! #brief The mediating map (in C) from a cone to the limit.
+/-! #brief The universal map (in C) from a cone to the limit.
 -/
-@[reducible] definition Limit.mediate {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition Limit.univ {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
     (c : Limit F) (c' : Cone F)
     : C^.hom c' c
-:= (c^.final c')^.mediate
+:= c^.hom^.mediate
 
-/-! #brief The mediating map has the usual factoring property.
+/-! #brief The universal map has the usual factoring property.
 -/
-theorem Limit.mediate_factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem Limit.univ.factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
     (c : Limit F) (c' : Cone F)
     {x : [[B]]}
-    : c'^.proj x = Limit.proj c x ∘∘ Limit.mediate c c'
+    : c'^.hom x = c^.proj x ∘∘ c^.univ c'
   := by apply ConeHom.factor
 
-/-! #brief The mediating map is unique among maps which factor.
+/-! #brief The universal map is unique among maps which factor.
 -/
-theorem Limit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+theorem Limit.univ.uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
     (c : Limit F) (c' : Cone F)
     {f : C^.hom c' c}
-    (ωf : ∀ {x : [[B]]}, c'^.proj x = Limit.proj c x ∘∘ f)
-    : f = Limit.mediate c c'
+    (ωf : ∀ {x : [[B]]}, c'^.hom x = c^.proj x ∘∘ f)
+    : f = Limit.univ c c'
 := begin
      dsimp,
      assert lem₁ : f = ConeHom.mediate { mediate := f, factor := @ωf },
@@ -234,11 +248,11 @@ theorem Limit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ �
 
 /-! #brief Limits are unique up to isomorphism.
 -/
-@[reducible] definition Limit.Iso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition Limit.Iso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     {F : B ⇉⇉ C}
     (c₁ c₂ : Limit F)
-    : Iso (Limit.mediate c₂ c₁)
-          (Limit.mediate c₁ c₂)
+    : Iso (c₂^.univ c₁)
+          (c₁^.univ c₂)
 := let iso := Final.Iso c₁ c₂
    in { id₁ := congr_arg ConeHom.mediate iso^.id₁
       , id₂ := congr_arg ConeHom.mediate iso^.id₂
@@ -247,52 +261,87 @@ theorem Limit.mediate_uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ �
 
 
 /- ----------------------------------------------------------------------------
-Preservation of limits by functors.
+Categories with limits.
 ---------------------------------------------------------------------------- -/
 
--- Notion of when a functor preserves limits.
-structure PreservesLimits {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : C ⇉⇉ D)
-    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃) + 1)
-:= (limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (D : Fun B C)
-              (c : Limit D)
-            , Limit (F □□ D))
-   (limit_eq : ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (D : Fun B C)
-                 (c : Limit D)
-               , (limit D c)^.obj^.obj = F c)
+/-! #brief Existence of a limit in a category.
+-/
+class HasLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= (limit : Limit F)
+
+/-! #brief The limit of a functor.
+-/
+definition limit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    [F_HasLimit : HasLimit F]
+    : Limit F
+:= HasLimit.limit F
+
+
+/-! #brief A category with all limits of a given shape.
+-/
+class HasAllLimitsOfShape (C : Cat.{ℓobj₂ ℓhom₂})
+    (B : Cat.{ℓobj₁ ℓhom₁})
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= (limit : ∀ (F : B ⇉⇉ C), HasLimit F)
+
+attribute [instance] HasAllLimitsOfShape.limit
+
+/-! #brief A category with all limits.
+-/
+class HasAllLimits
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= (limit : ∀ (B : Cat.{ℓobj₁ ℓhom₁}), HasAllLimitsOfShape C B)
+
+attribute [instance] HasAllLimits.limit
+
+/-! #brief A category with all finite limits.
+-/
+class HasAllFiniteLimits
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= (limit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
+              [B_Fin : Cat.Fin B]
+            , HasAllLimitsOfShape C B)
+
+attribute [instance] HasAllFiniteLimits.limit
+
+/-! #brief Categories with all limits have all finite limits.
+-/
+instance HasAllLimits.HasAllFiniteLimits (C : Cat.{ℓobj₂ ℓhom₂})
+    [C_HasAllLimits : HasAllLimits.{ℓobj₁ ℓobj₂} C]
+    : HasAllFiniteLimits.{ℓobj₁ ℓobj₂} C
+:= { limit := λ B B_Fin, HasAllLimits.limit C B }
 
 
 
 /- ----------------------------------------------------------------------------
-Categories with limits.
+Preservation of limits by functors.
 ---------------------------------------------------------------------------- -/
 
-/-! #brief A witness that a category has all limits.
--/
-@[reducible] definition HasAllLimits
-    (C : Cat.{ℓobj₂ ℓhom₂})
-    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
-:= ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
-     (F : B ⇉⇉ C)
-   , Limit F
+-- Notion of when a functor preserves a limit.
+class PreservesLimit {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    {B : Cat.{ℓobj₁ ℓhom₁}}
+    (J : B ⇉⇉ C)
+    [J_HasLimit : HasLimit J]
+    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃) + 1)
+:= (preserves : HasLimit (F □□ J))
+   (preserves_eq : (@limit _ _ _ preserves)^.obj^.obj = F (limit J))
 
-/-! #brief A witness that a category has all finite limits.
--/
-@[reducible] definition HasAllFiniteLimits
-    (C : Cat.{ℓobj₂ ℓhom₂})
-    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
-:= ∀ {B : Cat.{ℓobj₁ ℓhom₁}} (B_Fin : Cat.Fin B)
-     (F : B ⇉⇉ C)
-   , Limit F
+attribute [instance] PreservesLimit.preserves
 
-/-! #brief Categories with all limits have all (finite) limits.
+/-! #brief A functor which preserves limits of a given shape.
 -/
-definition HasAllLimits.HasAllFiniteLimits
-    (C : Cat.{ℓobj₂ ℓhom₂})
-    (C_HasAllLimits : HasAllLimits C)
-    : HasAllFiniteLimits C
-:= λ B B_Fin F, C_HasAllLimits F
+class PreservesLimitsOfShape {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    (B : Cat.{ℓobj₁ ℓhom₁})
+:= (preserves : ∀ (J : B ⇉⇉ C) [J_HasLimit : HasLimit J], PreservesLimit F J)
 
+attribute [instance] PreservesLimitsOfShape.preserves
 
 
 /- ----------------------------------------------------------------------------
@@ -306,23 +355,270 @@ Final objects as limits.
     : Final C
 := let mcone : [[C]] → Cone (EmptyCat.init C)
             := λ c, { obj := c
-                    , proj := λ x, pempty.elim x
+                    , hom := λ x, pempty.elim x
                     , triangle := λ x₁ x₂ f, pempty.elim f
                     }
    in { obj := fin
-      , final := λ c, Limit.mediate fin (mcone c)
+      , hom := λ c, fin^.univ (mcone c)
       , uniq := λ c h, begin
-                         apply Limit.mediate_uniq fin (mcone c),
+                         apply fin^.univ.uniq (mcone c),
                          intro e, apply pempty.elim e
                        end
       }
 
-/-! #brief Every category with finite limits has a final object.
+/-! #brief A category with limits out of EmptyCat has a final object.
 -/
-@[reducible] definition HasAllFiniteLimits.HasFinal (C : Cat.{ℓobj₁ ℓhom₁})
-    (C_HasAllFiniteLimits : HasAllFiniteLimits C)
-    : Final C
-:= EmptyCat.init.limit_final C
-    (C_HasAllFiniteLimits EmptyCat.Fin (EmptyCat.init C))
+instance HasAllFiniteLimits.HasFinal
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    [C_HasAllLimitsOfShape_Empty : HasAllLimitsOfShape C EmptyCat]
+    : HasFinal C
+:= { final := EmptyCat.init.limit_final C (limit (EmptyCat.init C))
+   }
+
+
+
+/- ----------------------------------------------------------------------------
+Co-limits.
+---------------------------------------------------------------------------- -/
+
+/-! #brief A co-limit of a functor.
+-/
+definition CoLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= Limit (OpFun F)
+
+local attribute [reducible] CoLimit
+
+/-! #brief Helper for building a limit.
+-/
+definition CoLimit.mk {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    (c : [[C]])
+    (incl : ∀ (x : [[B]]), F x →→ c)
+    (univ : ∀ (cone : Cone (OpFun F)), C^.hom c cone)
+    (ωtriangle : ∀ {x₁ x₂ : [[B]]} (f : x₂ →→ x₁), incl x₂ = incl x₁ ∘∘ (F ↗ f))
+    (ωfactor : ∀ (cone : Cone (OpFun F)) {x : [[B]]}, cone^.hom x = univ cone ∘∘ incl x)
+    (ωuniq : ∀ (cone : Cone (OpFun F)) (h : ConeHom cone (Cone.mk c incl @ωtriangle)), h^.mediate = univ cone)
+    : CoLimit F
+:= Limit.mk (OpFun F) c incl univ @ωtriangle ωfactor ωuniq
+
+/-! #brief Every co-limit can be used as an object.
+-/
+@[reducible] instance CoLimit.has_coe_to_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : has_coe (CoLimit F) [[C]]
+:= { coe := λ x, by apply x^.obj^.obj
+   }
+
+/-! #brief The map to the co-limit from the image of the diagram.
+-/
+definition CoLimit.incl {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : CoLimit F)
+    (x : [[B]])
+    : C^.hom (F x) c
+:= Limit.proj c x
+
+/-! #brief CoLimit.incl satisfies the triangle equation.
+-/
+theorem CoLimit.incl.triangle {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C} (c : CoLimit F)
+    {x₁ x₂ : [[B]]} (f : x₂ →→ x₁)
+    : CoLimit.incl c x₂ = CoLimit.incl c x₁ ∘∘ (F ↗ f)
+:= Limit.proj.triangle c f
+
+/-! #brief The universal map (in C) from a co-limit to a cone.
+-/
+definition CoLimit.univ {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : CoLimit F) (c' : Cone (OpFun F))
+    : C^.hom c c'
+:= Limit.univ c c'
+
+/-! #brief The universal map has the usual factoring property.
+-/
+theorem CoLimit.univ.factor {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : CoLimit F) (c' : Cone (OpFun F))
+    {x : [[B]]}
+    : c'^.hom x = c^.univ c' ∘∘ c^.proj x
+:= Limit.univ.factor c c'
+
+/-! #brief The universal map is unique among maps which factor.
+-/
+theorem CoLimit.univ.uniq {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c : CoLimit F) (c' : Cone (OpFun F))
+    {f : C^.hom c c'}
+    (ωf : ∀ {x : [[B]]}, c'^.hom x = f ∘∘ c^.proj x)
+    : f = CoLimit.univ c c'
+:= Limit.univ.uniq c c' @ωf
+
+/-! #brief Limits are unique up to isomorphism.
+-/
+definition CoLimit.Iso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : B ⇉⇉ C}
+    (c₁ c₂ : CoLimit F)
+    : Iso (c₁^.univ c₂)
+          (c₂^.univ c₁)
+:= { id₁ := by apply (Limit.Iso c₂ c₁)^.id₂
+   , id₂ := by apply (Limit.Iso c₂ c₁)^.id₁
+   }
+
+
+
+/- ----------------------------------------------------------------------------
+Categories with co-limits.
+---------------------------------------------------------------------------- -/
+
+/-! #brief Existence of a co-limit in a category.
+-/
+class HasCoLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    : Type (max 1 ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= (colimit : CoLimit F)
+
+/-! #brief The co-limit of a functor.
+-/
+definition colimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    [F_HasCoLimit : HasCoLimit F]
+    : CoLimit F
+:= HasCoLimit.colimit F
+
+/-! #brief The universal map out of the co-limit.
+-/
+definition colimit.univ {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : B ⇉⇉ C)
+    [F_HasCoLimit : HasCoLimit F]
+    (c : Cone (OpFun F))
+    : C^.hom (colimit F) c
+:= CoLimit.univ (colimit F) c
+
+
+/-! #brief A category with all co-limits of a given shape.
+-/
+class HasAllCoLimitsOfShape (C : Cat.{ℓobj₂ ℓhom₂})
+    (B : Cat.{ℓobj₁ ℓhom₁})
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= (colimit : ∀ (F : B ⇉⇉ C), HasCoLimit F)
+
+attribute [instance] HasAllCoLimitsOfShape.colimit
+
+/-! #brief A category with all co-limits.
+-/
+class HasAllCoLimits
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= (colimit : ∀ (B : Cat.{ℓobj₁ ℓhom₁}), HasAllCoLimitsOfShape C B)
+
+attribute [instance] HasAllCoLimits.colimit
+
+/-! #brief A category with all finite co-limits.
+-/
+class HasAllFiniteCoLimits
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    : Type (max ((max ℓobj₁ ℓhom₁) + 1) ℓobj₂ ℓhom₂)
+:= (colimit : ∀ {B : Cat.{ℓobj₁ ℓhom₁}}
+                [B_Fin : Cat.Fin B]
+              , HasAllCoLimitsOfShape C B)
+
+attribute [instance] HasAllFiniteCoLimits.colimit
+
+/-! #brief Categories with all co-limits have all finite co-limits.
+-/
+instance HasAllCoLimits.HasAllFiniteCoLimits (C : Cat.{ℓobj₂ ℓhom₂})
+    [C_HasAllCoLimits : HasAllCoLimits.{ℓobj₁ ℓobj₂} C]
+    : HasAllFiniteCoLimits.{ℓobj₁ ℓobj₂} C
+:= { colimit := λ B B_Fin, HasAllCoLimits.colimit C B }
+
+
+
+/- ----------------------------------------------------------------------------
+Preservation of co-limits by functors.
+---------------------------------------------------------------------------- -/
+
+-- Notion of when a functor preserves a co-limit.
+class PreservesCoLimit {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    {B : Cat.{ℓobj₁ ℓhom₁}}
+    (J : B ⇉⇉ C)
+    : Type ((max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃) + 1)
+:= (colimit : ∀ [J_HasCoLimit : HasCoLimit J], HasCoLimit (F □□ J))
+   (colimit_in : ∀ [J_HasCoLimit : HasCoLimit J], ↑(@qp.colimit _ _ _ colimit) →→ F (qp.colimit J))
+   (colimit_out : ∀ [J_HasCoLimit : HasCoLimit J], F (qp.colimit J) →→ ↑(@qp.colimit _ _ _ colimit))
+   (iso : ∀ [J_HasCoLimit : HasCoLimit J], Iso colimit_out colimit_in)
+
+attribute [instance] PreservesCoLimit.colimit
+
+definition colimit.preserves.in {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    {B : Cat.{ℓobj₁ ℓhom₁}}
+    (J : B ⇉⇉ C)
+    [J_HasCoLimit : HasCoLimit J]
+    [F_PreservesCoLimit_J : PreservesCoLimit F J]
+    : ↑(colimit (F □□ J)) →→ F ↑(colimit J)
+:= PreservesCoLimit.colimit_in F J
+
+definition colimit.preserves.out {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    {B : Cat.{ℓobj₁ ℓhom₁}}
+    (J : B ⇉⇉ C)
+    [J_HasCoLimit : HasCoLimit J]
+    [F_PreservesCoLimit_J : PreservesCoLimit F J]
+    : F ↑(colimit J) →→ ↑(colimit (F □□ J))
+:= PreservesCoLimit.colimit_out F J
+
+definition colimit.preserves.Iso {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    {B : Cat.{ℓobj₁ ℓhom₁}}
+    (J : B ⇉⇉ C)
+    [J_HasCoLimit : HasCoLimit J]
+    [F_PreservesCoLimit_J : PreservesCoLimit F J]
+    : Iso (colimit.preserves.out F J) (colimit.preserves.in F J)
+:= PreservesCoLimit.iso F J
+
+/-! #brief A functor which preserves co-limits of a given shape.
+-/
+class PreservesCoLimitsOfShape {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : C ⇉⇉ D)
+    (B : Cat.{ℓobj₁ ℓhom₁})
+:= (preserves : ∀ (J : B ⇉⇉ C) [J_HasCoLimit : HasCoLimit J], PreservesCoLimit F J)
+
+attribute [instance] PreservesLimitsOfShape.preserves
+
+
+
+/- ----------------------------------------------------------------------------
+Initial objects as co-limits.
+---------------------------------------------------------------------------- -/
+
+/-! #brief The co-limit of the empty diagram, if it exists, is initial.
+-/
+@[reducible] definition EmptyCat.init.colimit_init (C : Cat.{ℓobj₁ ℓhom₁})
+    (ini : CoLimit (EmptyCat.init.{ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂} C))
+    : Init C
+:= let mcone : [[C]] → Cone (OpFun (EmptyCat.init C))
+            := λ c, { obj := c
+                    , hom := λ x, pempty.elim x
+                    , triangle := λ x₁ x₂ f, pempty.elim f
+                    }
+   in { obj := ini
+      , hom := λ c, ini^.univ (mcone c)
+      , uniq := λ c h, begin
+                         apply ini^.univ.uniq (mcone c),
+                         intro e, apply pempty.elim e
+                       end
+      }
+
+/-! #brief A category with co-limits out of EmptyCat has an initial object.
+-/
+instance HasAllFiniteCoLimits.HasInit
+    (C : Cat.{ℓobj₂ ℓhom₂})
+    [C_HasAllCoLimitsOfShape_Empty : HasAllCoLimitsOfShape C EmptyCat]
+    : HasInit C
+:= { init := EmptyCat.init.colimit_init C (colimit (EmptyCat.init C))
+   }
 
 end qp

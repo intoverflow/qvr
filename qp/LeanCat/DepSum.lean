@@ -19,7 +19,7 @@ Dependent sums.
     {T₀ T₁ : [[LeanCat.{ℓ}]]}
     (base : LeanCat^.hom T₀ T₁)
     : SliceCat LeanCat T₀ ⇉⇉ SliceCat LeanCat T₁
-:= DepSumFun (@LeanCat.HasAllPullbacksAlong _ _ base)
+:= DepSumFun base
 
 /-! #brief The Lean categories have dependent sums.
 -/
@@ -27,6 +27,6 @@ Dependent sums.
     {T₀ T₁ : [[LeanCat.{ℓ}]]}
     (base : LeanCat^.hom T₀ T₁)
     : LeanCat.DepSumFun base ⊣ LeanCat.BaseChangeFun base
-:= DepSum_BaseChange.Adj (@LeanCat.HasAllPullbacksAlong _ _ base)
+:= DepSum_BaseChange.Adj
 
 end qp

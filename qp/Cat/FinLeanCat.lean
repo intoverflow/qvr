@@ -23,7 +23,7 @@ Initial and final objects.
 := { obj := { T := pempty.{ℓ + 1}
             , is_finite := pempty.FinType
             }
-   , init := λ A, pempty.elim
+   , hom := λ A, pempty.elim
    , uniq := λ A f, begin
                       apply pfunext, intro e,
                       exact pempty.elim e
@@ -37,7 +37,7 @@ Initial and final objects.
 := { obj := { T := punit.{ℓ + 1}
             , is_finite := punit.FinType
             }
-   , final := λ A a, punit.star
+   , hom := λ A a, punit.star
    , uniq := λ A f, begin
                       apply pfunext, intro a,
                       apply punit.uniq

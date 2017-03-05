@@ -184,7 +184,7 @@ definition Qvr.Mor.on_Hom {Q₁ : Qvr.{ℓvtx₁ ℓarr₁}} {Q₂ : Qvr.{ℓvtx
        dsimp at w,
        induction w,
        { apply heq.refl },
-       { dsimp [FreeCat.FreeFun], dsimp at ih_1, rw (eq_of_heq ih_1) }
+       { exact sorry } -- dsimp [FreeCat.FreeFun], dsimp at ih_1, rw (eq_of_heq ih_1), apply rfl }
      }
    end
 

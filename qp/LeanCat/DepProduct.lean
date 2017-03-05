@@ -39,7 +39,7 @@ Dependent products.
    , hom_id
       := λ X
          , begin
-             apply SliceCat.Hom.eq,
+             apply SliceHom.eq,
              apply funext, intro σ,
              cases σ with t₁ σ,
              apply congr_arg (sigma.mk t₁),
@@ -50,7 +50,7 @@ Dependent products.
    , hom_circ
       := λ X Y Z g f
          , begin
-             apply SliceCat.Hom.eq,
+             apply SliceHom.eq,
              apply funext, intro σ,
              cases σ with t₁ σ,
              simp,
@@ -68,7 +68,7 @@ Dependent products.
     (X : [[SliceCat LeanCat T₁]])
     : (SliceCat LeanCat T₁)^.hom
         X
-        ((LeanCat.DepProdFun base □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base)) X)
+        ((LeanCat.DepProdFun base □□ BaseChangeFun base) X)
 := { hom
       := λ x
          , { fst := X^.hom x
@@ -98,9 +98,9 @@ Dependent products.
     : ∀ {X Y : [[SliceCat LeanCat T₁]]} {f : (SliceCat LeanCat T₁)^.hom X Y}
       , (SliceCat LeanCat T₁)^.circ (LeanCat.BaseChangeDepProd_Unit.component base Y) f
          = (SliceCat LeanCat T₁)^.circ
-             ((LeanCat.DepProdFun base □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base))^.hom f)
+             ((LeanCat.DepProdFun base □□ BaseChangeFun base)^.hom f)
              (LeanCat.BaseChangeDepProd_Unit.component base X)
-| (SliceCat.Obj.mk X Xhom) (SliceCat.Obj.mk Y Yhom) (SliceCat.Hom.mk f ωXhom)
+| (SliceObj.mk X Xhom) (SliceObj.mk Y Yhom) (SliceHom.mk f ωXhom)
 := sorry
 /- begin
      dsimp at ωXhom,
@@ -127,9 +127,7 @@ Dependent products.
 -/
 @[reducible] definition {ℓ} LeanCat.BaseChangeDepProd_Unit
     {T₀ T₁ : [[LeanCat.{ℓ}]]} (base : T₀ → T₁)
-    : Fun.id (SliceCat LeanCat T₁)
-       ↣↣ LeanCat.DepProdFun base
-           □□ BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base)
+    : Fun.id (SliceCat LeanCat T₁) ↣↣ LeanCat.DepProdFun base □□ BaseChangeFun base
 := { component := LeanCat.BaseChangeDepProd_Unit.component base
    , transport := λ X Y f, LeanCat.BaseChangeDepProd_Unit.transport base
    }
@@ -138,9 +136,7 @@ Dependent products.
 -/
 @[reducible] definition {ℓ} LeanCat.BaseChangeDepProd_CoUnit
     {T₀ T₁ : [[LeanCat.{ℓ}]]} (base : T₀ → T₁)
-    : BaseChangeFun (@HasAllPullbacks.HasAllPullbacksAlong _ @LeanCat.HasAllPullbacks _ _ base)
-       □□ LeanCat.DepProdFun base
-      ↣↣ Fun.id (SliceCat LeanCat T₀)
+    : LeanCat.BaseChangeFun base □□ LeanCat.DepProdFun base ↣↣ Fun.id (SliceCat LeanCat T₀)
 := { component
       := λ X, { hom := λ t₀t₁σ, let t₀ := t₀t₁σ^.elt_of^.fst in
                                 let ωt₀ := t₀t₁σ^.has_property in
@@ -159,11 +155,11 @@ Dependent products.
    , transport
       := λ X Y f
          , begin
-             apply SliceCat.Hom.eq,
-             apply funext,
-             intro x,
-             dsimp,
-             apply rfl
+            --  apply SliceHom.eq,
+            --  apply funext,
+            --  intro x,
+            --  apply rfl
+            exact sorry
            end
    }
 
@@ -177,38 +173,42 @@ Dependent products.
    , counit := LeanCat.BaseChangeDepProd_CoUnit base
    , id_left
       := λ X
-         , begin
-             apply SliceCat.Hom.eq,
-             apply funext,
-             intro t₀x,
-             cases t₀x with t₀x ωt₀,
-             cases t₀x with t₀ x,
-             apply subtype.eq,
-             apply rfl
-           end
+         , sorry
+           --begin
+            --  apply SliceHom.eq,
+            --  apply funext,
+            --  intro t₀x,
+            --  cases t₀x with t₀x ωt₀,
+            --  cases t₀x with t₀ x,
+            --  apply subtype.eq,
+            --  apply rfl
+           --end
    , id_right
       := λ X
-         , begin
-             apply SliceCat.Hom.eq,
-             apply funext,
-             intro t₁σ,
-             cases t₁σ with t₁ σ,
-             apply congr_arg (sigma.mk t₁),
-             apply funext,
-             intro t₀,
-             cases t₀ with t₀ ωt₀,
-             apply subtype.eq,
-             exact rfl
-           end
+         , sorry
+           --begin
+            --  apply SliceHom.eq,
+            --  apply funext,
+            --  intro t₁σ,
+            --  cases t₁σ with t₁ σ,
+            --  apply congr_arg (sigma.mk t₁),
+            --  apply funext,
+            --  intro t₀,
+            --  cases t₀ with t₀ ωt₀,
+            --  apply subtype.eq,
+            --  exact rfl
+           --end
    }
 
 /-! #brief The Lean categories have dependent products.
 -/
 @[reducible] definition {ℓ} LeanCat.HasAllDepProducts
-    : HasAllDepProducts @LeanCat.HasAllPullbacks.{ℓ}
-:= λ T₀ T₁ base
-   , { dprod := LeanCat.DepProdFun base
-     , adj := LeanCat.BaseChange_DepProd.Adj base
-     }
+    : HasAllDepProducts LeanCat.{ℓ}
+:= { dprod
+      := λ Lean_HasAllPullbacks T₀ T₁ base
+         , { dprod := LeanCat.DepProdFun base
+           , adj := sorry -- LeanCat.BaseChange_DepProd.Adj base
+           }
+   }
 
 end qp

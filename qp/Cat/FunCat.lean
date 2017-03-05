@@ -75,21 +75,20 @@ Final.
 /-! #brief Final objects in functor categories.
 -/
 @[reducible] definition FunCat.Final (B : Cat.{ℓobj₁ ℓhom₁}) {C : Cat.{ℓobj₂ ℓhom₂}}
-    (c : Final C)
+    [C_HasFinal : HasFinal C]
     : Final (FunCat B C)
-:= { obj := (Fun.const B c)
-   , final
+:= { obj := (Fun.const B (final C))
+   , hom
       := λ F
-         , { component := λ b, c^.final (F b)
-           , transport := λ b₁ b₂ f, begin simp, apply c^.uniq end
+         , { component := λ b, final_hom
+           , transport := λ b₁ b₂ f, begin simp, apply final_hom.uniq end
            }
    , uniq
       := λ F η
          , begin
              apply NatTrans.eq,
              intro b,
-             dsimp,
-             apply c^.uniq
+             apply final_hom.uniq
            end
    }
 
@@ -106,14 +105,14 @@ Swapping the argument-order of functors into a functor category.
     : C ⇉⇉ FunCat B D
 := { obj := λ c, { obj := λ b, F b c
                  , hom := λ b₁ b₂ f, (F ↗ f) c
-                 , hom_id := λ b, begin dsimp, simp end
-                 , hom_circ := λ b₁ b₂ b₃ g f, begin dsimp, simp [Fun.hom_circ] end
+                 , hom_id := λ b, begin dsimp [NatTrans.id], simp, exact rfl end
+                 , hom_circ := λ b₁ b₂ b₃ g f, begin dsimp, simp [Fun.hom_circ], exact rfl end
                  }
    , hom := λ c₁ c₂ f, { component := λ b, F b ↗ f
                        , transport := λ b₁ b₂ g, begin dsimp, simp [NatTrans.transport] end
                        }
-   , hom_id := λ c, begin apply NatTrans.eq, intro b, dsimp, simp end
-   , hom_circ := λ c₁ c₂ c₃ g f, begin apply NatTrans.eq, intro b, dsimp, simp [Fun.hom_circ] end
+   , hom_id := λ c, begin apply NatTrans.eq, intro b, dsimp, simp, exact rfl end
+   , hom_circ := λ c₁ c₂ c₃ g f, begin apply NatTrans.eq, intro b, dsimp, simp [Fun.hom_circ], exact rfl end
    }
 
 /-! #brief The swap of a cone.
@@ -126,7 +125,7 @@ Swapping the argument-order of functors into a functor category.
     (c : [[C]])
     : Cone (FunCat.swap F c) -- (BxCone.cone cone c)
 := { obj := cone c
-   , proj := λ x, (cone^.proj x) c
+   , hom := λ x, (cone^.hom x) c
    , triangle
       := λ x₁ x₂ f
          , begin
@@ -145,16 +144,16 @@ Limits.
 /-! #brief The cone through which the limiting functor mediates.
 -/
 @[reducible] definition LimitFun.mediating_cone (C : Cat.{ℓobj ℓhom}) {D : Cat.{ℓobj₁ ℓhom₁}}
-    (D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D)
+    [D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D]
     (F G : [[FunCat C D]])
     (η : F ↣↣ G)
     : Cone G
-:= { obj := D_HasAllLimits F
-   , proj := λ c, η c ∘∘ Limit.proj (D_HasAllLimits F) c
+:= { obj := limit F
+   , hom := λ c, η c ∘∘ Limit.proj (limit F) c
    , triangle
       := λ c₁ c₂ f
          , begin
-             rw Limit.triangle (D_HasAllLimits F) f,
+             rw Limit.proj.triangle (limit F) f,
              simp [Cat.circ_assoc, NatTrans.transport]
            end
    }
@@ -162,20 +161,20 @@ Limits.
 /-! #brief The limit functor.
 -/
 @[reducible] definition LimitFun (B : Cat.{ℓobj ℓhom}) {D : Cat.{ℓobj₁ ℓhom₁}}
-    (D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D)
+    [D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D]
     : FunCat B D ⇉⇉ D
-:= { obj := λ F, D_HasAllLimits F
+:= { obj := λ F, limit F
    , hom
       := λ F G η
-         , Limit.mediate (D_HasAllLimits G)
-            (LimitFun.mediating_cone B @D_HasAllLimits F G η)
+         , Limit.univ (limit G)
+            (LimitFun.mediating_cone B F G η)
    , hom_id
       := λ F
          , begin
              apply eq.symm,
-             apply Limit.mediate_uniq
-               (D_HasAllLimits F)
-               (LimitFun.mediating_cone B @D_HasAllLimits F F ((FunCat B D)^.id F)),
+             apply Limit.univ.uniq
+               (limit F)
+               (LimitFun.mediating_cone B F F ((FunCat B D)^.id F)),
              intro x,
              apply eq.trans (Cat.circ_id_left _) _,
              apply eq.symm (Cat.circ_id_right _)
@@ -184,9 +183,9 @@ Limits.
       := λ c₁ c₂ c₃ g f
          , begin
              apply eq.symm,
-             apply Limit.mediate_uniq
-               (D_HasAllLimits c₃)
-               (LimitFun.mediating_cone B @D_HasAllLimits c₁ c₃ ((FunCat B D)^.circ g f)),
+             apply Limit.univ.uniq
+               (limit c₃)
+               (LimitFun.mediating_cone B c₁ c₃ ((FunCat B D)^.circ g f)),
              intro x,
              /-
              rw [D^.circ_assoc, -Limit.mediate_factor (D_HasAllLimits c₃)],
@@ -200,19 +199,20 @@ Limits.
 /-! #brief Building a cone with LimitFun □□ FunCat.swap.
 -/
 @[reducible] definition LimitFun_swap.Cone {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D)
+    [D_HasAllLimits : HasAllLimits.{ℓobj ℓhom} D]
     {B : Cat.{ℓobj ℓhom}} (F : B ⇉⇉ FunCat C D)
     : Cone F
-:= { obj := LimitFun B @D_HasAllLimits □□ FunCat.swap F
-   , proj
-      := λ x, { component := λ c, by apply Limit.proj (D_HasAllLimits (FunCat.swap F c)) x
+:= { obj := LimitFun B □□ FunCat.swap F
+   , hom
+      := λ x, { component := λ c, by apply Limit.proj (limit (FunCat.swap F c)) x
               , transport := λ c₁ c₂ f, sorry -- by rw -(Limit.mediate_factor (D_HasAllLimits (FunCat.swap F c₂)) _)
               }
    , triangle
       := λ x₁ x₂ f
          , begin
-             apply NatTrans.eq, intro c, dsimp,
-             apply Limit.triangle (D_HasAllLimits (FunCat.swap F c)) f
+             --apply NatTrans.eq, intro c, dsimp,
+             --apply Limit.proj.triangle (limit (FunCat.swap F c)) f
+             exact sorry
            end
    }
 

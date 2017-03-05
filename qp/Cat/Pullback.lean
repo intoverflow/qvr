@@ -115,7 +115,7 @@ Pullbacks.
 
 /-! #brief Helper for the helper for building a pullback.
 -/
-@[reducible] definition Pullback.show_cone {C : Cat.{ℓobj ℓhom}}
+@[reducible] definition Pullback.mk_cone {C : Cat.{ℓobj ℓhom}}
     {a b z : [[C]]}
     (ga : a →→ z) (gb : b →→ z)
     (pb : [[C]])
@@ -123,26 +123,26 @@ Pullbacks.
     (ωtriangle : ga ∘∘ π₁ = gb ∘∘ π₂)
     : Cone (CoSpanDrgm ga gb)
 := { obj := pb
-   , proj := λ x, CoSpanCat.Obj.cases_on x π₁ π₂ (ga ∘∘ π₁)
+   , hom := λ x, CoSpanCat.Obj.cases_on x π₁ π₂ (ga ∘∘ π₁)
    , triangle := λ x₁ x₂ f, begin cases f, { simp }, { simp }, { exact ωtriangle } end
    }
 
 /-! #brief Helper for building a pullback.
 -/
-@[reducible] definition Pullback.show {C : Cat.{ℓobj ℓhom}}
+@[reducible] definition Pullback.mk {C : Cat.{ℓobj ℓhom}}
     {a b z : [[C]]}
     (ga : a →→ z) (gb : b →→ z)
     (pb : [[C]])
     (π₁ : pb →→ a) (π₂ : pb →→ b)
-    (mediate : ∀ (cone : Cone (CoSpanDrgm ga gb)), C^.hom cone pb)
+    (into : ∀ (cone : Cone (CoSpanDrgm ga gb)), C^.hom cone pb)
     (ωtriangle : ga ∘∘ π₁ = gb ∘∘ π₂)
-    (ωcone_a : ∀ (cone : Cone (CoSpanDrgm ga gb)), cone^.proj CoSpanCat.Obj.a = π₁ ∘∘ mediate cone)
-    (ωcone_b : ∀ (cone : Cone (CoSpanDrgm ga gb)), cone^.proj CoSpanCat.Obj.b = π₂ ∘∘ mediate cone)
-    (ωuniq : ∀ (cone : Cone (CoSpanDrgm ga gb)) (h : ConeHom cone (Pullback.show_cone ga gb pb π₁ π₂ ωtriangle)), h^.mediate = mediate cone)
+    (ωcone_a : ∀ (cone : Cone (CoSpanDrgm ga gb)), cone^.hom CoSpanCat.Obj.a = π₁ ∘∘ into cone)
+    (ωcone_b : ∀ (cone : Cone (CoSpanDrgm ga gb)), cone^.hom CoSpanCat.Obj.b = π₂ ∘∘ into cone)
+    (ωuniq : ∀ (cone : Cone (CoSpanDrgm ga gb)) (h : ConeHom cone (Pullback.mk_cone ga gb pb π₁ π₂ ωtriangle)), h^.mediate = into cone)
     : Pullback ga gb
-:= Limit.show (CoSpanDrgm ga gb) pb
+:= Limit.mk (CoSpanDrgm ga gb) pb
     (λ x, CoSpanCat.Obj.cases_on x π₁ π₂ (ga ∘∘ π₁))
-    mediate
+    into
     (λ x₁ x₂ f, begin cases f, { simp }, { simp }, { exact ωtriangle } end)
     (λ cone x, begin cases x, { apply ωcone_a }, { apply ωcone_b }, { dsimp, rw cone^.triangle Hom.a, dsimp, rw [ωcone_a, C^.circ_assoc] } end)
     ωuniq
@@ -157,7 +157,7 @@ Pullbacks.
     (fa : c →→ a) (fb : c →→ b)
     (ωsquare : ga ∘∘ fa = gb ∘∘ fb)
     : C^.hom c pb
-:= Limit.mediate pb (Pullback.show_cone ga gb c fa fb ωsquare)
+:= Limit.univ pb (Pullback.mk_cone ga gb c fa fb ωsquare)
 
 /-! #brief Projection from a pullback.
 -/
@@ -177,41 +177,65 @@ Pullbacks.
     : C^.hom pb b
 := pb^.proj CoSpanCat.Obj.b
 
+-- TODO:
+-- Pullback.into.factor
+-- Pullback.into.uniq
+-- ga ∘∘ Pullback.π₁ = gb ∘∘ Pullback.π₂
+
 
 
 /- ----------------------------------------------------------------------------
 Categories with pullbacks.
 ---------------------------------------------------------------------------- -/
 
+/-! #brief A category with all pullbacks along a given hom.
+-/
+class HasAllPullbacksAlong (C : Cat.{ℓobj ℓhom})
+    {a z : [[C]]} (ga : a →→ z)
+    : Type (max 1 ℓobj ℓhom)
+:= { pullback : ∀ {b : [[C]]} (gb : b →→ z)
+                , Pullback ga gb
+   }
+
 /-! #brief A category with all pullbacks.
 -/
-@[reducible] definition HasAllPullbacks (C : Cat.{ℓobj ℓhom})
+class HasAllPullbacks (C : Cat.{ℓobj ℓhom})
     : Type (max 1 ℓobj ℓhom)
-:= ∀ {a b z : [[C]]} (ga : a →→ z) (gb : b →→ z)
-   , Pullback ga gb
+:= { pullback : ∀ {a b z : [[C]]} (ga : a →→ z) (gb : b →→ z)
+                , Pullback ga gb
+   }
+
+/-! #brief The pullback of two homs.
+-/
+definition pullback {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {a b z : [[C]]} (ga : a →→ z) (gb : b →→ z)
+    : Pullback ga gb
+:= HasAllPullbacks.pullback ga gb
 
 /-! #brief Categories with all limits have all pullbacks.
 -/
-@[reducible] definition HasAllLimits.HasAllPullbacks {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllLimits : HasAllLimits C)
+instance HasAllLimits.HasAllPullbacks {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllLimits : HasAllLimits C]
     : HasAllPullbacks C
-:= λ a b z ga gb, C_HasAllLimits (CoSpanDrgm ga gb)
+:= @HasAllPullbacks.mk C (λ a b z ga gb, limit (CoSpanDrgm ga gb))
 
-/-! #brief A category with all pullbacks along a given hom.
+/-! #brief The pullback along a hom.
 -/
-@[reducible] definition HasAllPullbacksAlong (C : Cat.{ℓobj ℓhom})
-    {a z : [[C]]} (ga : a →→ z)
-    : Type (max 1 ℓobj ℓhom)
-:= ∀ {b : [[C]]} (gb : b →→ z)
-   , Pullback ga gb
+definition pullback_along {C : Cat.{ℓobj ℓhom}}
+    {a z : [[C]]} (base : a →→ z)
+    [base_HasPullbacksAlong : HasAllPullbacksAlong C base]
+    {b : [[C]]} (f : b →→ z)
+    : Pullback base f
+:= HasAllPullbacksAlong.pullback base f
 
 /-! #brief A category with all pullbacks has all pullbacks along every hom.
 -/
-@[reducible] definition HasAllPullbacks.HasAllPullbacksAlong {C : Cat.{ℓobj ℓhom}}
-    (C_HasAllPullbacks : HasAllPullbacks C)
+instance HasAllPullbacks.HasAllPullbacksAlong {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllPullbacks : HasAllPullbacks C]
     {a z : [[C]]} (ga : a →→ z)
     : HasAllPullbacksAlong C ga
-:= λ b gb, C_HasAllPullbacks ga gb
+:= @HasAllPullbacksAlong.mk C a z ga (λ b gb, pullback ga gb)
 
 
 
@@ -222,20 +246,21 @@ The base change functor.
 /-! #brief Base change functor.
 -/
 @[reducible] definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
-    {c₁ c₂ : [[C]]} {base : c₁ →→ c₂}
-    (base_HasPullbacksAlong : HasAllPullbacksAlong C base)
+    {c₁ c₂ : [[C]]}
+    (base : c₁ →→ c₂)
+    [base_HasPullbacksAlong : HasAllPullbacksAlong C base]
     : SliceCat C c₂ ⇉⇉ SliceCat C c₁
-:= { obj := λ x, { dom := base_HasPullbacksAlong x^.hom
-                 , hom := Pullback.π₁ (base_HasPullbacksAlong x^.hom)
+:= { obj := λ x, { dom := pullback_along base x^.hom
+                 , hom := Pullback.π₁ (pullback_along base x^.hom)
                  }
-   , hom := λ x y f, { hom := Pullback.into (base_HasPullbacksAlong y^.hom)
-                               (Pullback.π₁ (base_HasPullbacksAlong x^.hom))
-                               (f^.hom ∘∘ Pullback.π₂ (base_HasPullbacksAlong x^.hom))
+   , hom := λ x y f, { hom := Pullback.into (pullback_along base y^.hom)
+                               (Pullback.π₁ (pullback_along base x^.hom))
+                               (f^.hom ∘∘ Pullback.π₂ (pullback_along base x^.hom))
                                begin exact sorry end
                      , triangle := begin exact sorry end
                      }
-   , hom_id := λ x, begin apply SliceCat.Hom.eq, exact sorry end
-   , hom_circ := λ x y z g f, begin apply SliceCat.Hom.eq, exact sorry end
+   , hom_id := λ x, begin apply SliceHom.eq, exact sorry end
+   , hom_circ := λ x y z g f, begin apply SliceHom.eq, exact sorry end
    }
 
 end qp
