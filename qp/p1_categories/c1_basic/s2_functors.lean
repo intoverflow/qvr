@@ -8,7 +8,7 @@ namespace qp
 
 open stdaux
 
-universe variables ℓ₁ ℓ₂ ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄ ℓobj₅ ℓhom₅
+universe variables ℓ₁ ℓ₂ ℓ₃ ℓ₄ ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃ ℓobj₄ ℓhom₄ ℓobj₅ ℓhom₅
 
 /-! #brief A functor between categories.
 -/
@@ -165,7 +165,109 @@ theorem Fun.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓho
 
 
 /- -----------------------------------------------------------------------
-Bijections of categories.
+The category of categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief A category of categories.
+-/
+definition CatOfCats
+    : Cat.{((max ℓobj ℓhom) + 1) ((max ℓobj ℓhom) + 1)}
+:= { obj := Cat.{ℓobj ℓhom}
+   , hom := Fun
+   , id := Fun.id
+   , circ := @Fun.comp
+   , circ_assoc := @Fun.comp_assoc
+   , circ_id_left := @Fun.comp_id_left
+   , circ_id_right := @Fun.comp_id_right
+   }
+
+/-! #brief The Lean object functor.
+-/
+definition CatOfCats.ObjFun
+    : Fun CatOfCats.{ℓobj ℓhom} LeanCat.{ℓobj}
+:= { obj := λ C, C^.obj
+   , hom := λ C₁ C₂ F, F^.obj
+   , hom_id := λ C, rfl
+   , hom_circ := λ C₁ C₂ C₃ g f, rfl
+   }
+
+/-! #brief A general hom in a category.
+-/
+structure Cat.GeneralHom (C : Cat.{ℓobj₁ ℓhom₁})
+    : Type (max ℓobj₁ ℓhom₁)
+:= (dom : C^.obj)
+   (codom : C^.obj)
+   (hom : C^.hom dom codom)
+
+/-! #brief The Lean hom functor.
+-/
+definition CatOfCats.HomFun
+    : Fun CatOfCats.{ℓobj ℓhom} LeanCat.{max ℓobj ℓhom}
+:= { obj := Cat.GeneralHom
+   , hom
+      := λ C₁ C₂ F h
+         , { dom := F^.obj h^.dom
+           , codom := F^.obj h^.codom
+           , hom := F^.hom h^.hom
+           }
+   , hom_id := λ C, begin apply funext, intro x, cases x, trivial end
+   , hom_circ := λ C₁ C₂ C₃ g f, begin apply funext, intro x, cases x, trivial end
+   }
+
+
+
+/- -----------------------------------------------------------------------
+The Lean universe-level functors.
+----------------------------------------------------------------------- -/
+
+/-! #brief Lift the universe level of a type by 1.
+-/
+inductive Lean.Level1 (A : Type.{ℓ₁}) : Type (ℓ₁ + 1)
+| lift : A → Lean.Level1
+
+/-! #brief Apply a function to a Lean.Level1.
+-/
+definition Lean.Level1.map {A : Type.{ℓ₁}} {B : Type.{ℓ₂}}
+    (f : A → B)
+    : Lean.Level1 A → Lean.Level1 B
+| (Lean.Level1.lift a) := Lean.Level1.lift (f a)
+
+/-! #brief Increasing the universe level by 1.
+-/
+definition LeanCat.Level1
+    : Fun LeanCat.{ℓ₁} LeanCat.{ℓ₁ + 1}
+:= { obj := Lean.Level1
+   , hom := @Lean.Level1.map
+   , hom_id := λ X, begin apply funext, intro x, cases x, trivial end
+   , hom_circ := λ X Y Z g f, begin apply funext, intro x, cases x, trivial end
+   }
+
+/-! #brief Lift the universe level to the max.
+-/
+inductive Lean.LevelMax (A : Type.{ℓ₁}) : Type (max ℓ₁ ℓ₂)
+| lift : A → Lean.LevelMax
+
+/-! #brief Apply a function to a Lean.Level1.
+-/
+definition Lean.LevelMax.map {A : Type.{ℓ₁}} {B : Type.{ℓ₂}}
+    (f : A → B)
+    : Lean.LevelMax.{ℓ₁ ℓ₃} A → Lean.LevelMax.{ℓ₂ ℓ₄} B
+| (Lean.LevelMax.lift a) := Lean.LevelMax.lift (f a)
+
+/-! #brief Increasing the universe level to the max.
+-/
+definition LeanCat.LevelMax
+    : Fun LeanCat.{ℓ₁} LeanCat.{max ℓ₁ ℓ₂}
+:= { obj := Lean.LevelMax
+   , hom := @Lean.LevelMax.map
+   , hom_id := λ X, begin apply funext, intro x, cases x, trivial end
+   , hom_circ := λ X Y Z g f, begin apply funext, intro x, cases x, trivial end
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Bijections of categories and conjugate functors.
 ----------------------------------------------------------------------- -/
 
 /-! #brief A bijection of categories.
@@ -247,9 +349,26 @@ theorem Fun.comp.bij
 -/
 definition CastFun
     : ∀ {C₁ C₂ : Cat.{ℓobj ℓhom}}
-         (ω : C₁ = C₂)
+        (ω : C₁ = C₂)
        , Fun C₁ C₂
 | C .C (eq.refl .C) := Fun.id C
+
+/-! #brief The casting functor is trivial on eq.refl.
+-/
+theorem CastFun.refl
+    : ∀ {C : Cat.{ℓobj ℓhom}}
+         (ω : C = C)
+      , CastFun ω = Fun.id C
+| C (eq.refl .C) := rfl
+
+/-! #brief The casting functor is compatible with transitivity.
+-/
+theorem CastFun.trans
+    : ∀ {C₁ C₂ C₃ : Cat.{ℓobj ℓhom}}
+        (ω₂₃ : C₂ = C₃)
+        (ω₁₂ : C₁ = C₂)
+      , CastFun ω₂₃ □□ CastFun ω₁₂ = CastFun (eq.trans ω₁₂ ω₂₃)
+| C .C .C (eq.refl .C) (eq.refl .C) := Fun.comp_id_right
 
 /-! #brief The casting functor is a bijection of categories.
 -/
@@ -260,7 +379,65 @@ theorem CastFun.Bij
       , Cat.Bij (CastFun ω₁₂) (CastFun ω₂₁)
 | C .C (eq.refl .C) (eq.refl .C) := Fun.id.Bij C
 
+/-! #brief A pair of conjugate functors.
+-/
+structure Fun.Conj {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}} {D₁ D₂ : Cat.{ℓobj₂ ℓhom₂}}
+    (FC₁₂ : Fun C₁ C₂) (FC₂₁ : Fun C₂ C₁)
+    (FD₁₂ : Fun D₁ D₂) (FD₂₁ : Fun D₂ D₁)
+    (F₁ : Fun C₁ D₁) (F₂ : Fun C₂ D₂)
+    : Prop
+:= (dom_bij : Cat.Bij FC₁₂ FC₂₁)
+   (codom_bij : Cat.Bij FD₁₂ FD₂₁)
+   (id₂ : F₂ = Fun.comp (Fun.comp FD₁₂ F₁) FC₂₁)
 
+theorem Fun.Conj.outside {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}} {D₁ D₂ : Cat.{ℓobj₂ ℓhom₂}}
+    {FC₁₂ : Fun C₁ C₂} {FC₂₁ : Fun C₂ C₁}
+    {FD₁₂ : Fun D₁ D₂} {FD₂₁ : Fun D₂ D₁}
+    {F₁ : Fun C₁ D₁} {F₂ : Fun C₂ D₂}
+    (conj : Fun.Conj FC₁₂ FC₂₁ FD₁₂ FD₂₁ F₁ F₂)
+    : Fun.comp FD₂₁ F₂ = Fun.comp F₁ FC₂₁
+:= by calc FD₂₁ □□ F₂
+               = FD₂₁ □□ (FD₁₂ □□ F₁ □□ FC₂₁) : by rw conj^.id₂
+           ... = (FD₂₁ □□ FD₁₂) □□ F₁ □□ FC₂₁ : by repeat {rw Fun.comp_assoc}
+           ... = Fun.id D₁ □□ F₁ □□ FC₂₁     : by rw conj^.codom_bij^.id₁
+           ... = F₁ □□ FC₂₁                   : by rw Fun.comp_id_left
+
+theorem Fun.Conj.inside {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}} {D₁ D₂ : Cat.{ℓobj₂ ℓhom₂}}
+    {FC₁₂ : Fun C₁ C₂} {FC₂₁ : Fun C₂ C₁}
+    {FD₁₂ : Fun D₁ D₂} {FD₂₁ : Fun D₂ D₁}
+    {F₁ : Fun C₁ D₁} {F₂ : Fun C₂ D₂}
+    (conj : Fun.Conj FC₁₂ FC₂₁ FD₁₂ FD₂₁ F₁ F₂)
+    : Fun.comp F₂ FC₁₂ = Fun.comp FD₁₂ F₁
+:= by calc F₂ □□ FC₁₂
+               = (FD₁₂ □□ F₁ □□ FC₂₁) □□ FC₁₂ : by rw conj^.id₂
+           ... = FD₁₂ □□ F₁ □□ (FC₂₁ □□ FC₁₂) : by repeat {rw Fun.comp_assoc}
+           ... = FD₁₂ □□ F₁ □□ Fun.id C₁     : by rw conj^.dom_bij^.id₁
+           ... = FD₁₂ □□ F₁                  : by rw Fun.comp_id_right
+
+theorem Fun.Conj.id₁ {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}} {D₁ D₂ : Cat.{ℓobj₂ ℓhom₂}}
+    {FC₁₂ : Fun C₁ C₂} {FC₂₁ : Fun C₂ C₁}
+    {FD₁₂ : Fun D₁ D₂} {FD₂₁ : Fun D₂ D₁}
+    {F₁ : Fun C₁ D₁} {F₂ : Fun C₂ D₂}
+    (conj : Fun.Conj FC₁₂ FC₂₁ FD₁₂ FD₂₁ F₁ F₂)
+    : Fun.comp (Fun.comp FD₂₁ F₂) FC₁₂ = F₁
+:= by calc FD₂₁ □□ F₂ □□ FC₁₂
+               = FD₂₁ □□ (FD₁₂ □□ F₁ □□ FC₂₁) □□ FC₁₂   : by rw conj^.id₂
+           ... = (FD₂₁ □□ FD₁₂) □□ F₁ □□ (FC₂₁ □□ FC₁₂) : by repeat {rw Fun.comp_assoc}
+           ... = Fun.id D₁ □□ F₁ □□ Fun.id C₁           : by rw [conj^.dom_bij^.id₁, conj^.codom_bij^.id₁]
+           ... = F₁                                     : by rw [Fun.comp_id_left, Fun.comp_id_right]
+
+/-! #brief Conjugate functors can be 'flipped' to the other direction.
+-/
+theorem Fun.conj {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}} {D₁ D₂ : Cat.{ℓobj₂ ℓhom₂}}
+    {FC₁₂ : Fun C₁ C₂} {FC₂₁ : Fun C₂ C₁}
+    {FD₁₂ : Fun D₁ D₂} {FD₂₁ : Fun D₂ D₁}
+    {F₁ : Fun C₁ D₁} {F₂ : Fun C₂ D₂}
+    (conj : Fun.Conj FC₁₂ FC₂₁ FD₁₂ FD₂₁ F₁ F₂)
+    : Fun.Conj FC₂₁ FC₁₂ FD₂₁ FD₁₂ F₂ F₁
+:= { dom_bij := Cat.Bij.flip conj^.dom_bij
+   , codom_bij := Cat.Bij.flip conj^.codom_bij
+   , id₂ := eq.symm conj^.id₁
+   }
 
 /- -----------------------------------------------------------------------
 Forgetful functors between the algebraic categories.
@@ -596,49 +773,19 @@ theorem OpFun.outFun {C : Cat.{ℓobj ℓhom}}
     : OpFun (OpCat_OpCat.outFun C) = OpCat_OpCat.inFun (OpCat C)
 := begin cases C, exact OpFun.id end
 
-/-! #brief OpFun is an involution.
+/-! #brief OpFun is nearly an involution.
 -/
-theorem OpFun_OpFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+definition OpFun_OpFun.Conj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : Fun C D)
-    : OpFun (OpFun F) = Fun.comp (Fun.comp (OpCat_OpCat.inFun D) F) (OpCat_OpCat.outFun C)
-:= begin
-     apply Fun.eq,
-     { intro c, cases C, cases D, trivial },
-     { intros ωobj c₁ c₂ f, cases C, cases D, trivial }
-   end
-
-/-! #brief OpFun is an involution.
--/
-theorem OpFun_OpFun_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    (F : Fun C D)
-    : Fun.comp (OpFun (OpFun F)) (OpCat_OpCat.inFun C) = Fun.comp (OpCat_OpCat.inFun D) F
-:= by calc OpFun (OpFun F) □□ OpCat_OpCat.inFun C
-               = OpCat_OpCat.inFun D □□ F □□ OpCat_OpCat.outFun C □□ OpCat_OpCat.inFun C : by rw OpFun_OpFun
-           ... = OpCat_OpCat.inFun D □□ F □□ (OpCat_OpCat.outFun C □□ OpCat_OpCat.inFun C) : by rw Fun.comp_assoc
-           ... = OpCat_OpCat.inFun D □□ F □□ (Fun.id C) : by rw (OpCat_OpCat.Bij C)^.id₁
-           ... = OpCat_OpCat.inFun D □□ F : by rw Fun.comp_id_right
-
-/-! #brief OpFun is an involution.
--/
-theorem OpFun_OpFun_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    (F : Fun C D)
-    : Fun.comp (OpCat_OpCat.outFun D) (OpFun (OpFun F)) = Fun.comp F (OpCat_OpCat.outFun C)
-:= by calc OpCat_OpCat.outFun D □□ OpFun (OpFun F)
-               = OpCat_OpCat.outFun D □□ (OpCat_OpCat.inFun D □□ F □□ OpCat_OpCat.outFun C) : by rw OpFun_OpFun
-           ... = (OpCat_OpCat.outFun D □□ OpCat_OpCat.inFun D) □□ F □□ OpCat_OpCat.outFun C : by repeat { rw -Fun.comp_assoc }
-           ... = (Fun.id D) □□ F □□ OpCat_OpCat.outFun C : by rw (OpCat_OpCat.Bij D)^.id₁
-           ... = F □□ OpCat_OpCat.outFun C : by rw Fun.comp_id_left
-
-/-! #brief OpFun is an involution.
--/
-theorem OpFun_OpFun_collapse {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    (F : Fun C D)
-    : Fun.comp (Fun.comp (OpCat_OpCat.outFun D) (OpFun (OpFun F))) (OpCat_OpCat.inFun C) = F
-:= by calc OpCat_OpCat.outFun D □□ OpFun (OpFun F) □□ OpCat_OpCat.inFun C
-               = F □□ OpCat_OpCat.outFun C □□ OpCat_OpCat.inFun C : by rw OpFun_OpFun_left
-           ... = F □□ (OpCat_OpCat.outFun C □□ OpCat_OpCat.inFun C) : by rw Fun.comp_assoc
-           ... = F □□ Fun.id C : by rw (OpCat_OpCat.Bij C)^.id₁
-           ... = F             : by rw Fun.comp_id_right
+    : Fun.Conj _ _ _ _  F (OpFun (OpFun F))
+:= { dom_bij := (OpCat_OpCat.Bij C)
+   , codom_bij := (OpCat_OpCat.Bij D)
+   , id₂ := begin
+              apply Fun.eq,
+              { intro c, cases C, cases D, trivial },
+              { intros ωobj c₁ c₂ f, cases C, cases D, trivial }
+            end
+   }
 
 
 
@@ -652,8 +799,8 @@ definition OverFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂
     (X : C^.obj)
     (F : Fun C D)
     : Fun (OverCat C X) (OverCat D (F^.obj X))
-:= { obj := λ A, OverObj.mk (F^.obj A^.obj) (F^.hom A^.hom)
-   , hom := λ A B f, OverHom.mk (F^.hom f^.hom) (by rw [f^.triangle, F^.hom_circ])
+:= { obj := λ A, OverObj.mk (F^.obj A^.dom) (F^.hom A^.down)
+   , hom := λ A B f, OverHom.mk (F^.hom f^.hom) (begin dsimp, rw [f^.triangle, F^.hom_circ] end)
    , hom_id := λ A, OverHom.eq F^.hom_id
    , hom_circ := λ a b c g f, OverHom.eq F^.hom_circ
    }
@@ -828,26 +975,13 @@ definition ConeCat {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂
    , circ_id_right := @ConeHom.comp_id_right C D F
    }
 
-/-! #brief Functors induce functors on cone categories.
+/-! #brief Equal functors give equal cone categories.
 -/
-definition ConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : Fun B C)
-    (H : Fun C D)
-    : Fun (ConeCat F) (ConeCat (H □□ F))
-:= { obj := λ c, { obj := H^.obj c^.obj
-                 , hom := λ b, H^.hom (c^.hom b)
-                 , triangle := λ b₁ b₂ f
-                               , begin
-                                   rw [c^.triangle f, H^.hom_circ],
-                                   trivial
-                                 end
-                 }
-   , hom := λ c₁ c₂ h, { mediate := H^.hom h^.mediate
-                      , factor := λ b, begin dsimp, rw [h^.factor, H^.hom_circ] end
-                      }
-   , hom_id := λ c, ConeHom.eq H^.hom_id
-   , hom_circ := λ c₁ c₂ c₃ g f, ConeHom.eq H^.hom_circ
-   }
+definition ConeCat.CastFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    (ω : F₁ = F₂)
+    : Fun (ConeCat F₁) (ConeCat F₂)
+:= CastFun (congr_arg ConeCat ω)
 
 /-! #brief A co-cone category.
 -/
@@ -856,13 +990,13 @@ definition CoConeCat {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom�
     : Cat.{(max ℓobj₁ ℓobj₂ ℓhom₂) (ℓhom₂ + 1)}
 := ConeCat (OpFun F)
 
-/-! #brief Functors induce functors on cone categories.
+/-! #brief Equal functors give equal co-cone categories.
 -/
-definition CoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : Fun B C)
-    (H : Fun C D)
-    : Fun (CoConeCat F) (CoConeCat (H □□ F))
-:= ConeFun (OpFun F) (OpFun H)
+definition CoConeCat.CastFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    (ω : F₁ = F₂)
+    : Fun (CoConeCat F₁) (CoConeCat F₂)
+:= CastFun (congr_arg CoConeCat ω)
 
 /-! #brief An object in a co-cone category.
 -/
@@ -904,5 +1038,93 @@ definition CoConeHom.mk {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓh
 := { mediate := f
    , factor := ω
    }
+
+/-! #brief Co-cones and cones are dual concepts.
+-/
+theorem CoCone_dual_Cone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    : CoConeCat F = ConeCat (OpFun F)
+:= rfl
+
+/-! #brief Cones and co-cones are dual concepts.
+-/
+theorem Cone_dual_CoCone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    : (ConeCat F) = (CoConeCat (OpFun F))
+:= begin
+     cases C, cases D, cases F,
+     exact rfl,
+   end
+
+
+
+/- -----------------------------------------------------------------------
+Functors and cone and co-cone categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Functors induce functors on cone categories by composition.
+-/
+definition ConeFun
+    {A : Cat.{ℓobj₁ ℓhom₁}} {B : Cat.{ℓobj₂ ℓhom₂}} {C : Cat.{ℓobj₃ ℓhom₃}} {D : Cat.{ℓobj₄ ℓhom₄}}
+    (H : Fun C D)
+    (G : Fun B C)
+    (F : Fun A B)
+    : Fun (ConeCat G) (ConeCat (H □□ G □□ F))
+:= { obj := λ c, { obj := H^.obj c^.obj
+                 , hom := λ a, H^.hom (c^.hom (F^.obj a))
+                 , triangle := λ a₁ a₂ f
+                               , begin
+                                   rw [c^.triangle (F^.hom f), H^.hom_circ],
+                                   trivial
+                                 end
+                 }
+   , hom := λ c₁ c₂ h, { mediate := H^.hom h^.mediate
+                      , factor := λ b, begin dsimp, rw [h^.factor, H^.hom_circ] end
+                      }
+   , hom_id := λ c, ConeHom.eq H^.hom_id
+   , hom_circ := λ c₁ c₂ c₃ g f, ConeHom.eq H^.hom_circ
+   }
+
+/-! #brief Functors induce functors on cone categories by composition on the left.
+-/
+definition LeftConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : Fun B C)
+    (H : Fun C D)
+    : Fun (ConeCat F) (ConeCat (H □□ F))
+:= ConeFun H F (Fun.id B)
+
+/-! #brief Functors induce functors on cone categories by composition on the right.
+-/
+definition RightConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (H : Fun B C)
+    (F : Fun C D)
+    : Fun (ConeCat F) (ConeCat (F □□ H))
+:= CastFun (congr_arg ConeCat Fun.comp_id_left)  □□ ConeFun (Fun.id D) F H
+
+/-! #brief Functors induce functors on co-cone categories by composition.
+-/
+definition CoConeFun
+    {A : Cat.{ℓobj₁ ℓhom₁}} {B : Cat.{ℓobj₂ ℓhom₂}} {C : Cat.{ℓobj₃ ℓhom₃}} {D : Cat.{ℓobj₄ ℓhom₄}}
+    (H : Fun C D)
+    (G : Fun B C)
+    (F : Fun A B)
+    : Fun (CoConeCat G) (CoConeCat (H □□ G □□ F))
+:= ConeFun (OpFun H) (OpFun G) (OpFun F)
+
+/-! #brief Functors induce functors on co-cone categories by composition on the left.
+-/
+definition LeftCoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (F : Fun B C)
+    (H : Fun C D)
+    : Fun (CoConeCat F) (CoConeCat (H □□ F))
+:= LeftConeFun (OpFun F) (OpFun H)
+
+/-! #brief Functors induce functors on co-cone categories by composition on the left.
+-/
+definition RightCoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (H : Fun B C)
+    (F : Fun C D)
+    : Fun (CoConeCat F) (CoConeCat (F □□ H))
+:= RightConeFun (OpFun H) (OpFun F)
 
 end qp

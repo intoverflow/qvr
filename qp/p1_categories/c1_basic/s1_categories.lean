@@ -403,15 +403,15 @@ Over and under categories.
 -/
 structure OverObj (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
     : Type (max ℓobj ℓhom)
-:= (obj : C^.obj)
-   (hom : C^.hom obj X)
+:= (dom : C^.obj)
+   (down : C^.hom dom X)
 
 /-! #brief Eqaulity of objects in an over category.
 -/
 theorem OverObj.eq {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     : ∀ {A B : OverObj C X}
-         (ωobj : A^.obj = B^.obj)
-         (ωhom : A^.hom == B^.hom)
+         (ωobj : A^.dom = B^.dom)
+         (ωhom : A^.down == B^.down)
       , A = B
 | (OverObj.mk obj hom) (OverObj.mk .obj .hom)
   (eq.refl .obj) (heq.refl .hom)
@@ -422,8 +422,8 @@ theorem OverObj.eq {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
 structure OverHom (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
     (A B : OverObj C X)
     : Sort (max 1 ℓhom)
-:= (hom : C^.hom A^.obj B^.obj)
-   (triangle : A^.hom = C^.circ B^.hom hom)
+:= (hom : C^.hom A^.dom B^.dom)
+   (triangle : A^.down = C^.circ B^.down hom)
 
 /-! #brief Equality of homs in an over category.
 -/
@@ -452,7 +452,7 @@ theorem OverHom.heq {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
 definition OverHom.id (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
     (A : OverObj C X)
     : OverHom C X A A
-:= { hom := C^.id A^.obj
+:= { hom := C^.id A^.dom
    , triangle := eq.symm C^.circ_id_right
    }
 
@@ -524,6 +524,7 @@ notation C `//` X := OverCat C X
 -/
 definition UnderCat (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
     : Cat.{(max ℓobj ℓhom) (max 1 ℓhom)}
+--:= OpCat (OverCat (OpCat C) X)
 := OpCat (OverCat (OpCat C) X)
 
 -- An under category.
@@ -548,37 +549,45 @@ definition UnderHom (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
 definition UnderObj.mk {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     {A : C^.obj} (f : C^.hom X A)
     : UnderObj C X
-:= { obj := A, hom := f }
+:= { dom := A, down := f }
 
 /-! #brief The object contained within an under object.
 -/
 @[reducible] definition UnderObj.codom {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
-    (A : (UnderCat C X)^.obj)
+    (A : UnderObj C X)
     : C^.obj
-:= A^.obj
+:= A^.dom
 
 /-! #brief The hom contained within an under object.
 -/
-@[reducible] definition UnderObj.hom {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
-    (A : (UnderCat C X)^.obj)
+@[reducible] definition UnderObj.up {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
+    (A : UnderObj C X)
     : C^.hom X (UnderObj.codom A)
-:= A^.hom
+:= A^.down
 
 /-! #brief Constructor for a hom in an under category.
 -/
 definition UnderHom.mk {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     {A B : UnderObj C X}
     (f : C^.hom (UnderObj.codom A) (UnderObj.codom B))
-    (ω : B^.hom = C^.circ f A^.hom)
+    (ω : B^.up = C^.circ f A^.up)
     : UnderHom C X A B
 := { hom := f, triangle := ω }
 
 /-! #brief The hom contained within an under hom.
 -/
 @[reducible] definition UnderHom.hom {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
-    (A B : UnderObj C X)
+    {A B : UnderObj C X}
     (f : UnderHom C X A B)
     : C^.hom (UnderObj.codom A) (UnderObj.codom B)
 := f^.hom
+
+/-! #brief The hom contained within an under hom.
+-/
+@[reducible] theorem UnderHom.triangle {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
+    (A B : UnderObj C X)
+    (f : UnderHom C X A B)
+    : B^.up = UnderHom.hom f ∘∘ A^.up
+:= f^.triangle
 
 end qp
