@@ -88,6 +88,52 @@ attribute [instance] Cat.Finite.hom_fin
 
 
 /- -----------------------------------------------------------------------
+The empty and star categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief The category with one object and one hom.
+-/
+definition UnitCat : Cat.{ℓobj ℓhom}
+:= { obj := punit
+   , hom := λ u₁ u₂, punit
+   , id := λ u, punit.star
+   , circ := λ u₁ u₂ u₃ g f, punit.star
+   , circ_assoc := λ u₁ u₂ u₃ u₄ h g f, rfl
+   , circ_id_left := λ u₁ u₂ f, begin cases f, trivial end
+   , circ_id_right := λ u₁ u₂ f, begin cases f, trivial end
+   }
+
+/-! #brief UnitCat is a finite category.
+-/
+instance UnitCat.Finite
+    : Cat.Finite (UnitCat.{ℓobj ℓhom})
+:= { obj_fin := punit.FinSort
+   , hom_fin := λ u₁ u₂, punit.FinSort
+   }
+
+/-! #brief The category with no objects.
+-/
+definition EmptyCat : Cat.{ℓobj ℓhom}
+:= { obj := pempty
+   , hom := λ u₁ u₂, pempty
+   , id := λ u, by cases u
+   , circ := λ u₁ u₂ u₃ g f, by cases f
+   , circ_assoc := λ u₁ u₂ u₃ u₄ h g f, by cases f
+   , circ_id_left := λ u₁ u₂ f, by cases f
+   , circ_id_right := λ u₁ u₂ f, by cases f
+   }
+
+/-! #brief EmptyCat is a finite category.
+-/
+instance EmptyCat.Finite
+    : Cat.Finite (EmptyCat.{ℓobj ℓhom})
+:= { obj_fin := pempty.FinSort
+   , hom_fin := λ u₁ u₂, pempty.FinSort
+   }
+
+
+
+/- -----------------------------------------------------------------------
 The Lean categories.
 ----------------------------------------------------------------------- -/
 
@@ -403,8 +449,22 @@ Over and under categories.
 -/
 structure OverObj (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
     : Type (max ℓobj ℓhom)
-:= (dom : C^.obj)
-   (down : C^.hom dom X)
+:= (obj : C^.obj)
+   (hom : C^.hom obj X)
+
+/-! #brief The object contained within an over object.
+-/
+@[reducible] definition OverObj.dom {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
+    (A : OverObj C X)
+    : C^.obj
+:= A^.obj
+
+/-! #brief The hom contained within an over object.
+-/
+@[reducible] definition OverObj.down {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
+    (A : OverObj C X)
+    : C^.hom (OverObj.dom A) X
+:= A^.hom
 
 /-! #brief Eqaulity of objects in an over category.
 -/
@@ -549,21 +609,21 @@ definition UnderHom (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
 definition UnderObj.mk {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     {A : C^.obj} (f : C^.hom X A)
     : UnderObj C X
-:= { dom := A, down := f }
+:= { obj := A, hom := f }
 
 /-! #brief The object contained within an under object.
 -/
 @[reducible] definition UnderObj.codom {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     (A : UnderObj C X)
     : C^.obj
-:= A^.dom
+:= A^.obj
 
 /-! #brief The hom contained within an under object.
 -/
 @[reducible] definition UnderObj.up {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     (A : UnderObj C X)
     : C^.hom X (UnderObj.codom A)
-:= A^.down
+:= A^.hom
 
 /-! #brief Constructor for a hom in an under category.
 -/
@@ -589,5 +649,305 @@ definition UnderHom.mk {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     (f : UnderHom C X A B)
     : B^.up = UnderHom.hom f ∘∘ A^.up
 := f^.triangle
+
+
+
+/- -----------------------------------------------------------------------
+Isomorphisms in categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief An isomorphism in a category.
+-/
+structure Iso {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : C^.obj}
+    (f : C^.hom c₁ c₂) (g : C^.hom c₂ c₁)
+    : Prop
+:= (id₁ : C^.circ g f = C^.id c₁)
+   (id₂ : C^.circ f g = C^.id c₂)
+
+/-! #brief Iso's can be 'flipped' to run in the other direction.
+-/
+definition Iso.flip {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : C^.obj}
+    {f : C^.hom c₁ c₂} {g : C^.hom c₂ c₁}
+    (iso : Iso f g)
+    : Iso g f
+:= { id₁ := iso^.id₂
+   , id₂ := iso^.id₁
+   }
+
+/-! #brief Iso's have unique inverses.
+-/
+definition Iso.inv_uniq₂ {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : C^.obj}
+    {f : C^.hom c₁ c₂} {g₁ g₂ : C^.hom c₂ c₁}
+    (iso₁ : Iso f g₁)
+    (iso₂ : Iso f g₂)
+    : g₁ = g₂
+:= by calc g₁  = g₁ ∘∘ ⟨⟨c₂⟩⟩    : by rw C^.circ_id_right
+           ... = g₁ ∘∘ (f ∘∘ g₂) : by rw iso₂^.id₂
+           ... = (g₁ ∘∘ f) ∘∘ g₂ : by rw C^.circ_assoc
+           ... = ⟨⟨c₁⟩⟩ ∘∘ g₂    : by rw iso₁^.id₁
+           ... = g₂              : by rw C^.circ_id_left
+
+/-! #brief Iso's have unique inverses.
+-/
+definition Iso.inv_uniq₁ {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ : C^.obj}
+    {f₁ f₂ : C^.hom c₁ c₂} {g : C^.hom c₂ c₁}
+    (iso₁ : Iso f₁ g)
+    (iso₂ : Iso f₂ g)
+    : f₁ = f₂
+:= Iso.inv_uniq₂ (Iso.flip iso₁) (Iso.flip iso₂)
+
+/-! #brief Identity homs are isomorphisms.
+-/
+theorem Cat.id.Iso {C : Cat.{ℓobj ℓhom}}
+    (c : C^.obj)
+    : Iso (C^.id c) (C^.id c)
+:= { id₁ := C^.circ_id_left
+   , id₂ := C^.circ_id_left
+   }
+
+/-! #brief Isomorphisms are closed under composition.
+-/
+theorem Cat.circ.Iso {C : Cat.{ℓobj ℓhom}}
+    {c₁ c₂ c₃ : C^.obj}
+    {f₂₃ : C^.hom c₂ c₃} {g₂₃ : C^.hom c₃ c₂} (iso₂₃ : Iso f₂₃ g₂₃)
+    {f₁₂ : C^.hom c₁ c₂} {g₁₂ : C^.hom c₂ c₁} (iso₁₂ : Iso f₁₂ g₁₂)
+    : Iso (C^.circ f₂₃ f₁₂) (C^.circ g₁₂ g₂₃)
+:= { id₁ := by calc g₁₂ ∘∘ g₂₃ ∘∘ (f₂₃ ∘∘ f₁₂)
+                        = g₁₂ ∘∘ (g₂₃ ∘∘ f₂₃) ∘∘ f₁₂ : by repeat {rw C^.circ_assoc}
+                    ... = g₁₂ ∘∘ ⟨⟨c₂⟩⟩ ∘∘ f₁₂       : by rw iso₂₃^.id₁
+                    ... = g₁₂ ∘∘ f₁₂                 : by rw C^.circ_id_right
+                    ... = ⟨⟨c₁⟩⟩                     : by rw iso₁₂^.id₁
+   , id₂ := by calc f₂₃ ∘∘ f₁₂ ∘∘ (g₁₂ ∘∘ g₂₃)
+                        = f₂₃ ∘∘ (f₁₂ ∘∘ g₁₂) ∘∘ g₂₃ : by repeat {rw C^.circ_assoc}
+                    ... = f₂₃ ∘∘ ⟨⟨c₂⟩⟩ ∘∘ g₂₃       : by rw iso₁₂^.id₂
+                    ... = f₂₃ ∘∘ g₂₃                 : by rw C^.circ_id_right
+                    ... = ⟨⟨c₃⟩⟩                     : by rw iso₂₃^.id₂
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Initial and final objects in categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief A final object in a category.
+-/
+structure Final (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= (obj : C^.obj)
+   (hom : ∀ (c : C^.obj), C^.hom c obj)
+   (hom_uniq : ∀ {c : C^.obj} {h : C^.hom c obj}, h = hom c )
+
+/-! #brief A category with a final object.
+-/
+class HasFinal (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= (final : Final C)
+
+/-! #brief The final object in a category with a final object.
+-/
+definition final (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : C^.obj
+:= (HasFinal.final C)^.obj
+
+/-! #brief The final hom in a category with a final object.
+-/
+definition final_hom {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    (c : C^.obj)
+    : C^.hom c (final C)
+:= (HasFinal.final C)^.hom c
+
+/-! #brief The final hom is unique.
+-/
+definition final_hom_uniq (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    {c : C^.obj} {f : C^.hom c (final C)}
+    : f = final_hom c
+:= (HasFinal.final C)^.hom_uniq
+
+/-! #brief HasFinal is non-evil.
+-/
+theorem HasFinal_nonevil {C : Cat.{ℓobj ℓhom}}
+    (C_HasFinal₁ C_HasFinal₂ : HasFinal C)
+    : Iso (@final_hom _ C_HasFinal₁ (@final _ C_HasFinal₂))
+          (@final_hom _ C_HasFinal₂ (@final _ C_HasFinal₁))
+:= { id₁ := eq.trans (@final_hom_uniq _ C_HasFinal₂ _ _)
+                     (eq.symm (@final_hom_uniq _ C_HasFinal₂ _ _))
+   , id₂ := eq.trans (@final_hom_uniq _ C_HasFinal₁ _ _)
+                     (eq.symm (@final_hom_uniq _ C_HasFinal₁ _ _))
+   }
+
+/-! #brief HasFinal is non-evil.
+-/
+theorem HasFinal_nonevil.uniq₁ {C : Cat.{ℓobj ℓhom}}
+    (C_HasFinal₁ C_HasFinal₂ : HasFinal C)
+    {f : C^.hom (@final _ C_HasFinal₂) (@final _ C_HasFinal₁)}
+    {g : C^.hom (@final _ C_HasFinal₁) (@final _ C_HasFinal₂)}
+    (iso : Iso f g)
+    : f = (@final_hom _ C_HasFinal₁ (@final _ C_HasFinal₂))
+:= @final_hom_uniq _ C_HasFinal₁ _ _
+
+/-! #brief HasFinal is non-evil.
+-/
+theorem HasFinal_nonevil.uniq₂ {C : Cat.{ℓobj ℓhom}}
+    (C_HasFinal₁ C_HasFinal₂ : HasFinal C)
+    {f : C^.hom (@final _ C_HasFinal₂) (@final _ C_HasFinal₁)}
+    {g : C^.hom (@final _ C_HasFinal₁) (@final _ C_HasFinal₂)}
+    (iso : Iso f g)
+    : g = (@final_hom _ C_HasFinal₂ (@final _ C_HasFinal₁))
+:= @final_hom_uniq _ C_HasFinal₂ _ _
+
+
+/-! #brief An initial object in a category.
+-/
+definition Init (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= Final (OpCat C)
+
+/-! #brief A category with an initial object.
+-/
+class HasInit (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= (init : Init C)
+
+/-! #brief The initial object in a category with a initial object.
+-/
+definition init (C : Cat.{ℓobj ℓhom})
+    [C_HasInit : HasInit C]
+    : C^.obj
+:= (HasInit.init C)^.obj
+
+/-! #brief The initial hom in a category with a initial object.
+-/
+definition init_hom {C : Cat.{ℓobj ℓhom}}
+    [C_HasInit : HasInit C]
+    (c : C^.obj)
+    : C^.hom (init C) c
+:= (HasInit.init C)^.hom c
+
+/-! #brief The initial hom is unique.
+-/
+definition init_hom_uniq (C : Cat.{ℓobj ℓhom})
+    [C_HasInit : HasInit C]
+    {c : C^.obj} {f : C^.hom (init C) c}
+    : f = init_hom c
+:= (HasInit.init C)^.hom_uniq
+
+/-! #brief Initial and final are dual concepts.
+-/
+theorem Init_dual_Final (C : Cat.{ℓobj ℓhom})
+    : Init C = Final (OpCat C)
+:= rfl
+
+/-! #brief Final and initial are dual concepts.
+-/
+theorem Final_dual_Init (C : Cat.{ℓobj ℓhom})
+    : Final C = Init (OpCat C)
+:= congr_arg Final (eq.symm (OpCat_OpCat C))
+
+/-! #brief A category has an initial object when its opposite has a final obejct.
+-/
+instance HasFinal.HasInit (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal (OpCat C)]
+    : HasInit C
+:= { init := HasFinal.final (OpCat C) }
+
+/-! #brief A category has a final object when its opposite has an initial obejct.
+-/
+instance HasInit.HasFinal (C : Cat.{ℓobj ℓhom})
+    [C_HasInit : HasInit (OpCat C)]
+    : HasFinal C
+:= { final := cast (eq.symm (Final_dual_Init C))
+                   (HasInit.init (OpCat C))
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Examples of initial and final objects in categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief UnitCat has an initial object.
+-/
+instance UnitCat.HasInit
+    : HasInit UnitCat.{ℓobj ℓhom}
+:= { init := { obj := punit.star
+             , hom := λ c, punit.star
+             , hom_uniq := λ c h, begin cases h, trivial end
+             }
+   }
+
+/-! #brief UnitCat has a final object.
+-/
+instance UnitCat.HasFinal
+    : HasFinal UnitCat.{ℓobj ℓhom}
+:= { final := { obj := punit.star
+              , hom := λ c, punit.star
+              , hom_uniq := λ c h, begin cases h, trivial end
+              }
+   }
+
+
+/-! #brief SortCat has an initial object.
+-/
+instance SortCat.HasInit
+    : HasInit SortCat.{ℓ}
+:= { init := { obj := pempty
+             , hom := λ T e, by cases e
+             , hom_uniq := λ c h, funext (λ e, by cases e)
+             }
+   }
+
+/-! #brief PropCat has an initial object.
+-/
+instance PropCat.HasInit
+    : HasInit PropCat
+:= SortCat.HasInit
+
+/-! #brief LeanCat has an initial object.
+-/
+instance LeanCat.HasInit
+    : HasInit LeanCat
+:= SortCat.HasInit
+
+
+/-! #brief SortCat has a final object.
+-/
+instance SortCat.HasFinal
+    : HasFinal SortCat.{ℓ}
+:= { final := { obj := punit
+              , hom := λ T t, punit.star
+              , hom_uniq := λ c h, funext (λ t, begin cases (h t), trivial end)
+              }
+   }
+
+/-! #brief PropCat has a final object.
+-/
+instance PropCat.HasFinal
+    : HasFinal PropCat
+:= SortCat.HasFinal
+
+/-! #brief LeanCat has a final object.
+-/
+instance LeanCat.HasFinal
+    : HasFinal LeanCat
+:= SortCat.HasFinal
+
+
+/-! #brief The category of natural numbers has an initial object.
+-/
+instance NatCat.HasInitial
+    :HasInit NatCat
+:= { init := { obj := nat.zero
+             , hom := nat.zero_le
+             , hom_uniq := λ c h, proof_irrel _ _
+             }
+   }
 
 end qp

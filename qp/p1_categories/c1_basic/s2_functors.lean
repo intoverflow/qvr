@@ -800,7 +800,7 @@ definition OverFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂
     (F : Fun C D)
     : Fun (OverCat C X) (OverCat D (F^.obj X))
 := { obj := λ A, OverObj.mk (F^.obj A^.dom) (F^.hom A^.down)
-   , hom := λ A B f, OverHom.mk (F^.hom f^.hom) (begin dsimp, rw [f^.triangle, F^.hom_circ] end)
+   , hom := λ A B f, OverHom.mk (F^.hom f^.hom) (by rw [f^.triangle, F^.hom_circ])
    , hom_id := λ A, OverHom.eq F^.hom_id
    , hom_circ := λ a b c g f, OverHom.eq F^.hom_circ
    }

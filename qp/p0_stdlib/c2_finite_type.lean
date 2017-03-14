@@ -26,6 +26,32 @@ class FinSort (A : Sort ℓ)
 --     : @FinSort.card A A_FinType₁ = @FinSort.card A A_FinType₂
 -- := sorry
 
+/-! #brief punit is a finite sort.
+-/
+instance punit.FinSort
+    : FinSort punit.{ℓ}
+:= { card := 1
+   , to_n := λ u, fin.zero
+   , of_n := λ n, punit.star
+   , of_n_to := λ u, begin cases u, trivial end
+   , to_n_of := λ n, eq.symm (fin.zero_uniq n)
+   }
+
+/-! #brief The empty sort.
+-/
+inductive pempty : Sort.{ℓ}
+
+/-! #brief punit is a finite sort.
+-/
+instance pempty.FinSort
+    : FinSort pempty.{ℓ}
+:= { card := 0
+   , to_n := λ u, by cases u
+   , of_n := fin.zero_elim
+   , of_n_to := λ u, begin cases u end
+   , to_n_of := λ n, fin.zero_elim n
+   }
+
 /-! #brief Every true proposition is a finite sort.
 -/
 instance Prop.true_FinSort
