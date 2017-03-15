@@ -26,6 +26,15 @@ class FinSort (A : Sort ℓ)
 --     : @FinSort.card A A_FinType₁ = @FinSort.card A A_FinType₂
 -- := sorry
 
+/-! #brief Finite sorts have decidable equality.
+-/
+instance FinSort.decidable_eq (A : Sort ℓ)
+    [A_FinSort : FinSort A]
+    : decidable_eq A
+:= λ a₁ a₂, if ω : FinSort.to_n a₁ = FinSort.to_n a₂
+            then decidable.is_true (function.injective_of_left_inverse (FinSort.of_n_to A) ω)
+            else decidable.is_false (λ ω', ω (congr_arg FinSort.to_n ω'))
+
 /-! #brief punit is a finite sort.
 -/
 instance punit.FinSort
@@ -93,6 +102,13 @@ instance Prop.decidable_FinSort
 @[class] definition FinType (A : Type ℓ)
     : Type ℓ
 := FinSort A
+
+/-! #brief Finite types have decidable equality.
+-/
+instance FinType.decidable_eq (A : Type ℓ)
+    [A_FinType : FinType A]
+    : decidable_eq A
+:= @FinSort.decidable_eq A A_FinType
 
 /-! #brief fin n is a finite type for all N.
 -/

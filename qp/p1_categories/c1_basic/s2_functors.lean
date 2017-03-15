@@ -165,6 +165,124 @@ theorem Fun.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓho
 
 
 /- -----------------------------------------------------------------------
+The initial and final functors.
+----------------------------------------------------------------------- -/
+
+/-! #brief The final functor.
+-/
+definition FinalFun (C : Cat.{ℓobj₂ ℓhom₂})
+    : Fun C UnitCat.{ℓobj₁ ℓhom₁}
+:= { obj := λ c, punit.star
+   , hom := λ c₁ c₂ f, punit.star
+   , hom_id := λ c, rfl
+   , hom_circ := λ c₁ c₂ c₃ g f, rfl
+   }
+
+/-! #brief The final functor is unique.
+-/
+theorem FinalFun.uniq {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C UnitCat.{ℓobj₁ ℓhom₁}}
+    : F = FinalFun.{ℓobj₁ ℓhom₁} C
+:= Fun.eq
+    (λ c, begin cases F^.obj c, trivial end)
+    (λ ω c₁ c₂ f, begin cases F^.hom f, trivial end)
+
+/-! #brief The initial functor.
+-/
+definition InitFun (C : Cat.{ℓobj₂ ℓhom₂})
+    : Fun EmptyCat.{ℓobj₁ ℓhom₁} C
+:= { obj := λ e, by cases e
+   , hom := λ e₁ e₂ f, by cases f
+   , hom_id := λ e, by cases e
+   , hom_circ := λ e₁ e₂ e₃ g f, by cases f
+   }
+
+/-! #brief The initial functor is unique.
+-/
+theorem InitFun.uniq {C : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun EmptyCat.{ℓobj₁ ℓhom₁} C}
+    : F = InitFun.{ℓobj₁ ℓhom₁} C
+:= Fun.eq
+    (λ c, by cases c)
+    (λ ω c₁ c₂ f, by cases f)
+
+
+
+/- -----------------------------------------------------------------------
+Functors and isomorphisms.
+----------------------------------------------------------------------- -/
+
+/-! #brief Functors preserve isomorphisms.
+-/
+theorem Fun.preserves_Iso {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    {c₁ c₂ : C^.obj}
+    {f₁₂ : C^.hom c₁ c₂} {f₂₁ : C^.hom c₂ c₁}
+    (iso : Iso f₁₂ f₂₁)
+    : Iso (F^.hom f₁₂) (F^.hom f₂₁)
+:= { id₁ := by calc F^.hom f₂₁ ∘∘ F^.hom f₁₂
+                        = F^.hom (f₂₁ ∘∘ f₁₂) : by rw F^.hom_circ
+                    ... = F^.hom (C^.id c₁)   : by rw iso^.id₁
+                    ... = ⟨⟨F^.obj c₁⟩⟩       : by rw F^.hom_id
+   , id₂ := by calc F^.hom f₁₂ ∘∘ F^.hom f₂₁
+                        = F^.hom (f₁₂ ∘∘ f₂₁) : by rw F^.hom_circ
+                    ... = F^.hom (C^.id c₂)   : by rw iso^.id₂
+                    ... = ⟨⟨F^.obj c₂⟩⟩       : by rw F^.hom_id
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Preservation of initial and final.
+----------------------------------------------------------------------- -/
+
+/-! #brief A functor which preserves final objects.
+-/
+class PresFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= (hom : ∀ [C_HasFinal : HasFinal C]
+            (d : D^.obj)
+          , D^.hom d (F^.obj (final C)))
+   (pres : ∀ [C_HasFinal : HasFinal C]
+           , IsFinal D (F^.obj (final C)) hom)
+
+/-! #brief Functors which preserve final objects yield instances of HasFinal.
+-/
+instance PresFinal.HasFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [C_HasFinal : HasFinal C]
+    (F : Fun C D) [F_PresFinal : PresFinal F]
+    : HasFinal D
+:= { obj := F^.obj (final C)
+   , hom := PresFinal.hom F
+   , final := PresFinal.pres F
+   }
+
+/-! #brief A functor which preserves initial objects.
+-/
+class PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= (hom : ∀ [C_HasInit : HasInit C]
+            (d : D^.obj)
+          , D^.hom (F^.obj (init C)) d)
+   (pres : ∀ [C_HasInit : HasInit C]
+           , IsInit D (F^.obj (init C)) hom)
+
+/-! #brief Functors which preserve initial objects yield instances of HasInit.
+-/
+instance PresInit.HasInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [C_HasInit : HasInit C]
+    (F : Fun C D) [F_PresInit : PresInit F]
+    : HasInit D
+:= { obj := F^.obj (init C)
+   , hom := PresInit.hom F
+   , init := PresInit.pres F
+   }
+
+
+
+/- -----------------------------------------------------------------------
 The category of categories.
 ----------------------------------------------------------------------- -/
 
@@ -888,19 +1006,19 @@ Cone and co-cone categories.
 
 /-! #brief An object in a cone category.
 -/
-structure ConeObj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+structure Cone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : Fun C D)
     : Type (max ℓobj₁ ℓobj₂ ℓhom₂)
 := (obj : D^.obj)
    (hom : ∀ (c : C^.obj), D^.hom obj (F^.obj c))
-   (triangle : ∀ {c₁ c₂ : C^.obj} (f : C^.hom c₁ c₂)
-               , hom c₂ = F^.hom f ∘∘ hom c₁)
+   (comm : ∀ {c₁ c₂ : C^.obj} (f : C^.hom c₁ c₂)
+           , hom c₂ = F^.hom f ∘∘ hom c₁)
 
 /-! #brief A hom in a cone category.
 -/
 structure ConeHom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : Fun C D)
-    (X Y : ConeObj F)
+    (X Y : Cone F)
     : Type ℓhom₂
 := (mediate : D^.hom X^.obj Y^.obj)
    (factor : ∀ (c : C^.obj), X^.hom c = Y^.hom c ∘∘ mediate)
@@ -909,7 +1027,7 @@ structure ConeHom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}
 -/
 theorem ConeHom.eq {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    {X Y : ConeObj F}
+    {X Y : Cone F}
     : ∀ {f₁ f₂ : ConeHom F X Y}
       , f₁^.mediate = f₂^.mediate
       → f₁ = f₂
@@ -919,28 +1037,41 @@ theorem ConeHom.eq {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂
 -/
 definition ConeHom.id {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    (X : ConeObj F)
+    (X : Cone F)
     : ConeHom F X X
 := { mediate := D^.id X^.obj
    , factor := λ c, eq.symm D^.circ_id_right
    }
 
+@[simp] theorem ConeHom.id.simp_mediate {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    {X : Cone F}
+    : (ConeHom.id X)^.mediate = D^.id X^.obj
+:= rfl
+
 /-! #brief Composition of two homs in a cone category.
 -/
 definition ConeHom.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    {X Y Z : ConeObj F}
+    {X Y Z : Cone F}
     (g : ConeHom F Y Z) (f : ConeHom F X Y)
     : ConeHom F X Z
 := { mediate := D^.circ g^.mediate f^.mediate
    , factor := λ c, by rw [D^.circ_assoc, -g^.factor, -f^.factor]
    }
 
+@[simp] theorem ConeHom.comp.simp_mediate {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    {X Y Z : Cone F}
+    {g : ConeHom F Y Z} {f : ConeHom F X Y}
+    : (ConeHom.comp g f)^.mediate = D^.circ g^.mediate f^.mediate
+:= rfl
+
 /-! #brief Composition of cone homs is associative.
 -/
 theorem ConeHom.comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    {X Y Z W : ConeObj F}
+    {X Y Z W : Cone F}
     (h : ConeHom F Z W) (g : ConeHom F Y Z) (f : ConeHom F X Y)
     : ConeHom.comp h (ConeHom.comp g f) = ConeHom.comp (ConeHom.comp h g) f
 := ConeHom.eq D^.circ_assoc
@@ -949,7 +1080,7 @@ theorem ConeHom.comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ �
 -/
 theorem ConeHom.comp_id_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    {A B : ConeObj F} {f : ConeHom F A B}
+    {A B : Cone F} {f : ConeHom F A B}
     : ConeHom.comp (ConeHom.id B) f = f
 := ConeHom.eq D^.circ_id_left
 
@@ -957,7 +1088,7 @@ theorem ConeHom.comp_id_left {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂
 -/
 theorem ConeHom.comp_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    {A B : ConeObj F} {f : ConeHom F A B}
+    {A B : Cone F} {f : ConeHom F A B}
     : ConeHom.comp f (ConeHom.id A) = f
 := ConeHom.eq D^.circ_id_right
 
@@ -966,7 +1097,7 @@ theorem ConeHom.comp_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
 definition ConeCat {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : Fun C D)
     : Cat.{(max ℓobj₁ ℓobj₂ ℓhom₂) (ℓhom₂ + 1)}
-:= { obj := ConeObj F
+:= { obj := Cone F
    , hom := ConeHom F
    , id := ConeHom.id
    , circ := @ConeHom.comp C D F
@@ -1000,30 +1131,30 @@ definition CoConeCat.CastFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂
 
 /-! #brief An object in a co-cone category.
 -/
-definition CoConeObj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+definition CoCone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : Fun C D)
     : Type (max ℓobj₁ ℓobj₂ ℓhom₂)
 := (CoConeCat F)^.obj
 
 /-! #brief Construct an object in a co-cone category.
 -/
-definition CoConeObj.mk {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+definition CoCone.mk {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
     (d : D^.obj)
     (to : ∀ (c : C^.obj), D^.hom (F^.obj c) d)
     (ω : ∀ {c₁ c₂ : C^.obj} (f : C^.hom c₁ c₂)
          , to c₁ = to c₂ ∘∘ F^.hom f)
-    : CoConeObj F
+    : CoCone F
 := { obj := d
    , hom := to
-   , triangle := λ c₁ c₂, ω
+   , comm := λ c₁ c₂, ω
    }
 
 /-! #brief A hom in a co-cone category.
 -/
 definition CoConeHom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     (F : Fun C D)
-    (A B : CoConeObj F)
+    (A B : CoCone F)
     : Type ℓhom₂
 := (CoConeCat F)^.hom A B
 
@@ -1031,7 +1162,7 @@ definition CoConeHom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom�
 -/
 definition CoConeHom.mk {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
     {F : Fun C D}
-    {A B : CoConeObj F}
+    {A B : CoCone F}
     (f : D^.hom B^.obj A^.obj)
     (ω : ∀ (c : C^.obj), A^.hom c = f ∘∘ B^.hom c)
     : CoConeHom F A B
@@ -1062,6 +1193,44 @@ theorem Cone_dual_CoCone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓ
 Functors and cone and co-cone categories.
 ----------------------------------------------------------------------- -/
 
+/-! #brief Functors induce functors on cone categories by composition on the left.
+-/
+definition LeftConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (G : Fun C D)
+    (F : Fun B C)
+    : Fun (ConeCat F) (ConeCat (G □□ F))
+:= { obj := λ c, { obj := G^.obj c^.obj
+                 , hom := λ a, G^.hom (c^.hom a)
+                 , comm := λ a₁ a₂ f
+                           , begin
+                               rw [c^.comm f, G^.hom_circ],
+                               trivial
+                             end
+                 }
+   , hom := λ c₁ c₂ h, { mediate := G^.hom h^.mediate
+                      , factor := λ b, begin dsimp, rw [h^.factor, G^.hom_circ] end
+                      }
+   , hom_id := λ c, ConeHom.eq G^.hom_id
+   , hom_circ := λ c₁ c₂ c₃ g f, ConeHom.eq G^.hom_circ
+   }
+
+/-! #brief Functors induce functors on cone categories by composition on the right.
+-/
+definition RightConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (G : Fun C D)
+    (F : Fun B C)
+    : Fun (ConeCat G) (ConeCat (G □□ F))
+:= { obj := λ c, { obj := c^.obj
+                 , hom := λ a, (c^.hom (F^.obj a))
+                 , comm := λ a₁ a₂ f, c^.comm (F^.hom f)
+                 }
+   , hom := λ c₁ c₂ h, { mediate := h^.mediate
+                      , factor := λ b, h^.factor (F^.obj b)
+                      }
+   , hom_id := λ c, rfl
+   , hom_circ := λ c₁ c₂ c₃ g f, rfl
+   }
+
 /-! #brief Functors induce functors on cone categories by composition.
 -/
 definition ConeFun
@@ -1070,36 +1239,23 @@ definition ConeFun
     (G : Fun B C)
     (F : Fun A B)
     : Fun (ConeCat G) (ConeCat (H □□ G □□ F))
-:= { obj := λ c, { obj := H^.obj c^.obj
-                 , hom := λ a, H^.hom (c^.hom (F^.obj a))
-                 , triangle := λ a₁ a₂ f
-                               , begin
-                                   rw [c^.triangle (F^.hom f), H^.hom_circ],
-                                   trivial
-                                 end
-                 }
-   , hom := λ c₁ c₂ h, { mediate := H^.hom h^.mediate
-                      , factor := λ b, begin dsimp, rw [h^.factor, H^.hom_circ] end
-                      }
-   , hom_id := λ c, ConeHom.eq H^.hom_id
-   , hom_circ := λ c₁ c₂ c₃ g f, ConeHom.eq H^.hom_circ
-   }
+:= Fun.comp (RightConeFun (Fun.comp H G) F) (LeftConeFun H G)
 
-/-! #brief Functors induce functors on cone categories by composition on the left.
+/-! #brief Functors induce functors on co-cone categories by composition on the left.
 -/
-definition LeftConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : Fun B C)
+definition LeftCoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (H : Fun C D)
-    : Fun (ConeCat F) (ConeCat (H □□ F))
-:= ConeFun H F (Fun.id B)
+    (F : Fun B C)
+    : Fun (CoConeCat F) (CoConeCat (H □□ F))
+:= LeftConeFun (OpFun H) (OpFun F)
 
-/-! #brief Functors induce functors on cone categories by composition on the right.
+/-! #brief Functors induce functors on co-cone categories by composition on the left.
 -/
-definition RightConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (H : Fun B C)
+definition RightCoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (F : Fun C D)
-    : Fun (ConeCat F) (ConeCat (F □□ H))
-:= CastFun (congr_arg ConeCat Fun.comp_id_left)  □□ ConeFun (Fun.id D) F H
+    (H : Fun B C)
+    : Fun (CoConeCat F) (CoConeCat (F □□ H))
+:= RightConeFun (OpFun F) (OpFun H)
 
 /-! #brief Functors induce functors on co-cone categories by composition.
 -/
@@ -1110,21 +1266,5 @@ definition CoConeFun
     (F : Fun A B)
     : Fun (CoConeCat G) (CoConeCat (H □□ G □□ F))
 := ConeFun (OpFun H) (OpFun G) (OpFun F)
-
-/-! #brief Functors induce functors on co-cone categories by composition on the left.
--/
-definition LeftCoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (F : Fun B C)
-    (H : Fun C D)
-    : Fun (CoConeCat F) (CoConeCat (H □□ F))
-:= LeftConeFun (OpFun F) (OpFun H)
-
-/-! #brief Functors induce functors on co-cone categories by composition on the left.
--/
-definition RightCoConeFun {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
-    (H : Fun B C)
-    (F : Fun C D)
-    : Fun (CoConeCat F) (CoConeCat (F □□ H))
-:= RightConeFun (OpFun H) (OpFun F)
 
 end qp

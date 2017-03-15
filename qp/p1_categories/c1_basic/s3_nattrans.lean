@@ -133,6 +133,62 @@ definition FunCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂}
 
 
 /- -----------------------------------------------------------------------
+Natural isomorphisms.
+----------------------------------------------------------------------- -/
+
+/-! #brief A natural isomorphism between two functors.
+-/
+definition NatIso {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    (η₁₂ : NatTrans F₁ F₂)
+    (η₂₁ : NatTrans F₂ F₁)
+    : Prop
+:= @Iso (FunCat C D) F₁ F₂ η₁₂ η₂₁
+
+/-! #brief The identity natural transformation is a natural isomorphism.
+-/
+theorem NatIso.id {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    : NatIso (NatTrans.id F) (NatTrans.id F)
+:= Cat.id.Iso F
+
+/-! #brief The composition of two natural isomorphisms is a natural iso.
+-/
+theorem NatIso.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ F₃ : Fun C D}
+    {η₂₃ : NatTrans F₂ F₃} {η₂₃' : NatTrans F₃ F₂} (iso₂₃ : NatIso η₂₃ η₂₃')
+    {η₁₂ : NatTrans F₁ F₂} {η₁₂' : NatTrans F₂ F₁} (iso₁₂ : NatIso η₁₂ η₁₂')
+    : NatIso (NatTrans.comp η₂₃ η₁₂) (NatTrans.comp η₁₂' η₂₃')
+:= Cat.circ.Iso iso₂₃ iso₁₂
+
+/-! #brief The components of a natural isomorphism are isomorphisms.
+-/
+theorem NatIso.com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (iso : NatIso η₁₂ η₂₁)
+    (c : C^.obj)
+    : Iso (η₁₂^.com c) (η₂₁^.com c)
+:= { id₁ := congr_arg (λ η, NatTrans.com η c) iso^.id₁
+   , id₂ := congr_arg (λ η, NatTrans.com η c) iso^.id₂
+   }
+
+/-! #brief A natural transformation whose components are isos is a natural iso.
+-/
+theorem NatTrans.Iso_on_com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (ω : ∀ (c : C^.obj), Iso (η₁₂^.com c) (η₂₁^.com c))
+    : NatIso η₁₂ η₂₁
+:= { id₁ := NatTrans.eq (funext (λ c, (ω c)^.id₁))
+   , id₂ := NatTrans.eq (funext (λ c, (ω c)^.id₂))
+   }
+
+
+
+/- -----------------------------------------------------------------------
 Whisker composition of natural transformations.
 ----------------------------------------------------------------------- -/
 
@@ -151,7 +207,7 @@ definition NatTrans.whisk_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj�
                           ... = (G □□ F₂)^.hom f ∘∘ G^.hom (η^.com b₁) : G^.hom_circ
    }
 
--- Left horizontal composition.
+-- Left whisker composition.
 -- \Box\Diamond
 infixr `□◇` : 150 := NatTrans.whisk_left
 
@@ -195,6 +251,17 @@ theorem NatTrans.whisk_left.comp_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.
        = NatTrans.comp (NatTrans.whisk_left G η₂₃) (NatTrans.whisk_left G η₁₂)
 := NatTrans.eq (funext (λ b, G^.hom_circ))
 
+/-! #brief Left whisker composition preserves natural isomorphisms.
+-/
+theorem NatTrans.whisk_left.NatIso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (G : Fun C D)
+    {F₁ F₂ : Fun B C}
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (iso : NatIso η₁₂ η₂₁)
+    : NatIso (NatTrans.whisk_left G η₁₂) (NatTrans.whisk_left G η₂₁)
+:= NatTrans.Iso_on_com (λ b, Fun.preserves_Iso G (NatIso.com iso b))
+
 
 /-! #brief Right whisker composition.
 -/
@@ -207,8 +274,129 @@ definition NatTrans.whisk_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj
    , natural := λ b₁ b₂ f, η^.natural
    }
 
--- Right horizontal composition.
+-- Right whisker composition.
 -- \Diamond\Box
 infixl `◇□` : 150 := NatTrans.whisk_right
+
+/-! #brief Right whisker composition and identity functors.
+-/
+theorem NatTrans.whisk_right_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    {η : NatTrans F₁ F₂}
+    : NatTrans.whisk_right η (Fun.id C) == η
+:= NatTrans.heq Fun.comp_id_right Fun.comp_id_right
+    (λ ω₁ ω₂, heq.refl _)
+
+/-! #brief Right whisker composition and composition of functors.
+-/
+definition NatTrans.whisk_right.comp_right
+    {A : Cat.{ℓobj₁ ℓhom₁}} {B : Cat.{ℓobj₂ ℓhom₂}} {C : Cat.{ℓobj₃ ℓhom₃}} {D : Cat.{ℓobj₄ ℓhom₄}}
+    {F₁ F₂ : Fun C D}
+    {η : NatTrans F₁ F₂}
+    {H : Fun B C}
+    {G : Fun A B}
+    : NatTrans.whisk_right η (Fun.comp H G) == NatTrans.whisk_right (NatTrans.whisk_right η H) G
+:= NatTrans.heq Fun.comp_assoc Fun.comp_assoc
+    (λ ω₁ ω₂, heq.refl _)
+
+/-! #brief Right whisker composition and identity natural transformations.
+-/
+theorem NatTrans.whisk_right.id_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {G : Fun C D}
+    {F : Fun B C}
+    : NatTrans.whisk_right (NatTrans.id G) F = NatTrans.id (Fun.comp G F)
+:= NatTrans.eq (funext (λ b, rfl))
+
+/-! #brief Right whisker composition and composition of natural transformations.
+-/
+theorem NatTrans.whisk_right.comp_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {G : Fun B C}
+    {F₁ F₂ F₃ : Fun C D}
+    {η₂₃ : NatTrans F₂ F₃}
+    {η₁₂ : NatTrans F₁ F₂}
+    : NatTrans.whisk_right (NatTrans.comp η₂₃ η₁₂) G
+       = NatTrans.comp (NatTrans.whisk_right η₂₃ G) (NatTrans.whisk_right η₁₂ G)
+:= NatTrans.eq (funext (λ b, rfl))
+
+/-! #brief Right whisker composition preserves natural isomorphisms.
+-/
+theorem NatTrans.whisk_right.NatIso {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    {G₁ G₂ : Fun C D}
+    {η₁₂ : NatTrans G₁ G₂}
+    {η₂₁ : NatTrans G₂ G₁}
+    (iso : NatIso η₁₂ η₂₁)
+    (F : Fun B C)
+    : NatIso (NatTrans.whisk_right η₁₂ F) (NatTrans.whisk_right η₂₁ F)
+:= NatTrans.Iso_on_com (λ b, NatIso.com iso (F^.obj b))
+
+
+
+/- -----------------------------------------------------------------------
+Adjoint functors.
+----------------------------------------------------------------------- -/
+
+/-! #brief An adjunction between two functors.
+-/
+structure Adj
+    {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (L : Fun C D)
+    (R : Fun D C)
+  : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+  := mk :: (counit : NatTrans (Fun.comp L R) (Fun.id D))
+           (unit : NatTrans (Fun.id C) (Fun.comp R L))
+           (id_left : ∀ {c : C^.obj}, counit^.com (L^.obj c) ∘∘ L^.hom (unit^.com c) = D^.id (L^.obj c))
+           (id_right : ∀ {d : D^.obj}, R^.hom (counit^.com d) ∘∘ unit^.com (R^.obj d) = C^.id (R^.obj d))
+
+-- An adjunction of functors.
+-- \dashv
+notation L `⊣` R := Adj L R
+
+/-! #brief The right adjoint of a hom.
+-/
+definition Adj.right_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C} (adj : Adj L R)
+    {c : C^.obj} {d : D^.obj} (f : D^.hom (L^.obj c) d)
+    : C^.hom c (R^.obj d)
+:= R^.hom f ∘∘ adj^.unit^.com c
+
+/-! #brief The left adjoint of a hom.
+-/
+definition Adj.left_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C} (adj : Adj L R)
+    {c : C^.obj} {d : D^.obj} (f : C^.hom c (R^.obj d))
+    : D^.hom (L^.obj c) d
+:= adj^.counit^.com d ∘∘ L^.hom f
+
+/-! #brief right_adj and left_adj are inverses of one another.
+-/
+theorem Adj.right_adj_left_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C} {adj : Adj L R}
+    {c : C^.obj} {d : D^.obj} {f : C^.hom c (R^.obj d)}
+    : adj^.right_adj (adj^.left_adj f) = f
+:= by calc adj^.right_adj (adj^.left_adj f)
+               = R^.hom (adj^.counit^.com d ∘∘ L^.hom f) ∘∘ adj^.unit^.com c            : rfl
+           ... = R^.hom (adj^.counit^.com d) ∘∘ R^.hom (L^.hom f) ∘∘ adj^.unit^.com c   : by rw R^.hom_circ
+           ... = R^.hom (adj^.counit^.com d) ∘∘ (R^.hom (L^.hom f) ∘∘ adj^.unit^.com c) : by rw C^.circ_assoc
+           ... = R^.hom (adj^.counit^.com d) ∘∘ ((R □□ L)^.hom f ∘∘ adj^.unit^.com c)   : rfl
+           ... = R^.hom (adj^.counit^.com d) ∘∘ (adj^.unit^.com (R^.obj d) ∘∘ f)        : congr_arg (λ q, R^.hom (adj^.counit^.com d) ∘∘ q) (eq.symm adj^.unit^.natural)
+           ... = R^.hom (adj^.counit^.com d) ∘∘ adj^.unit^.com (R^.obj d) ∘∘ f          : C^.circ_assoc
+           ... = ⟨⟨R^.obj d⟩⟩ ∘∘ f                                                      : congr_arg (λ q, q ∘∘ f) adj^.id_right
+           ... = f                                                                      : C^.circ_id_left
+
+/-! #brief left_adj and right_adj are inverses of one another.
+-/
+theorem Adj.left_adj_right_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C} {adj : Adj L R}
+    {c : C^.obj} {d : D^.obj} {f : D^.hom (L^.obj c) d}
+    : adj^.left_adj (adj^.right_adj f) = f
+:= by calc adj^.left_adj (adj^.right_adj f)
+               = adj^.counit^.com d ∘∘ L^.hom (R^.hom f ∘∘ adj^.unit^.com c) : rfl
+           ... = adj^.counit^.com d ∘∘ (L^.hom (R^.hom f) ∘∘ L^.hom (adj^.unit^.com c)) : congr_arg (λ q, adj^.counit^.com d ∘∘ q) L^.hom_circ
+           ... = adj^.counit^.com d ∘∘ ((L □□ R)^.hom f ∘∘ L^.hom (adj^.unit^.com c))   : rfl
+           ... = adj^.counit^.com d ∘∘ (L □□ R)^.hom f ∘∘ L^.hom (adj^.unit^.com c)     : by rw D^.circ_assoc
+           ... = f ∘∘ adj^.counit^.com (L^.obj c) ∘∘ L^.hom (adj^.unit^.com c)          : congr_arg (λ q, q ∘∘ L^.hom (adj^.unit^.com c)) adj^.counit^.natural
+           ... = f ∘∘ (adj^.counit^.com (L^.obj c) ∘∘ L^.hom (adj^.unit^.com c))        : by rw D^.circ_assoc
+           ... = f ∘∘ ⟨⟨L^.obj c⟩⟩                                                      : congr_arg (λ q, f ∘∘ q) adj^.id_left
+           ... = f                                                                      : D^.circ_id_right
 
 end qp
