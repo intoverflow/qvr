@@ -739,7 +739,7 @@ structure IsFinal (C : Cat.{ℓobj ℓhom})
     (obj : C^.obj)
     (hom : ∀ (c : C^.obj), C^.hom c obj)
     : Type (max ℓobj ℓhom)
-:= (hom_uniq : ∀ {c : C^.obj} {h : C^.hom c obj}, h = hom c )
+:= (hom_uniq : ∀ {c : C^.obj} {h : C^.hom c obj}, h = hom c)
 
 /-! #brief A category with a final object.
 -/
@@ -748,6 +748,19 @@ class HasFinal (C : Cat.{ℓobj ℓhom})
 := (obj : C^.obj)
    (hom : ∀ (c : C^.obj), C^.hom c obj)
    (final : IsFinal C obj hom)
+
+/-! #brief Helper for showing a category has a final object.
+-/
+definition HasFinal.show {C : Cat.{ℓobj ℓhom}}
+    (x : C^.obj)
+    (hom : ∀ (c : C^.obj), C^.hom c x)
+    (hom_uniq : ∀ {c : C^.obj} {h : C^.hom c x}, h = hom c)
+    : HasFinal C
+:= { obj := x
+   , hom := hom
+   , final := { hom_uniq := @hom_uniq
+              }
+   }
 
 /-! #brief The final object in a category with a final object.
 -/
@@ -766,11 +779,18 @@ definition final_hom {C : Cat.{ℓobj ℓhom}}
 
 /-! #brief The final hom is unique.
 -/
-definition final_hom.uniq (C : Cat.{ℓobj ℓhom})
+theorem final_hom.uniq (C : Cat.{ℓobj ℓhom})
     [C_HasFinal : HasFinal C]
     {c : C^.obj} {f : C^.hom c (final C)}
     : f = final_hom c
 := (HasFinal.final C)^.hom_uniq
+
+/-! #brief The final hom to the final object is the identity.
+-/
+theorem final_hom.id (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : final_hom (final C) = C^.id (final C)
+:= eq.symm (final_hom.uniq C)
 
 /-! #brief The unique iso between two final objects.
 -/
@@ -822,18 +842,25 @@ definition IsInit (C : Cat.{ℓobj ℓhom})
 
 /-! #brief A category with an initial object.
 -/
-class HasInit (C : Cat.{ℓobj ℓhom})
+@[class] definition HasInit (C : Cat.{ℓobj ℓhom})
     : Type (max ℓobj ℓhom)
-:= (obj : C^.obj)
-   (hom : ∀ (c : C^.obj), C^.hom obj c)
-   (init : IsInit C obj hom)
+:= HasFinal (OpCat C)
+
+/-! #brief Helper for showing a category has a final object.
+-/
+definition HasInit.show {C : Cat.{ℓobj ℓhom}}
+    (x : C^.obj)
+    (hom : ∀ (c : C^.obj), C^.hom x c)
+    (hom_uniq : ∀ {c : C^.obj} {h : C^.hom x c}, h = hom c)
+    : HasInit C
+:= HasFinal.show x hom @hom_uniq
 
 /-! #brief The initial object in a category with a initial object.
 -/
 definition init (C : Cat.{ℓobj ℓhom})
     [C_HasInit : HasInit C]
     : C^.obj
-:= HasInit.obj C
+:= @final (OpCat C) C_HasInit
 
 /-! #brief The initial hom in a category with a initial object.
 -/
@@ -841,7 +868,7 @@ definition init_hom {C : Cat.{ℓobj ℓhom}}
     [C_HasInit : HasInit C]
     (c : C^.obj)
     : C^.hom (init C) c
-:= HasInit.hom c
+:= @final_hom (OpCat C) C_HasInit c
 
 /-! #brief The initial hom is unique.
 -/
@@ -849,7 +876,7 @@ definition init_hom.uniq (C : Cat.{ℓobj ℓhom})
     [C_HasInit : HasInit C]
     {c : C^.obj} {f : C^.hom (init C) c}
     : f = init_hom c
-:= (HasInit.init C)^.hom_uniq
+:= @final_hom.uniq (OpCat C) C_HasInit c f
 
 /-! #brief Initial and final are dual concepts.
 -/
@@ -864,28 +891,6 @@ theorem IsFinal_dual_IsInit (C : Cat.{ℓobj ℓhom})
 := funext (λ obj, funext (λ hom, begin cases C, trivial end))
 
 
-/-! #brief A category has an initial object when its opposite has a final obejct.
--/
-instance HasFinal.HasInit (C : Cat.{ℓobj ℓhom})
-    [OpC_HasFinal : HasFinal (OpCat C)]
-    : HasInit C
-:= { obj := @HasFinal.obj (OpCat C) OpC_HasFinal
-   , hom := λ c, @HasFinal.hom (OpCat C) OpC_HasFinal c
-   , init := HasFinal.final (OpCat C)
-   }
-
-/-! #brief A category has a final object when its opposite has an initial obejct.
--/
-instance HasInit.HasFinal (C : Cat.{ℓobj ℓhom})
-    [OpC_HasInit : HasInit (OpCat C)]
-    : HasFinal C
-:= { obj := @HasInit.obj (OpCat C) OpC_HasInit
-   , hom := λ c, @HasInit.hom (OpCat C) OpC_HasInit c
-   , final := cast (by rw IsFinal_dual_IsInit C)
-               (HasInit.init (OpCat C))
-   }
-
-
 
 /- -----------------------------------------------------------------------
 Examples of initial and final objects in categories.
@@ -895,32 +900,20 @@ Examples of initial and final objects in categories.
 -/
 instance UnitCat.HasInit
     : HasInit UnitCat.{ℓobj ℓhom}
-:= { obj := punit.star
-   , hom := λ c, punit.star
-   , init := { hom_uniq := λ c h, begin cases h, trivial end
-             }
-   }
+:= HasInit.show punit.star (λ c, punit.star)
+    (λ c h, begin cases h, trivial end)
 
 /-! #brief UnitCat has a final object.
 -/
 instance UnitCat.HasFinal
     : HasFinal UnitCat.{ℓobj ℓhom}
-:= { obj := punit.star
-   , hom := λ c, punit.star
-   , final := { hom_uniq := λ c h, begin cases h, trivial end
-              }
-   }
-
+:= HasFinal.show punit.star (λ c, punit.star) (λ c h, begin cases h, trivial end)
 
 /-! #brief SortCat has an initial object.
 -/
 instance SortCat.HasInit
     : HasInit SortCat.{ℓ}
-:= { obj := pempty
-   , hom := λ T e, by cases e
-   , init := { hom_uniq := λ c h, funext (λ e, by cases e)
-             }
-   }
+:= HasInit.show pempty (λ T e, by cases e) (λ c h, funext (λ e, by cases e))
 
 /-! #brief PropCat has an initial object.
 -/
@@ -939,11 +932,7 @@ instance LeanCat.HasInit
 -/
 instance SortCat.HasFinal
     : HasFinal SortCat.{ℓ}
-:= { obj := punit
-   , hom := λ T t, punit.star
-   , final := { hom_uniq := λ c h, funext (λ t, begin cases (h t), trivial end)
-              }
-   }
+:= HasFinal.show punit (λ T t, punit.star) (λ c h, funext (λ t, begin cases (h t), trivial end))
 
 /-! #brief PropCat has a final object.
 -/
@@ -960,12 +949,8 @@ instance LeanCat.HasFinal
 
 /-! #brief The category of natural numbers has an initial object.
 -/
-instance NatCat.HasInitial
+instance NatCat.HasInit
     :HasInit NatCat
-:= { obj := nat.zero
-   , hom := nat.zero_le
-   , init := { hom_uniq := λ c h, proof_irrel _ _
-             }
-   }
+:= HasInit.show nat.zero nat.zero_le (λ c h, proof_irrel _ _)
 
 end qp

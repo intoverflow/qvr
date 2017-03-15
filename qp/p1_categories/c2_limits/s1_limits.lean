@@ -58,20 +58,15 @@ definition HasLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
           (ωf : ∀ (x : X^.obj), hom x = C^.circ (out x) f)
         , f = mediate c hom @comm)
     : HasLimit L
-:= { obj := { obj := l
-            , hom := out
-            , comm := @ωout
-            }
-   , hom := λ cone, { mediate := mediate cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
-                    , factor := ωmediate cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
-                    }
-   , final
-      := { hom_uniq := λ cone cone_hom
-                       , ConeHom.eq (ωuniq
-                                      cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
-                                      cone_hom^.mediate cone_hom^.factor)
-         }
-   }
+:= HasFinal.show
+    { obj := l, hom := out, comm := @ωout }
+    (λ cone, { mediate := mediate cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
+             , factor := ωmediate cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
+             })
+   (λ cone cone_hom
+    , ConeHom.eq (ωuniq
+                   cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
+                   cone_hom^.mediate cone_hom^.factor))
 
 /-! #brief Limits are cones.
 -/
@@ -277,10 +272,45 @@ instance InitFun.HasLimit_HasFinal {C : Cat.{ℓobj ℓhom}}
                      , hom := λ e, by cases e
                      , comm := λ e₁ e₂ f, by cases f
                      }
-   in { obj := limit (InitFun.{ℓobjx ℓhomx} C)
-      , hom := λ c, limit.mediate (mkcone c)
-      , final := { hom_uniq := λ c h, limit.mediate.uniq (mkcone c) h (λ e, by cases e)
-                 }
+   in HasFinal.show
+       (limit (InitFun.{ℓobjx ℓhomx} C))
+       (λ c, limit.mediate (mkcone c))
+       (λ c h, limit.mediate.uniq (mkcone c) h (λ e, by cases e))
+
+/-! #brief If the category has a final, then the initial functor has a limit.
+-/
+definition InitFun.HasFinal_HasLimit {C : Cat.{ℓobj ℓhom}}
+    [HasFinal C]
+    : HasLimit (InitFun.{ℓobjx ℓhomx} C)
+:= HasLimit.show (final C) (λ e, by cases e) (λ x₁ x₂ f, by cases f)
+    (λ c hom ωcomm, final_hom c)
+    (λ c hom ωcomm e, by cases e)
+    (λ c hom ωcomm f e, final_hom.uniq C)
+
+/-! #brief Functors which preserve limits of the initial functor preserve final objects.
+-/
+instance PresLimit.InitFun_PresFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    [F_PresLimit : PresLimit (InitFun.{ℓobjx ℓhomx} C) F]
+    : PresFinal F
+:= let mk_cone : ∀ (d : D^.obj), Cone (F □□ InitFun.{ℓobjx ℓhomx} C)
+              := λ d, { obj := d
+                      , hom := λ e, by cases e
+                      , comm := λ e₁ e₂ f, by cases f
+                      } in
+   let mk_lim : ∀ (C_HasFinal : HasFinal C)
+                , HasLimit (F □□ InitFun.{ℓobjx ℓhomx} C)
+             := λ C_HasFinal, @PresLimit.HasLimit _ _ _
+                               _ (@InitFun.HasFinal_HasLimit C C_HasFinal)
+                               _ F_PresLimit
+   in { hom := λ C_HasFinal d, @limit.mediate _ _ _ (mk_lim C_HasFinal) (mk_cone d)
+      , pres := λ C_HasFinal
+                , { hom_uniq := λ d h
+                                , begin
+                                    apply (@limit.mediate.uniq _ _ _ (mk_lim C_HasFinal) (mk_cone d) h _),
+                                    { intro e, cases e }
+                                  end
+                  }
       }
 
 
@@ -331,20 +361,11 @@ definition HasCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓho
           (ωf : ∀ (x : X^.obj), hom x = C^.circ f (into x))
         , f = mediate c hom @comm)
     : HasCoLimit L
-:= { obj := { obj := l
-            , hom := into
-            , comm := λ x₂ x₁ f, ωinto f
-            }
-   , hom := λ cone, { mediate := mediate cone^.obj cone^.hom (λ x₂ x₁ f, cone^.comm f)
-                    , factor := ωmediate cone^.obj cone^.hom (λ x₂ x₁ f, cone^.comm f)
-                    }
-   , final
-      := { hom_uniq := λ cone cone_hom
-                       , ConeHom.eq (ωuniq
-                                      cone^.obj cone^.hom (λ x₂ x₁ f, cone^.comm f)
-                                      cone_hom^.mediate cone_hom^.factor)
-         }
-   }
+:= HasLimit.show
+    l into (λ x₂ x₁ f, ωinto f)
+    (λ c hom comm, mediate c hom (λ x₂ x₁ f, comm f))
+    (λ c hom comm, ωmediate c hom (λ x₂ x₁ f, comm f))
+    (λ c hom comm, ωuniq c hom (λ x₂ x₁ f, comm f))
 
 /-! #brief Co-limits are co-cones.
 -/
@@ -486,15 +507,10 @@ definition PresCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓh
           (ωf : ∀ (x : X^.obj), hom x = C^.circ f (F^.hom (colimit.in L x)))
         , f = mediate c hom @ωcomm)
     : PresCoLimit L F
-:= { hom := λ L_HasLimit cone
-            , { mediate := @mediate L_HasLimit cone^.obj cone^.hom (λ x₂ x₁ f, cone^.comm f)
-              , factor := @ωmediate L_HasLimit cone^.obj cone^.hom (λ x₂ x₁ f, cone^.comm f)
-              }
-   , pres := λ L_HasLimit
-             , { hom_uniq := λ cone h, ConeHom.eq (@ωuniq L_HasLimit cone^.obj cone^.hom (λ x₂ x₁ f, cone^.comm f)
-                                                     h^.mediate h^.factor)
-               }
-   }
+:= PresLimit.show
+    (λ L_HasCoLimit c hom ωcomm, @mediate L_HasCoLimit c hom (λ x₂ x₁ f, ωcomm f))
+    (λ L_HasCoLimit c hom ωcomm, @ωmediate L_HasCoLimit c hom (λ x₂ x₁ f, ωcomm f))
+    (λ L_HasCoLimit c hom ωcomm, @ωuniq L_HasCoLimit c hom (λ x₂ x₁ f, ωcomm f))
 
 /-! #brief A co-limit of a functor.
 -/
@@ -538,10 +554,45 @@ instance InitFun.HasCoLimit_HasInit {C : Cat.{ℓobj ℓhom}}
                      , hom := λ e, by cases e
                      , comm := λ e₁ e₂ f, by cases f
                      }
-   in { obj := colimit (InitFun.{ℓobjx ℓhomx} C)
-      , hom := λ c, colimit.mediate (mkcone c)
-      , init := { hom_uniq := λ c h, limit.mediate.uniq (mkcone c) h (λ e, by cases e)
-                }
+   in HasInit.show
+       (colimit (InitFun.{ℓobjx ℓhomx} C))
+       (λ c, colimit.mediate (mkcone c))
+       (λ c h, limit.mediate.uniq (mkcone c) h (λ e, by cases e))
+
+/-! #brief If the category has an initial, then the initial functor has a co-limit.
+-/
+definition InitFun.HasInit_HasCoLimit {C : Cat.{ℓobj ℓhom}}
+    [HasInit C]
+    : HasCoLimit (InitFun.{ℓobjx ℓhomx} C)
+:= HasCoLimit.show (init C) (λ e, by cases e) (λ x₁ x₂ f, by cases f)
+    (λ c hom ωcomm, init_hom c)
+    (λ c hom ωcomm e, by cases e)
+    (λ c hom ωcomm f e, init_hom.uniq C)
+
+/-! #brief Functors which preserve co-limits of the initial functor preserve initial objects.
+-/
+instance PresCoLimit.InitFun_PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    [F_PresCoLimit : PresCoLimit (InitFun.{ℓobjx ℓhomx} C) F]
+    : PresInit F
+:= let mk_cocone : ∀ (d : D^.obj), CoCone (F □□ InitFun.{ℓobjx ℓhomx} C)
+                := λ d, { obj := d
+                        , hom := λ e, by cases e
+                        , comm := λ e₁ e₂ f, by cases f
+                        } in
+   let mk_colim : ∀ (C_HasInit : HasInit C)
+                  , HasCoLimit (F □□ InitFun.{ℓobjx ℓhomx} C)
+               := λ C_HasInit, @PresCoLimit.HasCoLimit _ _ _
+                                 _ (@InitFun.HasInit_HasCoLimit C C_HasInit)
+                                 _ F_PresCoLimit
+   in { hom := λ C_HasInit d, @colimit.mediate _ _ _ (mk_colim C_HasInit) (mk_cocone d)
+      , pres := λ C_HasInit
+                , { hom_uniq := λ d h
+                                , begin
+                                    apply (@colimit.mediate.uniq _ _ _ (mk_colim C_HasInit) (mk_cocone d) h _),
+                                    { intro e, cases e }
+                                  end
+                  }
       }
 
 end qp

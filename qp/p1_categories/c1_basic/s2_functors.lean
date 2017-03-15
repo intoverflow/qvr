@@ -233,56 +233,6 @@ theorem Fun.preserves_Iso {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ �
 
 
 /- -----------------------------------------------------------------------
-Preservation of initial and final.
------------------------------------------------------------------------ -/
-
-/-! #brief A functor which preserves final objects.
--/
-class PresFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    (F : Fun C D)
-    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
-:= (hom : ∀ [C_HasFinal : HasFinal C]
-            (d : D^.obj)
-          , D^.hom d (F^.obj (final C)))
-   (pres : ∀ [C_HasFinal : HasFinal C]
-           , IsFinal D (F^.obj (final C)) hom)
-
-/-! #brief Functors which preserve final objects yield instances of HasFinal.
--/
-instance PresFinal.HasFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    [C_HasFinal : HasFinal C]
-    (F : Fun C D) [F_PresFinal : PresFinal F]
-    : HasFinal D
-:= { obj := F^.obj (final C)
-   , hom := PresFinal.hom F
-   , final := PresFinal.pres F
-   }
-
-/-! #brief A functor which preserves initial objects.
--/
-class PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    (F : Fun C D)
-    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
-:= (hom : ∀ [C_HasInit : HasInit C]
-            (d : D^.obj)
-          , D^.hom (F^.obj (init C)) d)
-   (pres : ∀ [C_HasInit : HasInit C]
-           , IsInit D (F^.obj (init C)) hom)
-
-/-! #brief Functors which preserve initial objects yield instances of HasInit.
--/
-instance PresInit.HasInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    [C_HasInit : HasInit C]
-    (F : Fun C D) [F_PresInit : PresInit F]
-    : HasInit D
-:= { obj := F^.obj (init C)
-   , hom := PresInit.hom F
-   , init := PresInit.pres F
-   }
-
-
-
-/- -----------------------------------------------------------------------
 The category of categories.
 ----------------------------------------------------------------------- -/
 
@@ -904,6 +854,54 @@ definition OpFun_OpFun.Conj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
               { intros ωobj c₁ c₂ f, cases C, cases D, trivial }
             end
    }
+
+
+
+/- -----------------------------------------------------------------------
+Preservation of initial and final.
+----------------------------------------------------------------------- -/
+
+/-! #brief A functor which preserves final objects.
+-/
+class PresFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= (hom : ∀ [C_HasFinal : HasFinal C]
+            (d : D^.obj)
+          , D^.hom d (F^.obj (final C)))
+   (pres : ∀ [C_HasFinal : HasFinal C]
+           , IsFinal D (F^.obj (final C)) hom)
+
+/-! #brief Functors which preserve final objects yield instances of HasFinal.
+-/
+instance PresFinal.HasFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [C_HasFinal : HasFinal C]
+    (F : Fun C D) [F_PresFinal : PresFinal F]
+    : HasFinal D
+:= { obj := F^.obj (final C)
+   , hom := PresFinal.hom F
+   , final := PresFinal.pres F
+   }
+
+/-! #brief A functor which preserves initial objects.
+-/
+@[class] definition PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun C D)
+    : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
+:= PresFinal (OpFun F)
+-- := (hom : ∀ [C_HasInit : HasInit C]
+--             (d : D^.obj)
+--           , D^.hom (F^.obj (init C)) d)
+--    (pres : ∀ [C_HasInit : HasInit C]
+--            , IsInit D (F^.obj (init C)) hom)
+
+/-! #brief Functors which preserve initial objects yield instances of HasInit.
+-/
+instance PresInit.HasInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [C_HasInit : HasInit C]
+    (F : Fun C D) [F_PresInit : PresInit F]
+    : HasInit D
+:= @PresFinal.HasFinal (OpCat C) (OpCat D) C_HasInit (OpFun F) F_PresInit
 
 
 
