@@ -36,19 +36,19 @@ definition HasLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
     (out : ∀ (x : X^.obj), C^.hom l (L^.obj x))
     (ωout : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
              , out x₂ = C^.circ (L^.hom f) (out x₁))
-    (mediate
+    (univ
       : ∀ (c : C^.obj)
           (hom : ∀ (x : X^.obj), C^.hom c (L^.obj x))
           (comm : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
                   , hom x₂ = C^.circ (L^.hom f) (hom x₁))
         , C^.hom c l)
-    (ωmediate
+    (ωuniv
       : ∀ (c : C^.obj)
           (hom : ∀ (x : X^.obj), C^.hom c (L^.obj x))
           (comm : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
                   , hom x₂ = C^.circ (L^.hom f) (hom x₁))
           (x : X^.obj)
-        , hom x = C^.circ (out x) (mediate c hom @comm))
+        , hom x = C^.circ (out x) (univ c hom @comm))
     (ωuniq
       : ∀ (c : C^.obj)
           (hom : ∀ (x : X^.obj), C^.hom c (L^.obj x))
@@ -56,12 +56,12 @@ definition HasLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
                   , hom x₂ = C^.circ (L^.hom f) (hom x₁))
           (f : C^.hom c l)
           (ωf : ∀ (x : X^.obj), hom x = C^.circ (out x) f)
-        , f = mediate c hom @comm)
+        , f = univ c hom @comm)
     : HasLimit L
 := HasFinal.show
     { obj := l, hom := out, comm := @ωout }
-    (λ cone, { mediate := mediate cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
-             , factor := ωmediate cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
+    (λ cone, { mediate := univ cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
+             , factor := ωuniv cone^.obj cone^.hom (@Cone.comm _ _ _ cone)
              })
    (λ cone cone_hom
     , ConeHom.eq (ωuniq
@@ -105,7 +105,7 @@ theorem limit.out.comm {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁
 
 /-! #brief Every cone is mediated through the limit.
 -/
-definition limit.mediate {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+definition limit.univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
     [F_HasLimit : HasLimit F]
     (c : Cone F)
@@ -114,23 +114,23 @@ definition limit.mediate {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
 
 /-! #brief Every cone is mediated through the limit.
 -/
-theorem limit.mediate.mediates {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+theorem limit.univ.mediates {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
-    [F_HasLimit : HasLimit F]
+    {F_HasLimit : HasLimit F}
     (c : Cone F)
     (x : X^.obj)
-    : c^.hom x = C^.circ (limit.out F x) (limit.mediate c)
+    : c^.hom x = C^.circ (limit.out F x) (limit.univ c)
 := (@final_hom (ConeCat F) _ c)^.factor x
 
 /-! #brief The mediating map from a cone to the limit is unique.
 -/
-theorem limit.mediate.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+theorem limit.univ.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
-    [F_HasLimit : HasLimit F]
+    {F_HasLimit : HasLimit F}
     (c : Cone F)
     (m : C^.hom c^.obj (limit F))
     (ω : ∀ (x : X^.obj), c^.hom x = limit.out F x ∘∘ m)
-    : m = limit.mediate c
+    : m = limit.univ c
 := let m' : ConeHom F c (limit.cone F)
          := { mediate := m
             , factor := ω
@@ -145,7 +145,7 @@ definition limit.iso {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
     (F_HasLimit₁ F_HasLimit₂ : HasLimit F)
     : C^.hom (@limit X C F F_HasLimit₁) (@limit X C F F_HasLimit₂)
-:= @limit.mediate X C F F_HasLimit₂ (@limit.cone X C F F_HasLimit₁)
+:= @limit.univ X C F F_HasLimit₂ (@limit.cone X C F F_HasLimit₁)
 
 /-! #brief Limits are unique up-to unique isomorphism.
 -/
@@ -240,19 +240,19 @@ theorem preslimit.out {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓhom₁}
 
 /-! #brief Every cone is mediated through the limit.
 -/
-definition preslimit.mediate {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+definition preslimit.univ {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
     (L : Fun X B) [L_HasLimit : HasLimit L]
     (F : Fun B C) [F_PresLimit : PresLimit L F]
     (c : Cone L)
-    : limit.mediate ((LeftConeFun F L)^.obj c) = by exact F^.hom (limit.mediate c)
+    : limit.univ ((LeftConeFun F L)^.obj c) = by exact F^.hom (limit.univ c)
 := begin
      apply eq.symm,
-     apply limit.mediate.uniq ((LeftConeFun F L)^.obj c),
+     apply limit.univ.uniq ((LeftConeFun F L)^.obj c),
      intro x,
      dsimp [LeftConeFun],
      rw preslimit.out,
      refine eq.trans _ F^.hom_circ,
-     rw limit.mediate.mediates c x,
+     rw limit.univ.mediates c x,
      trivial
    end
 
@@ -274,8 +274,8 @@ instance InitFun.HasLimit_HasFinal {C : Cat.{ℓobj ℓhom}}
                      }
    in HasFinal.show
        (limit (InitFun.{ℓobjx ℓhomx} C))
-       (λ c, limit.mediate (mkcone c))
-       (λ c h, limit.mediate.uniq (mkcone c) h (λ e, by cases e))
+       (λ c, limit.univ (mkcone c))
+       (λ c h, limit.univ.uniq (mkcone c) h (λ e, by cases e))
 
 /-! #brief If the category has a final, then the initial functor has a limit.
 -/
@@ -303,11 +303,11 @@ instance PresLimit.InitFun_PresFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{�
              := λ C_HasFinal, @PresLimit.HasLimit _ _ _
                                _ (@InitFun.HasFinal_HasLimit C C_HasFinal)
                                _ F_PresLimit
-   in { hom := λ C_HasFinal d, @limit.mediate _ _ _ (mk_lim C_HasFinal) (mk_cone d)
+   in { hom := λ C_HasFinal d, @limit.univ _ _ _ (mk_lim C_HasFinal) (mk_cone d)
       , pres := λ C_HasFinal
                 , { hom_uniq := λ d h
                                 , begin
-                                    apply (@limit.mediate.uniq _ _ _ (mk_lim C_HasFinal) (mk_cone d) h _),
+                                    apply (@limit.univ.uniq _ _ _ (mk_lim C_HasFinal) (mk_cone d) h _),
                                     { intro e, cases e }
                                   end
                   }
@@ -339,19 +339,19 @@ definition HasCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓho
     (into : ∀ (x : X^.obj), C^.hom (L^.obj x) l)
     (ωinto : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
              , into x₁ = C^.circ (into x₂) (L^.hom f))
-    (mediate
+    (univ
       : ∀ (c : C^.obj)
           (hom : ∀ (x : X^.obj), C^.hom (L^.obj x) c)
           (comm : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
                   , hom x₁ = C^.circ (hom x₂) (L^.hom f))
         , C^.hom l c)
-    (ωmediate
+    (ωuniv
       : ∀ (c : C^.obj)
           (hom : ∀ (x : X^.obj), C^.hom (L^.obj x) c)
           (comm : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
                   , hom x₁ = C^.circ (hom x₂) (L^.hom f))
           (x : X^.obj)
-        , hom x = C^.circ (mediate c hom @comm) (into x))
+        , hom x = C^.circ (univ c hom @comm) (into x))
     (ωuniq
       : ∀ (c : C^.obj)
           (hom : ∀ (x : X^.obj), C^.hom (L^.obj x) c)
@@ -359,12 +359,12 @@ definition HasCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓho
                   , hom x₁ = C^.circ (hom x₂) (L^.hom f))
           (f : C^.hom l c)
           (ωf : ∀ (x : X^.obj), hom x = C^.circ f (into x))
-        , f = mediate c hom @comm)
+        , f = univ c hom @comm)
     : HasCoLimit L
 := HasLimit.show
     l into (λ x₂ x₁ f, ωinto f)
-    (λ c hom comm, mediate c hom (λ x₂ x₁ f, comm f))
-    (λ c hom comm, ωmediate c hom (λ x₂ x₁ f, comm f))
+    (λ c hom comm, univ c hom (λ x₂ x₁ f, comm f))
+    (λ c hom comm, ωuniv c hom (λ x₂ x₁ f, comm f))
     (λ c hom comm, ωuniq c hom (λ x₂ x₁ f, comm f))
 
 /-! #brief Co-limits are co-cones.
@@ -404,33 +404,33 @@ theorem colimit.in.comm {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
 
 /-! #brief Every co-cone is mediated through the co-limit.
 -/
-definition colimit.mediate {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+definition colimit.univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
-    [F_HasCoLimit : HasCoLimit F]
+    {F_HasCoLimit : HasCoLimit F}
     (c : CoCone F)
     : C^.hom (colimit F) c^.obj
-:= limit.mediate c
+:= limit.univ c
 
 /-! #brief Every co-cone is mediated through the co-limit.
 -/
-theorem colimit.mediate.mediates {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+theorem colimit.univ.mediates {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
-    [F_HasCoLimit : HasCoLimit F]
+    {F_HasCoLimit : HasCoLimit F}
     (c : CoCone F)
     (x : X^.obj)
-    : c^.hom x = C^.circ (limit.mediate c) (colimit.in F x)
-:= limit.mediate.mediates c x
+    : c^.hom x = C^.circ (limit.univ c) (colimit.in F x)
+:= limit.univ.mediates c x
 
 /-! #brief The mediating map to a co-cone from the co-limit is unique.
 -/
-theorem colimit.mediate.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+theorem colimit.univ.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     {F : Fun X C}
-    [F_HasCoLimit : HasCoLimit F]
+    {F_HasCoLimit : HasCoLimit F}
     (c : CoCone F)
     (m : C^.hom (colimit F) c^.obj)
     (ω : ∀ (x : X^.obj), c^.hom x = m ∘∘ colimit.in F x)
-    : m = limit.mediate c
-:= limit.mediate.uniq c m ω
+    : m = limit.univ c
+:= limit.univ.uniq c m ω
 
 /-! #brief The unique iso between two co-limits of the same functor.
 -/
@@ -535,8 +535,8 @@ definition prescolimit.mediate {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ �
     (L : Fun X B) [L_HasCoLimit : HasCoLimit L]
     (F : Fun B C) [F_PresCoLimit : PresCoLimit L F]
     (c : CoCone L)
-    : colimit.mediate ((LeftCoConeFun F L)^.obj c) = by exact F^.hom (colimit.mediate c)
-:= preslimit.mediate (OpFun L) (OpFun F) c
+    : colimit.univ ((LeftCoConeFun F L)^.obj c) = by exact F^.hom (colimit.univ c)
+:= preslimit.univ (OpFun L) (OpFun F) c
 
 
 
@@ -556,8 +556,8 @@ instance InitFun.HasCoLimit_HasInit {C : Cat.{ℓobj ℓhom}}
                      }
    in HasInit.show
        (colimit (InitFun.{ℓobjx ℓhomx} C))
-       (λ c, colimit.mediate (mkcone c))
-       (λ c h, limit.mediate.uniq (mkcone c) h (λ e, by cases e))
+       (λ c, colimit.univ (mkcone c))
+       (λ c h, limit.univ.uniq (mkcone c) h (λ e, by cases e))
 
 /-! #brief If the category has an initial, then the initial functor has a co-limit.
 -/
@@ -585,11 +585,11 @@ instance PresCoLimit.InitFun_PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{
                := λ C_HasInit, @PresCoLimit.HasCoLimit _ _ _
                                  _ (@InitFun.HasInit_HasCoLimit C C_HasInit)
                                  _ F_PresCoLimit
-   in { hom := λ C_HasInit d, @colimit.mediate _ _ _ (mk_colim C_HasInit) (mk_cocone d)
+   in { hom := λ C_HasInit d, @colimit.univ _ _ _ (mk_colim C_HasInit) (mk_cocone d)
       , pres := λ C_HasInit
                 , { hom_uniq := λ d h
                                 , begin
-                                    apply (@colimit.mediate.uniq _ _ _ (mk_colim C_HasInit) (mk_cocone d) h _),
+                                    apply (@colimit.univ.uniq _ _ _ (mk_colim C_HasInit) (mk_cocone d) h _),
                                     { intro e, cases e }
                                   end
                   }
