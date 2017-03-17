@@ -178,6 +178,14 @@ definition FinProductProj {C : Cat.{ℓobj ℓhom}}
     : Type (max ℓobj ℓhom)
 := dlist (C^.hom c) factor
 
+/-! #brief Every finite product cone comes with projections.
+-/
+definition FinProductCone.Proj {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (c : FinProductCone C factor)
+    : FinProductProj c^.obj factor
+:= dlist.enum (Cone.hom c)
+
 /-! #brief Fetching a projection out of FinProductProj.
 -/
 definition FinProductProj.get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
@@ -243,78 +251,88 @@ definition HasFinProduct.show {C : Cat.{ℓobj ℓhom}}
                       let f := (λ a j, @Cat.circ C _ _ a j h)
                       in ωuniq c _ h (dlist.enum_eq_map f proj hom @ωcomm))
 
--- /-! #brief Products are cones.
--- -/
--- definition product.cone (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
---     (factor : A → C^.obj)
---     [factor_HasProduct : HasProduct C factor]
---     : ProductCone C factor
--- := limit.cone (ProductDrgm C factor)
+/-! #brief Finite products are cones.
+-/
+definition finproduct.cone (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinProduct : HasFinProduct C factor]
+    : FinProductCone C factor
+:= product.cone C (list.get factor)
 
--- /-! #brief The product of a collection of objects.
--- -/
--- definition product (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
---     (factor : A → C^.obj)
---     [factor_HasProduct : HasProduct C factor]
---     : C^.obj
--- := limit (ProductDrgm C factor)
+/-! #brief The product of a finite collection of objects.
+-/
+definition finproduct (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinProduct : HasFinProduct C factor]
+    : C^.obj
+:= product C (list.get factor)
 
--- /-! #brief Projection out of a product.
--- -/
--- definition product.π (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
---     (factor : A → C^.obj)
---     [factor_HasProduct : HasProduct C factor]
---     (a : A)
---     : C^.hom (product C factor) (factor a)
--- := limit.out (ProductDrgm C factor) a
+/-! #brief Projection out of a product.
+-/
+definition finproduct.π (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinProduct : HasFinProduct C factor]
+    (n : fin (list.length factor))
+    : C^.hom (finproduct C factor) (list.get factor n)
+:= product.π C (list.get factor) n
 
--- /-! #brief Every cone is mediated through the product.
--- -/
--- definition product.univ (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
---     (factor : A → C^.obj)
---     [factor_HasProduct : HasProduct C factor]
---     (c : ProductCone C factor)
---     : C^.hom c^.obj (product C factor)
--- := limit.univ c
+/-! #brief Every cone is mediated through the product.
+-/
+definition finproduct.univ (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinProduct : HasFinProduct C factor]
+    (c : FinProductCone C factor)
+    : C^.hom c^.obj (finproduct C factor)
+:= product.univ C (list.get factor) c
 
--- /-! #brief Every cone is mediated through the product.
--- -/
--- definition product.univ.mediates (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
---     (factor : A → C^.obj)
---     {factor_HasProduct : HasProduct C factor}
---     (c : ProductCone C factor)
---     (a : A)
---     : c^.hom a = C^.circ (@product.π C A factor factor_HasProduct a) (product.univ C factor c)
--- := limit.univ.mediates c a
+/-! #brief Every cone is mediated through the product.
+-/
+definition finproduct.univ.mediates (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinProduct : HasFinProduct C factor]
+    (c : FinProductCone C factor)
+    (n : fin (list.length factor))
+    : c^.hom n = C^.circ (@finproduct.π C factor factor_HasFinProduct n) (finproduct.univ C factor c)
+:= product.univ.mediates C (list.get factor) c n
 
--- /-! #brief The mediating map from the cone to the product is unique.
--- -/
--- definition product.univ.uniq (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
---     (factor : A → C^.obj)
---     {factor_HasProduct : HasProduct C factor}
---     (c : ProductCone C factor)
---     (m : C^.hom c^.obj (product C factor))
---     (ω : ∀ (a : A), c^.hom a = (@product.π C A factor factor_HasProduct a) ∘∘ m)
---     : m = product.univ C factor c
--- := limit.univ.uniq c m ω
+/-! #brief The mediating map from the cone to the product is unique.
+-/
+definition finproduct.univ.uniq (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinProduct : HasFinProduct C factor]
+    (c : FinProductCone C factor)
+    (m : C^.hom c^.obj (finproduct C factor))
+    (ω : c^.Proj = dlist.map (λ a j, C^.circ j m) (finproduct.cone C factor)^.Proj)
+    : m = finproduct.univ C factor c
+:= product.univ.uniq C (list.get factor) c m
+    begin
+      intro n,
+      assert ω₁ : c^.hom n = dlist.get c^.Proj n,
+      { apply eq.symm, apply dlist.get_enum },
+      apply eq.trans ω₁,
+      rw ω,
+      rw dlist.get_map,
+      apply congr_arg (λ j, C^.circ j m),
+      apply dlist.get_enum
+    end
 
--- /-! #brief The unique iso between two products of the same factors.
--- -/
--- definition product.iso {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
---     {factor : A → C^.obj}
---     (factor_HasProduct₁ factor_HasProduct₂ : HasProduct C factor)
---     : C^.hom (@product C A factor factor_HasProduct₁)
---              (@product C A factor factor_HasProduct₂)
--- := limit.iso factor_HasProduct₁ factor_HasProduct₂
+/-! #brief The unique iso between two products of the same factors.
+-/
+definition finproduct.iso {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (factor_HasFinProduct₁ factor_HasFinProduct₂ : HasFinProduct C factor)
+    : C^.hom (@finproduct C factor factor_HasFinProduct₁)
+             (@finproduct C factor factor_HasFinProduct₂)
+:= product.iso factor_HasFinProduct₁ factor_HasFinProduct₂
 
--- /-! #brief Products are unique up-to unique isomorphism.
--- -/
--- definition product.uniq {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
---     {factor : A → C^.obj}
---     (factor_HasProduct₁ factor_HasProduct₂ : HasProduct C factor)
---     : Iso (product.iso factor_HasProduct₁ factor_HasProduct₂)
---           (product.iso factor_HasProduct₂ factor_HasProduct₁)
--- := limit.uniq factor_HasProduct₁ factor_HasProduct₂
+/-! #brief Finite products are unique up-to unique isomorphism.
+-/
+definition finproduct.uniq {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (factor_HasFinProduct₁ factor_HasFinProduct₂ : HasFinProduct C factor)
+    : Iso (finproduct.iso factor_HasFinProduct₁ factor_HasFinProduct₂)
+          (finproduct.iso factor_HasFinProduct₂ factor_HasFinProduct₁)
+:= product.uniq factor_HasFinProduct₁ factor_HasFinProduct₂
 
 
 end qp
