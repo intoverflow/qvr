@@ -16,6 +16,17 @@ inductive dlist {A : Type ℓ₁} (B : A → Sort ℓ₂) : list A → Type (max
 | cons : ∀ (a : A) (b : B a) (aa : list A) (bb : dlist aa)
          , dlist (a :: aa)
 
+/-! #brief Equality of dlists.
+-/
+definition dlist.eq {A : Type ℓ₁} {B : A → Sort ℓ₂}
+    : ∀ {a : A} {aa : list A}
+         {b₁ b₂ : B a}
+         {bb₁ bb₂ : dlist B aa}
+         (ωb : b₁ = b₂)
+         (ωbb : bb₁ = bb₂)
+       , dlist.cons a b₁ aa bb₁ = dlist.cons a b₂ aa bb₂
+| a aa b .b bb .bb (eq.refl .b) (eq.refl .bb) := rfl
+
 /-! #brief Mapping across a dependent list.
 -/
 definition dlist.map {A : Type ℓ₁} {B₁ B₂ : A → Sort ℓ₂} (f : ∀ {a : A}, B₁ a → B₂ a)
