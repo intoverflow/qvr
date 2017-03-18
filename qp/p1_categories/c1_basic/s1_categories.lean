@@ -59,6 +59,37 @@ theorem Cat.eq
      exact rfl
    end
 
+/-! #brief Left congruence for circ.
+-/
+theorem Cat.circ.congr_left {C : Cat.{ℓobj ℓhom}}
+    {x y z : C^.obj}
+    : ∀ {g₁ g₂ : C^.hom y z}
+        {f : C^.hom x y}
+        (ωg : g₁ = g₂)
+      , C^.circ g₁ f = C^.circ g₂ f
+| g .g f (eq.refl .g) := rfl
+
+/-! #brief Right congruence for circ.
+-/
+theorem Cat.circ.congr_right {C : Cat.{ℓobj ℓhom}}
+    {x y z : C^.obj}
+    : ∀ {g : C^.hom y z}
+        {f₁ f₂ : C^.hom x y}
+        (ωf : f₁ = f₂)
+      , C^.circ g f₁ = C^.circ g f₂
+| g f .f (eq.refl .f) := rfl
+
+/-! #brief Bi-congruence for circ.
+-/
+theorem Cat.circ.congr {C : Cat.{ℓobj ℓhom}}
+    {x y z : C^.obj}
+    : ∀ {g₁ g₂ : C^.hom y z}
+        {f₁ f₂ : C^.hom x y}
+        (ωg : g₁ = g₂)
+        (ωf : f₁ = f₂)
+      , C^.circ g₁ f₁ = C^.circ g₂ f₂
+| g .g f .f (eq.refl .g) (eq.refl .f) := rfl
+
 -- An object in a category.
 -- \[[ \]]
 notation `⟦` C `⟧` := Cat.obj C
@@ -727,6 +758,155 @@ theorem Cat.circ.Iso {C : Cat.{ℓobj ℓhom}}
                     ... = ⟨⟨c₃⟩⟩                     : by rw iso₂₃^.id₂
    }
 
+
+
+/- -----------------------------------------------------------------------
+Monomorphism and epimorphisms.
+----------------------------------------------------------------------- -/
+
+/-! brief A monomorphism.
+-/
+class Monic {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
+    (g : C^.hom x y)
+    : Prop
+:= (inj : ∀ {a : C^.obj} {f₁ f₂ : C^.hom a x}
+             (ω : C^.circ g f₁ = C^.circ g f₂)
+           , f₁ = f₂)
+
+/-! #brief Helper for showing a hom is epic.
+-/
+definition Monic.show {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
+    (g : C^.hom x y)
+    (ω : ∀ {a : C^.obj} {f₁ f₂ : C^.hom a x} (ωf : C^.circ g f₁ = C^.circ g f₂), f₁ = f₂)
+    : Monic g
+:= { inj := @ω }
+
+/-! brief An epimorphism.
+-/
+@[class] definition Epic {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
+    (f : C^.hom x y)
+    : Prop
+:= @Monic (OpCat C) y x f
+
+/-! #brief Helper for showing a hom is epic.
+-/
+definition Epic.show {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
+    (f : C^.hom x y)
+    (ω : ∀ {z : C^.obj} (g₁ g₂ : C^.hom y z) (ωg : C^.circ g₁ f = C^.circ g₂ f), g₁ = g₂)
+    : Epic f
+:= Monic.show f @ω
+
+/-! #brief Identity homs are monic.
+-/
+instance Cat.id.Monic {C : Cat.{ℓobj ℓhom}}
+    (c : C^.obj)
+    : Monic (C^.id c)
+:= Monic.show (C^.id c)
+    (λ a f₁ f₂ ω, by calc f₁ = ⟨⟨c⟩⟩ ∘∘ f₁ : eq.symm C^.circ_id_left
+                         ... = ⟨⟨c⟩⟩ ∘∘ f₂ : ω
+                         ... = f₂ : C^.circ_id_left)
+
+/-! #brief Identity homs are epic.
+-/
+instance Cat.id.Epic {C : Cat.{ℓobj ℓhom}}
+    (c : C^.obj)
+    : Epic (C^.id c)
+:= Epic.show (C^.id c)
+    (λ z g₁ g₂ ω, by calc g₁ = g₁ ∘∘ ⟨⟨c⟩⟩ : eq.symm C^.circ_id_right
+                         ... = g₂ ∘∘ ⟨⟨c⟩⟩ : ω
+                         ... = g₂ : C^.circ_id_right)
+
+
+
+/- -----------------------------------------------------------------------
+Casting homs.
+----------------------------------------------------------------------- -/
+
+/-! #brief A casting hom.
+-/
+definition cast_hom {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c₁ c₂ : C^.obj}
+        (ω : c₁ = c₂)
+      , C^.hom c₁ c₂
+| c .c (eq.refl .c) := C^.id c
+
+/-! #brief composition of casting homs.
+-/
+theorem cast_hom.circ {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c₁ c₂ c₃ : C^.obj}
+        {ω₁₂ : c₁ = c₂}
+        {ω₂₃ : c₂ = c₃}
+      , C^.circ (cast_hom ω₂₃) (cast_hom ω₁₂)
+         = cast_hom (eq.trans ω₁₂ ω₂₃)
+| c .c .c (eq.refl .c) (eq.refl .c) := C^.circ_id_left
+
+/-! #brief Left congruence of composition with casting homs.
+-/
+theorem cast_hom.circ.congr_left {C : Cat.{ℓobj ℓhom}}
+    : ∀ {b c₁ c₂ d : C^.obj}
+        {ω₁ : b = c₁}
+        {ω₂ : b = c₂}
+        {g₁ : C^.hom c₁ d}
+        {g₂ : C^.hom c₂ d}
+        (ωg : g₁ == g₂)
+      , C^.circ g₁ (cast_hom ω₁) = C^.circ g₂ (cast_hom ω₂)
+| b .b .b d (eq.refl .b) (eq.refl .b) g .g (heq.refl .g) := rfl
+
+/-! #brief Right congruence of composition with casting homs.
+-/
+theorem cast_hom.circ.congr_right {C : Cat.{ℓobj ℓhom}}
+    : ∀ {b c₁ c₂ d : C^.obj}
+        {ω₁ : c₁ = d}
+        {ω₂ : c₂ = d}
+        {f₁ : C^.hom b c₁}
+        {f₂ : C^.hom b c₂}
+        (ωf : f₁ == f₂)
+      , C^.circ (cast_hom ω₁) f₁ = C^.circ (cast_hom ω₂) f₂
+| b c .c .c (eq.refl .c) (eq.refl .c) f .f (heq.refl .f) := rfl
+
+/-! #brief Casting homs and heq.
+-/
+theorem cast_hom.circ_left_heq {C : Cat.{ℓobj ℓhom}}
+    : ∀ {b c₁ c₂ : C^.obj}
+        (ω : c₁ = c₂)
+        (f : C^.hom b c₁)
+      , C^.circ (cast_hom ω) f == f
+| b c .c (eq.refl .c) f := heq_of_eq C^.circ_id_left
+
+/-! #brief Casting homs and heq.
+-/
+theorem cast_hom.circ_right_heq {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c₁ c₂ d : C^.obj}
+        (ω : c₁ = c₂)
+        (g : C^.hom c₂ d)
+      , C^.circ g (cast_hom ω) == g
+| c .c d (eq.refl .c) g := heq_of_eq C^.circ_id_right
+
+
+/-! #brief Casting homs are isos.
+-/
+theorem cast_hom.Iso {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c₁ c₂ : C^.obj}
+        (ω₁₂ : c₁ = c₂)
+        (ω₂₁ : c₂ = c₁)
+      , Iso (cast_hom ω₁₂) (cast_hom ω₂₁)
+| c .c (eq.refl .c) (eq.refl .c) := Cat.id.Iso c
+
+/-! #brief Casting homs are monic.
+-/
+instance cast_hom.Monic {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c₁ c₂ : C^.obj}
+        (ω : c₁ = c₂)
+      , Monic (cast_hom ω)
+| c .c (eq.refl .c) := Cat.id.Monic c
+
+/-! #brief Casting homs are epic.
+-/
+instance cast_hom.Epic {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c₁ c₂ : C^.obj}
+        (ω : c₁ = c₂)
+      , Epic (cast_hom ω)
+| c .c (eq.refl .c) := Cat.id.Epic c
 
 
 /- -----------------------------------------------------------------------

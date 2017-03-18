@@ -74,6 +74,66 @@ definition {ℓ} list.get {A : Type ℓ}
        = list.get aa { val := n, is_lt := nat.lt_of_succ_lt_succ ωn }
 := rfl
 
+/-! #brief A handy lemma about lengths of lists.
+-/
+lemma {ℓ} list.length.grow_left {A : Type ℓ}
+    {aa₁ aa₂ : list A}
+    {n : ℕ}
+    (ωn : n < list.length aa₁)
+    : n < list.length (aa₁ ++ aa₂)
+:= by calc n   < list.length aa₁                   : ωn
+           ... ≤ list.length aa₁ + list.length aa₂ : nat.le_add_right _ _
+           ... = list.length (aa₁ ++ aa₂)          : by rw list.length_append
+
+/-! #brief A handy lemma about lengths of lists.
+-/
+lemma {ℓ} list.length.grow_right {A : Type ℓ}
+    {aa₁ aa₂ : list A}
+    {n : ℕ}
+    (ωn : n < list.length aa₂)
+    : n + list.length aa₁ < list.length (aa₁ ++ aa₂)
+:= by calc n + list.length aa₁
+               = list.length aa₁ + n               : by rw nat.add_comm
+           ... < list.length aa₁ + list.length aa₂ : nat.add_lt_add_left ωn _
+           ... = list.length (aa₁ ++ aa₂)          : by rw list.length_append
+
+/-! #brief Action of list.get on list.append.
+-/
+theorem {ℓ} list.get_append_left {A : Type ℓ}
+    : ∀ {aa₁ aa₂ : list A}
+        {n : ℕ} {ωn : n < list.length aa₁}
+      , list.get (aa₁ ++ aa₂) (fin.mk n (list.length.grow_left ωn))
+         = list.get aa₁ (fin.mk n ωn)
+| [] aa₂ n ωn := fin.zero_elim (fin.mk n ωn)
+| (a :: aa) aa₂ 0 ω0 := rfl
+| (a :: aa) aa₂ (nat.succ n) ωn
+:= begin
+     refine eq.trans (list.get.simp _ _ _ _) _,
+     refine eq.trans _ (eq.symm (list.get.simp _ _ _ _)),
+     apply list.get_append_left
+   end
+
+/-! #brief Action of list.get on list.append.
+-/
+theorem {ℓ} list.get_append_right {A : Type ℓ}
+    : ∀ {aa₁ aa₂ : list A}
+        {n : ℕ} {ωn : n < list.length aa₂}
+      , list.get (aa₁ ++ aa₂) (fin.mk (n + list.length aa₁) (list.length.grow_right ωn))
+         = list.get aa₂ (fin.mk n ωn)
+| [] aa₂ n ωn := rfl
+| (a₁ :: aa₁) [] n ωn := fin.zero_elim (fin.mk n ωn)
+| (a₁ :: aa₁) (a₂ :: aa₂) 0 ω0
+:= begin
+     refine eq.trans (list.get.simp _ _ _ _) _,
+     apply list.get_append_right
+   end
+| (a₁ :: aa₁) (a₂ :: aa₂) (nat.succ n) ωn
+:= begin
+     refine eq.trans (list.get.simp _ _ _ _) _,
+     refine eq.trans _ (eq.symm (list.get.simp _ _ _ _)),
+     apply list.get_append_right
+   end
+
 /-! #brief Action of list.get on list.map.
 -/
 theorem {ℓ₁ ℓ₂} list.get_map {A : Type ℓ₁} {B : Type ℓ₂}
