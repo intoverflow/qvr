@@ -1207,6 +1207,23 @@ definition HomsOut.comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
     : HomsOut c' factor
 := dlist.map (λ a j, C^.circ j f) proj
 
+/-! #brief HomsOut.comp distributes over composition of homs.
+-/
+definition HomsOut.comp_circ {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (proj : HomsOut c factor)
+    {c₁ c₂ : C^.obj} (g : C^.hom c₂ c) (f : C^.hom c₁ c₂)
+    : HomsOut.comp proj (C^.circ g f)
+       = HomsOut.comp (HomsOut.comp proj g) f
+:= begin
+     unfold HomsOut.comp,
+     apply eq.symm,
+     refine eq.trans (dlist.map_map _ _) _,
+     refine congr_arg (λ f, dlist.map f proj) _,
+     apply funext, intro a, apply funext, intro j,
+     apply eq.symm C^.circ_assoc
+   end
+
 /-! #brief Composition of a HomsList with a HomsOut.
 -/
 definition homs_comp_out {C : Cat.{ℓobj ℓhom}}

@@ -46,6 +46,21 @@ definition dlist.map {A : Type ℓ₁} {B₁ B₂ : A → Sort ℓ₂} (f : ∀ 
 | [] bb := dlist.nil B₂
 | (a :: aa) (dlist.cons .a b .aa bb) := dlist.cons a (f b) aa (dlist.map bb)
 
+/-! #brief Mapping a map.
+-/
+theorem dlist.map_map {A : Type ℓ₁} {B₁ B₂ B₃ : A → Sort ℓ₂}
+    (g : ∀ {a : A}, B₂ a → B₃ a)
+    (f : ∀ {a : A}, B₁ a → B₂ a)
+    : ∀ {aa : list A} {bb : dlist B₁ aa}
+      , dlist.map @g (dlist.map @f bb) = dlist.map (λ a b, g (f b)) bb
+| [] bb := rfl
+| (a :: aa) (dlist.cons .a b .aa bb)
+:= begin
+     apply dlist.eq,
+     { trivial },
+     { apply dlist.map_map }
+   end
+
 /-! #brief Getting an item out of a dependent list.
 -/
 definition dlist.get {A : Type ℓ₁} {B : A → Sort ℓ₂}
