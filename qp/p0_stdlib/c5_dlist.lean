@@ -30,13 +30,13 @@ definition dlist.eq {A : Type ℓ₁} {B : A → Sort ℓ₂}
        , dlist.cons a b₁ aa bb₁ = dlist.cons a b₂ aa bb₂
 | a aa b .b bb .bb (eq.refl .b) (eq.refl .bb) := rfl
 
-/-! #brief The head of a dlist.
--/
-definition dlist.head {A : Type ℓ₁} {B : A → Sort ℓ₂}
-    : ∀ {a:  A} {aa : list A}
-        (bb : dlist B (a :: aa))
-      , B a
-| a aa (dlist.cons .a b .aa bb) := b
+-- /-! #brief The head of a dlist.
+-- -/
+-- definition dlist.head {A : Type ℓ₁} {B : A → Sort ℓ₂}
+--     : ∀ {a:  A} {aa : list A}
+--         (bb : dlist B (a :: aa))
+--       , B a
+-- | a aa (dlist.cons .a b .aa bb) := b
 
 /-! #brief Mapping across a dependent list.
 -/

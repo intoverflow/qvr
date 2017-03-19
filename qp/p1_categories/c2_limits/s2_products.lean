@@ -371,213 +371,104 @@ definition finproduct.singleton.Iso {C : Cat.{ℓobj ℓhom}}
 
 
 
-/-! #brief Projections for the flattened product.
--/
-definition HasFinProduct.flatten_right.Proj {C : Cat.{ℓobj ℓhom}}
-    (factor₁ factor₂ : list C^.obj)
-    [factor₂_HasFinProduct : HasFinProduct C factor₂]
-    [factor₁₂_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
-    : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂]))
-                     (factor₁ ++ factor₂)
-:= let prj₁₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂]))
-                      (factor₁ ++ [finproduct C factor₂])
-           := (@finproduct.cone _ _ factor₁₂_HasFinProduct)^.Proj in
-   let f₁ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂])) factor₁
-         := HomsOut.split_left prj₁₂ in
-   let f₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂])) [finproduct C factor₂]
-         := HomsOut.split_right prj₁₂ in
-   let f₂' := HomsOut.comp (@finproduct.cone _ _ factor₂_HasFinProduct)^.Proj (dlist.head f₂)
-   in HomsOut.append f₁ f₂'
-
-/-! #brief The projections used by the universal map for the flattened product.
--/
-definition HasFinProduct.flatten_right.univ.Proj {C : Cat.{ℓobj ℓhom}}
-    (factor₁ factor₂ : list C^.obj)
-    [factor₂_HasFinProduct : HasFinProduct C factor₂]
-    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
-    (c : C^.obj)
-    (hom : HomsOut c (factor₁ ++ factor₂))
-    : HomsOut c (factor₁ ++ [finproduct C factor₂])
-:= let f₁ : HomsOut c factor₁
-         := HomsOut.split_left hom in
-   let f₂ : HomsOut c [finproduct C factor₂]
-         := dlist.cons _ (finproduct.univ C factor₂ (HomsOut.split_right hom))
-                       _ (dlist.nil _)
-   in HomsOut.append f₁ f₂
-
-/-! #brief Universal map for the flattened product.
--/
-definition HasFinProduct.flatten_right.univ {C : Cat.{ℓobj ℓhom}}
-    (factor₁ factor₂ : list C^.obj)
-    [factor₂_HasFinProduct : HasFinProduct C factor₂]
-    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
-    (c : C^.obj)
-    (hom : HomsOut c (factor₁ ++ factor₂))
-    : C^.hom c (finproduct C (factor₁ ++ [finproduct C factor₂]))
-:= finproduct.univ C
-    (factor₁ ++ [finproduct C factor₂])
-    (HasFinProduct.flatten_right.univ.Proj factor₁ factor₂ c hom)
-
-/-! #brief Flattening of products.
--/
-definition HasFinProduct.flatten_right {C : Cat.{ℓobj ℓhom}}
-    (factor₁ factor₂ : list C^.obj)
-    [factor₂_HasFinProduct : HasFinProduct C factor₂]
-    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
-    : HasFinProduct C (factor₁ ++ factor₂)
-:= HasFinProduct.show
-    (finproduct C (factor₁ ++ [finproduct C factor₂]))
-    (HasFinProduct.flatten_right.Proj factor₁ factor₂)
-    (HasFinProduct.flatten_right.univ factor₁ factor₂)
-    begin
-      intros c hom,
-      apply HomsOut.append_eq,
-      { rw HomsOut.split_left_comp,
-        unfold HasFinProduct.flatten_right.Proj,
-        rw HomsOut.split_left_append,
-        apply HomsOut.get.inj,
-        apply funext, intro n, cases n with n ωn,
-        rw HomsOut.get_comp,
-        repeat { rw HomsOut.get_split_left },
-        rw -C^.circ_assoc,
-        apply cast_hom.circ.congr_right,
-        unfold HasFinProduct.flatten_right.univ,
-        refine heq.trans _ (heq_of_eq (Cat.circ.congr_left (eq.symm (HomsOut.get_enum _ _)))),
-        refine heq.trans _ (heq_of_eq (finproduct.univ.mediates C
-                                        (factor₁ ++ [finproduct C factor₂])
-                                        (HasFinProduct.flatten_right.univ.Proj factor₁ factor₂ c hom)
-                                        {val := n, is_lt := list.length.grow_left ωn})),
-        unfold HasFinProduct.flatten_right.univ.Proj,
-        refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
-        repeat { rw HomsOut.get_split_left },
-        refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
-        apply heq.refl
-      },
-      { rw HomsOut.split_right_comp,
-        unfold HasFinProduct.flatten_right.Proj,
-        rw HomsOut.split_right_append,
-        rw -HomsOut.comp_circ,
-        apply HomsOut.get.inj,
-        apply funext, intro n, cases n with n ωn,
-        rw HomsOut.get_comp,
-        unfold HasFinProduct.flatten_right.univ,
-        exact sorry
-      }
-    end
-    begin
-      intros c hom h ωh,
-      exact sorry
-    end
-
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-/- - - - - - -- - - - - -- - - - - - -- -/
-
-
-
-
 -- /-! #brief Projections for the flattened product.
 -- -/
--- definition HasFinProduct.flatten.Proj {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
+-- definition HasFinProduct.flatten_right.Proj {C : Cat.{ℓobj ℓhom}}
+--     (factor₁ factor₂ : list C^.obj)
 --     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
---     : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
---                      (factor₁ ++ factor₂ ++ factor₃)
--- := let prj₁₂₃ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
---                               (factor₁ ++ [finproduct C factor₂] ++ factor₃)
---            := (@finproduct.cone _ _ factor₁₂₃_HasFinProduct)^.Proj in
---    let f₁ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₁
---          := HomsOut.split_left (HomsOut.split_left prj₁₂₃) in
---    let f₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) [finproduct C factor₂]
---          := HomsOut.split_right (HomsOut.split_left prj₁₂₃) in
---    let f₂' := HomsOut.comp (@finproduct.cone _ _ factor₂_HasFinProduct)^.Proj (dlist.head f₂) in
---    let f₃ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₃
---          := HomsOut.split_right prj₁₂₃
---    in HomsOut.append (HomsOut.append f₁ f₂') f₃
+--     [factor₁₂_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
+--     : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂]))
+--                      (factor₁ ++ factor₂)
+-- := let prj₁₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂]))
+--                       (factor₁ ++ [finproduct C factor₂])
+--            := (@finproduct.cone _ _ factor₁₂_HasFinProduct)^.Proj in
+--    let f₁ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂])) factor₁
+--          := HomsOut.split_left prj₁₂ in
+--    let f₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂])) [finproduct C factor₂]
+--          := HomsOut.split_right prj₁₂ in
+--    let f₂' := HomsOut.comp (@finproduct.cone _ _ factor₂_HasFinProduct)^.Proj (HomsOut.get f₂ fin.zero)
+--    in HomsOut.append f₁ f₂'
 
 -- /-! #brief The projections used by the universal map for the flattened product.
 -- -/
--- definition HasFinProduct.flatten.univ.Proj {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
+-- definition HasFinProduct.flatten_right.univ.Proj {C : Cat.{ℓobj ℓhom}}
+--     (factor₁ factor₂ : list C^.obj)
 --     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+--     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
 --     (c : C^.obj)
---     (hom : HomsOut c (factor₁ ++ factor₂ ++ factor₃))
---     : HomsOut c (factor₁ ++ [finproduct C factor₂] ++ factor₃)
+--     (hom : HomsOut c (factor₁ ++ factor₂))
+--     : HomsOut c (factor₁ ++ [finproduct C factor₂])
 -- := let f₁ : HomsOut c factor₁
---          := HomsOut.split_left (HomsOut.split_left hom) in
+--          := HomsOut.split_left hom in
 --    let f₂ : HomsOut c [finproduct C factor₂]
---          := dlist.cons _
---                (finproduct.univ C factor₂
---                  (HomsOut.split_right (HomsOut.split_left hom)))
---                _ (dlist.nil _) in
---    let f₃ : HomsOut c factor₃
---          := HomsOut.split_right hom
---    in HomsOut.append (HomsOut.append f₁ f₂) f₃
+--          := dlist.cons _ (finproduct.univ C factor₂ (HomsOut.split_right hom))
+--                        _ (dlist.nil _)
+--    in HomsOut.append f₁ f₂
 
 -- /-! #brief Universal map for the flattened product.
 -- -/
--- definition HasFinProduct.flatten.univ {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
+-- definition HasFinProduct.flatten_right.univ {C : Cat.{ℓobj ℓhom}}
+--     (factor₁ factor₂ : list C^.obj)
 --     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+--     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
 --     (c : C^.obj)
---     (hom : HomsOut c (factor₁ ++ factor₂ ++ factor₃))
---     : C^.hom c (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
--- := finproduct.univ C (factor₁ ++ [finproduct C factor₂] ++ factor₃)
---                      (HasFinProduct.flatten.univ.Proj factor₁ factor₂ factor₃ c hom)
-
+--     (hom : HomsOut c (factor₁ ++ factor₂))
+--     : C^.hom c (finproduct C (factor₁ ++ [finproduct C factor₂]))
+-- := finproduct.univ C
+--     (factor₁ ++ [finproduct C factor₂])
+--     (HasFinProduct.flatten_right.univ.Proj factor₁ factor₂ c hom)
 
 -- /-! #brief Flattening of products.
 -- -/
--- definition HasFinProduct.flatten {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
+-- definition HasFinProduct.flatten_right {C : Cat.{ℓobj ℓhom}}
+--     (factor₁ factor₂ : list C^.obj)
 --     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
---     : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)
+--     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂])]
+--     : HasFinProduct C (factor₁ ++ factor₂)
 -- := HasFinProduct.show
---     (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
---     (HasFinProduct.flatten.Proj factor₁ factor₂ factor₃)
---     (HasFinProduct.flatten.univ factor₁ factor₂ factor₃)
+--     (finproduct C (factor₁ ++ [finproduct C factor₂]))
+--     (HasFinProduct.flatten_right.Proj factor₁ factor₂)
+--     (HasFinProduct.flatten_right.univ factor₁ factor₂)
 --     begin
 --       intros c hom,
 --       apply HomsOut.append_eq,
---       apply HomsOut.append_eq,
---       { repeat { rw HomsOut.split_left_comp },
---         unfold HasFinProduct.flatten.Proj,
---         repeat { rw HomsOut.split_left_append },
+--       { rw HomsOut.split_left_comp,
+--         unfold HasFinProduct.flatten_right.Proj,
+--         rw HomsOut.split_left_append,
 --         apply HomsOut.get.inj,
 --         apply funext, intro n, cases n with n ωn,
 --         rw HomsOut.get_comp,
 --         repeat { rw HomsOut.get_split_left },
---         repeat { rw C^.circ_assoc },
---         repeat { rw cast_hom.circ },
 --         rw -C^.circ_assoc,
 --         apply cast_hom.circ.congr_right,
---         unfold HasFinProduct.flatten.univ,
+--         unfold HasFinProduct.flatten_right.univ,
 --         refine heq.trans _ (heq_of_eq (Cat.circ.congr_left (eq.symm (HomsOut.get_enum _ _)))),
 --         refine heq.trans _ (heq_of_eq (finproduct.univ.mediates C
---                                         (factor₁ ++ [finproduct C factor₂] ++ factor₃)
---                                         (HasFinProduct.flatten.univ.Proj factor₁ factor₂ factor₃ c hom)
---                                         {val := n, is_lt := list.length.grow_left (list.length.grow_left ωn)})),
---         unfold HasFinProduct.flatten.univ.Proj,
---         refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
+--                                         (factor₁ ++ [finproduct C factor₂])
+--                                         (HasFinProduct.flatten_right.univ.Proj factor₁ factor₂ c hom)
+--                                         {val := n, is_lt := list.length.grow_left ωn})),
+--         unfold HasFinProduct.flatten_right.univ.Proj,
 --         refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
 --         repeat { rw HomsOut.get_split_left },
---         rw [C^.circ_assoc, cast_hom.circ],
 --         refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
 --         apply heq.refl
 --       },
---       { exact sorry 
---       },
---       { exact sorry
+--       { rw HomsOut.split_right_comp,
+--         unfold HasFinProduct.flatten_right.Proj,
+--         rw HomsOut.split_right_append,
+--         rw -HomsOut.comp_circ,
+--         apply HomsOut.get.inj,
+--         apply funext, intro n, cases n with n ωn,
+--         rw HomsOut.get_comp,
+--         rw HomsOut.get_split_right,
+--         unfold HasFinProduct.flatten_right.univ,
+--         assert foo :
+--                 HomsOut.get (HomsOut.split_right (FinProductCone.Proj (finproduct.cone C (factor₁ ++ [finproduct C factor₂])))) fin.zero
+--                  == finproduct.π C (factor₁ ++ [finproduct C factor₂]) (fin.mk (list.length factor₁) begin rw list.length_append, apply nat.less_than_or_equal.refl end),
+--         { refine heq.trans (heq_of_eq HomsOut.get_split_right) _,
+--           refine heq.trans (cast_hom.circ_left_heq _ _) _,
+--           exact sorry,
+--         }
 --       }
 --     end
 --     begin
@@ -585,32 +476,148 @@ definition HasFinProduct.flatten_right {C : Cat.{ℓobj ℓhom}}
 --       exact sorry
 --     end
 
--- definition finproduct.unflatten {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
---     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
---     [factor₁₂₃_flat_HasFinProduct : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)]
---     : C^.hom (finproduct C (factor₁ ++ factor₂ ++ factor₃))
---              (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
--- := finproduct.iso factor₁₂₃_flat_HasFinProduct (HasFinProduct.flatten factor₁ factor₂ factor₃)
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
+/- - - - - - -- - - - - -- - - - - - -- -/
 
--- definition finproduct.flatten {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
---     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
---     [factor₁₂₃_flat_HasFinProduct : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)]
---     : C^.hom (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
---              (finproduct C (factor₁ ++ factor₂ ++ factor₃))
--- := finproduct.iso (HasFinProduct.flatten factor₁ factor₂ factor₃) factor₁₂₃_flat_HasFinProduct
 
--- definition finproduct.flatten.Iso {C : Cat.{ℓobj ℓhom}}
---     (factor₁ factor₂ factor₃ : list C^.obj)
---     [factor₂_HasFinProduct : HasFinProduct C factor₂]
---     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
---     [factor₁₂₃_flat_HasFinProduct : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)]
---     : Iso  (finproduct.flatten factor₁ factor₂ factor₃)
---            (finproduct.unflatten factor₁ factor₂ factor₃)
--- := finproduct.uniq (HasFinProduct.flatten factor₁ factor₂ factor₃) factor₁₂₃_flat_HasFinProduct
+
+
+/-! #brief Projections for the flattened product.
+-/
+definition HasFinProduct.flatten.Proj {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+                     (factor₁ ++ factor₂ ++ factor₃)
+:= let prj₁₂₃ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+                              (factor₁ ++ [finproduct C factor₂] ++ factor₃)
+           := (@finproduct.cone _ _ factor₁₂₃_HasFinProduct)^.Proj in
+   let f₁ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₁
+         := HomsOut.split_left (HomsOut.split_left prj₁₂₃) in
+   let f₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) [finproduct C factor₂]
+         := HomsOut.split_right (HomsOut.split_left prj₁₂₃) in
+   let f₂' := HomsOut.comp (@finproduct.cone _ _ factor₂_HasFinProduct)^.Proj (HomsOut.get f₂ fin.zero) in
+   let f₃ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₃
+         := HomsOut.split_right prj₁₂₃
+   in HomsOut.append (HomsOut.append f₁ f₂') f₃
+
+/-! #brief The projections used by the universal map for the flattened product.
+-/
+definition HasFinProduct.flatten.univ.Proj {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    (c : C^.obj)
+    (hom : HomsOut c (factor₁ ++ factor₂ ++ factor₃))
+    : HomsOut c (factor₁ ++ [finproduct C factor₂] ++ factor₃)
+:= let f₁ : HomsOut c factor₁
+         := HomsOut.split_left (HomsOut.split_left hom) in
+   let f₂ : HomsOut c [finproduct C factor₂]
+         := dlist.cons _
+               (finproduct.univ C factor₂
+                 (HomsOut.split_right (HomsOut.split_left hom)))
+               _ (dlist.nil _) in
+   let f₃ : HomsOut c factor₃
+         := HomsOut.split_right hom
+   in HomsOut.append (HomsOut.append f₁ f₂) f₃
+
+/-! #brief Universal map for the flattened product.
+-/
+definition HasFinProduct.flatten.univ {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    (c : C^.obj)
+    (hom : HomsOut c (factor₁ ++ factor₂ ++ factor₃))
+    : C^.hom c (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+:= finproduct.univ C (factor₁ ++ [finproduct C factor₂] ++ factor₃)
+                     (HasFinProduct.flatten.univ.Proj factor₁ factor₂ factor₃ c hom)
+
+
+/-! #brief Flattening of products.
+-/
+definition HasFinProduct.flatten {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)
+:= HasFinProduct.show
+    (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+    (HasFinProduct.flatten.Proj factor₁ factor₂ factor₃)
+    (HasFinProduct.flatten.univ factor₁ factor₂ factor₃)
+    begin
+      intros c hom,
+      apply HomsOut.append_eq,
+      apply HomsOut.append_eq,
+      { repeat { rw HomsOut.split_left_comp },
+        unfold HasFinProduct.flatten.Proj,
+        repeat { rw HomsOut.split_left_append },
+        apply HomsOut.get.inj,
+        apply funext, intro n, cases n with n ωn,
+        rw HomsOut.get_comp,
+        repeat { rw HomsOut.get_split_left },
+        repeat { rw C^.circ_assoc },
+        repeat { rw cast_hom.circ },
+        rw -C^.circ_assoc,
+        apply cast_hom.circ.congr_right,
+        unfold HasFinProduct.flatten.univ,
+        refine heq.trans _ (heq_of_eq (Cat.circ.congr_left (eq.symm (HomsOut.get_enum _ _)))),
+        refine heq.trans _ (heq_of_eq (finproduct.univ.mediates C
+                                        (factor₁ ++ [finproduct C factor₂] ++ factor₃)
+                                        (HasFinProduct.flatten.univ.Proj factor₁ factor₂ factor₃ c hom)
+                                        {val := n, is_lt := list.length.grow_left (list.length.grow_left ωn)})),
+        unfold HasFinProduct.flatten.univ.Proj,
+        refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
+        refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
+        repeat { rw HomsOut.get_split_left },
+        rw [C^.circ_assoc, cast_hom.circ],
+        refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
+        apply heq.refl
+      },
+      { exact sorry 
+      },
+      { exact sorry
+      }
+    end
+    begin
+      intros c hom h ωh,
+      exact sorry
+    end
+
+definition finproduct.unflatten {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    [factor₁₂₃_flat_HasFinProduct : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)]
+    : C^.hom (finproduct C (factor₁ ++ factor₂ ++ factor₃))
+             (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+:= finproduct.iso factor₁₂₃_flat_HasFinProduct (HasFinProduct.flatten factor₁ factor₂ factor₃)
+
+definition finproduct.flatten {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    [factor₁₂₃_flat_HasFinProduct : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)]
+    : C^.hom (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+             (finproduct C (factor₁ ++ factor₂ ++ factor₃))
+:= finproduct.iso (HasFinProduct.flatten factor₁ factor₂ factor₃) factor₁₂₃_flat_HasFinProduct
+
+definition finproduct.flatten.Iso {C : Cat.{ℓobj ℓhom}}
+    (factor₁ factor₂ factor₃ : list C^.obj)
+    [factor₂_HasFinProduct : HasFinProduct C factor₂]
+    [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
+    [factor₁₂₃_flat_HasFinProduct : HasFinProduct C (factor₁ ++ factor₂ ++ factor₃)]
+    : Iso  (finproduct.flatten factor₁ factor₂ factor₃)
+           (finproduct.unflatten factor₁ factor₂ factor₃)
+:= finproduct.uniq (HasFinProduct.flatten factor₁ factor₂ factor₃) factor₁₂₃_flat_HasFinProduct
 
 
 example (C : Cat) (x y z : ⟦C⟧)
@@ -619,6 +626,7 @@ example (C : Cat) (x y z : ⟦C⟧)
         [yz_HasFinProduct : HasFinProduct C [y, z]]
         [x_yz_HasFinProduct : HasFinProduct C [x, finproduct C [y, z]]]
         : ⟦C : finproduct C [finproduct C [x, y], z] →→ finproduct C [x, finproduct C [y, z]]⟧
- := sorry
+ := finproduct.iso (@HasFinProduct.flatten C [] [x, y] [z] xy_HasFinProduct xy_z_HasFinProduct)
+                   (@HasFinProduct.flatten C [x] [y,z] [] yz_HasFinProduct x_yz_HasFinProduct)
 
 end qp
