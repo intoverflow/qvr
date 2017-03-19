@@ -1133,4 +1133,266 @@ instance NatCat.HasInit
     :HasInit NatCat
 := HasInit.show nat.zero nat.zero_le (λ c h, proof_irrel _ _)
 
+
+
+/- -----------------------------------------------------------------------
+Boxes full of homs.
+----------------------------------------------------------------------- -/
+
+/-! #brief Type of dlist used for defining Hom.
+-/
+@[reducible] definition HomAt (C : Cat.{ℓobj ℓhom})
+    : prod C^.obj C^.obj → Sort ℓhom
+:= λ cc, C^.hom cc^.fst cc^.snd
+
+/-! #brief The domain/codomain pair of a hom.
+-/
+@[reducible] definition hom_at {C : Cat.{ℓobj ℓhom}}
+    {x : C^.obj} {y : C^.obj}
+    (f : C^.hom x y)
+    : prod C^.obj C^.obj
+:= (x, y)
+
+/-! #brief A list of homs in a category.
+-/
+definition HomsList (C : Cat.{ℓobj ℓhom})
+    (ccs : list (prod C^.obj C^.obj))
+:= dlist (HomAt C) ccs
+
+/-! #brief The nil HomsList.
+-/
+definition HomsList.nil {C : Cat.{ℓobj ℓhom}}
+    : HomsList C []
+:= dlist.nil _
+
+/-! #brief Push another hom onto a HomsList.
+-/
+definition HomsList.cons {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj} (f : C^.hom x y)
+    {ccs : list (prod C^.obj C^.obj)} (tail : HomsList C ccs)
+    : HomsList C ((x,y) :: ccs)
+:= dlist.cons _ f _ tail
+
+infixr `↗` : 50 := HomsList.cons
+notation f `↗↗` := HomsList.cons f HomsList.nil
+
+example {C : Cat.{ℓobj ℓhom}}
+        {a₁ a₂ b₁ b₂ c₁ c₂ : C^.obj}
+        (fa : C^.hom a₁ a₂)
+        (fb : C^.hom b₁ b₂)
+        (fc : C^.hom c₁ c₂)
+        : HomsList C [(a₁, a₂), (b₁, b₂), (c₁, c₂)]
+:= fa ↗ fb ↗ fc ↗↗
+
+
+
+/- -----------------------------------------------------------------------
+Boxes full of homs out of an object.
+----------------------------------------------------------------------- -/
+
+/-! #brief Outward homs.
+-/
+definition HomsOut {C : Cat.{ℓobj ℓhom}}
+    (c : C^.obj)
+    (factor : list C^.obj)
+    : Type (max ℓobj ℓhom)
+:= dlist (C^.hom c) factor
+
+/-! #brief Composition with outward homs.
+-/
+definition HomsOut.comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (proj : HomsOut c factor)
+    {c' : C^.obj} (f : C^.hom c' c)
+    : HomsOut c' factor
+:= dlist.map (λ a j, C^.circ j f) proj
+
+/-! #brief Composition of a HomsList with a HomsOut.
+-/
+definition homs_comp_out {C : Cat.{ℓobj ℓhom}}
+    : ∀ {ccs : list (prod C^.obj C^.obj)}
+        (fns : HomsList C ccs)
+        {c : C^.obj}
+        (c_proj : HomsOut c (list.map prod.fst ccs))
+      , HomsOut c (list.map prod.snd ccs)
+:= λ ccs fns c c_proj
+   , begin
+       induction ccs with cc ccs rec,
+       { apply dlist.nil },
+       { cases fns with cc f ccs fns',
+         cases cc with c₁ c₂,
+         cases c_proj with c₁ p ccs c_proj',
+         apply dlist.cons _ (C^.circ f p) _ (rec fns' c_proj')
+       }
+     end
+
+/-! #brief Fetching a hom out of HomsOut.
+-/
+definition HomsOut.get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (proj : HomsOut c factor)
+    (n : fin (list.length factor))
+    : C^.hom c (list.get factor n)
+:= dlist.get proj n
+
+/-! #brief get is injective.
+-/
+theorem HomsOut.get.inj {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (proj₁ proj₂ : HomsOut c factor)
+    (ω : HomsOut.get proj₁ = HomsOut.get proj₂)
+    : proj₁ = proj₂
+:= dlist.get.inj ω
+
+/-! #brief get on comp.
+-/
+theorem HomsOut.get_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    {proj : HomsOut c factor}
+    {c' : C^.obj} {f : C^.hom c' c}
+    {n : fin (list.length factor)}
+    : HomsOut.get (HomsOut.comp proj f) n = C^.circ (HomsOut.get proj n) f
+:= dlist.get_map _ _ _
+
+/-! #brief An inverse to HomsOut.get.
+-/
+definition HomsOut.enum {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (f : ∀ (n : fin (list.length factor)), C^.hom c (list.get factor n))
+    : HomsOut c factor
+:= dlist.enum f
+
+/-! #brief enum and get are inverses.
+-/
+theorem HomsOut.enum_get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (proj : HomsOut c factor)
+    : HomsOut.enum (HomsOut.get proj) = proj
+:= dlist.enum_get
+
+/-! #brief enum and get are inverses.
+-/
+theorem HomsOut.get_enum {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor : list C^.obj}
+    (f : ∀ (n : fin (list.length factor)), C^.hom c (list.get factor n))
+    (n : fin (list.length factor))
+    : HomsOut.get (HomsOut.enum f) n = f n
+:= dlist.get_enum _ _
+
+/-! #brief Appending lists of outward homs.
+-/
+definition HomsOut.append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj₁ : HomsOut c factor₁)
+    (proj₂ : HomsOut c factor₂)
+    : HomsOut c (factor₁ ++ factor₂)
+:= dlist.append proj₁ proj₂
+
+/-! #brief Splitting lists of outward homs.
+-/
+definition HomsOut.split_left {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj : HomsOut c (factor₁ ++ factor₂))
+    : HomsOut c factor₁
+:= dlist.split_left factor₁ proj
+
+/-! #brief Splitting lists of outward homs.
+-/
+definition HomsOut.split_right {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj : HomsOut c (factor₁ ++ factor₂))
+    : HomsOut c factor₂
+:= dlist.split_right factor₁ proj
+
+/-! #brief Equality of HomsOut.append
+-/
+theorem HomsOut.append_eq {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj₁ proj₂ : HomsOut c (factor₁ ++ factor₂))
+    (ωleft : HomsOut.split_left proj₁ = HomsOut.split_left proj₂)
+    (ωright : HomsOut.split_right proj₁ = HomsOut.split_right proj₂)
+    : proj₁ = proj₂
+:= dlist.append_eq ωleft ωright
+
+/-! #brief Action of split_left on append.
+-/
+theorem HomsOut.split_left_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj₁ : HomsOut c factor₁)
+    (proj₂ : HomsOut c factor₂)
+    : HomsOut.split_left (HomsOut.append proj₁ proj₂)
+       = proj₁
+:= dlist.split_left_append
+
+/-! #brief Action of split_right on append.
+-/
+theorem HomsOut.split_right_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj₁ : HomsOut c factor₁)
+    (proj₂ : HomsOut c factor₂)
+    : HomsOut.split_right (HomsOut.append proj₁ proj₂)
+       = proj₂
+:= dlist.split_right_append
+
+/-! #brief Action of split_left on comp.
+-/
+theorem HomsOut.split_left_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj : HomsOut c (factor₁ ++ factor₂))
+    {c' : C^.obj} (f : C^.hom c' c)
+    : HomsOut.split_left (HomsOut.comp proj f)
+       = HomsOut.comp (HomsOut.split_left proj) f
+:= dlist.split_left_map _
+
+/-! #brief Action of split_right on comp.
+-/
+theorem HomsOut.split_right_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj : HomsOut c (factor₁ ++ factor₂))
+    {c' : C^.obj} (f : C^.hom c' c)
+    : HomsOut.split_right (HomsOut.comp proj f)
+       = HomsOut.comp (HomsOut.split_right proj) f
+:= dlist.split_right_map _
+
+/-! #brief Action of get on an append.
+-/
+theorem HomsOut.get_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    (proj₁ : HomsOut c factor₁)
+    (proj₂ : HomsOut c factor₂)
+    (n : ℕ) (ωn : n < list.length factor₁)
+    : HomsOut.get (HomsOut.append proj₁ proj₂) (fin.mk n (list.length.grow_left ωn))
+       == HomsOut.get proj₁ (fin.mk n ωn)
+:= dlist.get_append
+
+/-! #brief Action of get on split_left.
+-/
+theorem HomsOut.get_split_left {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    {proj : HomsOut c (factor₁ ++ factor₂)}
+    {n : ℕ} {ωn : n < list.length factor₁}
+    : HomsOut.get (HomsOut.split_left proj) (fin.mk n ωn)
+       = cast_hom list.get_append_left
+          ∘∘ HomsOut.get proj (fin.mk n (list.length.grow_left ωn))
+:= begin
+     apply eq_of_heq,
+     refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
+     apply dlist.get_split_left
+   end
+
+/-! #brief Action of get on split_right.
+-/
+theorem HomsOut.get_split_right {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
+    {factor₁ factor₂ : list C^.obj}
+    {proj : HomsOut c (factor₁ ++ factor₂)}
+    {n : ℕ} {ωn : n < list.length factor₂}
+    : HomsOut.get (HomsOut.split_right proj) (fin.mk n ωn)
+       = cast_hom list.get_append_right
+          ∘∘ HomsOut.get proj (fin.mk (n + list.length factor₁) (list.length.grow_right ωn))
+:= begin
+     apply eq_of_heq,
+     refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
+     apply dlist.get_split_right
+   end
+
 end qp

@@ -16,6 +16,9 @@ inductive dlist {A : Type ℓ₁} (B : A → Sort ℓ₂) : list A → Type (max
 | cons : ∀ (a : A) (b : B a) (aa : list A) (bb : dlist aa)
          , dlist (a :: aa)
 
+-- notation `][` := dlist.nil _
+-- notation h ` :Σ: ` t  := dlist.cons _ h _ t
+
 /-! #brief Equality of dlists.
 -/
 definition dlist.eq {A : Type ℓ₁} {B : A → Sort ℓ₂}

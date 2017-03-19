@@ -170,208 +170,22 @@ definition FinProductCone (C : Cat.{ℓobj ℓhom})
     : Type (max ℓobj ℓhom)
 := ProductCone C (list.get factor)
 
-/-! #brief Projections out of a finite product cone.
--/
-definition FinProductProj {C : Cat.{ℓobj ℓhom}}
-    (c : C^.obj)
-    (factor : list C^.obj)
-    : Type (max ℓobj ℓhom)
-:= dlist (C^.hom c) factor
-
 /-! #brief Every finite product cone comes with projections.
 -/
 definition FinProductCone.Proj {C : Cat.{ℓobj ℓhom}}
     {factor : list C^.obj}
     (c : FinProductCone C factor)
-    : FinProductProj c^.obj factor
+    : HomsOut c^.obj factor
 := dlist.enum (Cone.hom c)
-
-/-! #brief Composition with projections.
--/
-definition FinProductProj.comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : FinProductProj c factor)
-    {c' : C^.obj} (f : C^.hom c' c)
-    : FinProductProj c' factor
-:= dlist.map (λ a j, C^.circ j f) proj
-
-/-! #brief Fetching a projection out of FinProductProj.
--/
-definition FinProductProj.get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : FinProductProj c factor)
-    (n : fin (list.length factor))
-    : C^.hom c (list.get factor n)
-:= dlist.get proj n
-
-/-! #brief get is injective.
--/
-theorem FinProductProj.get.inj {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj₁ proj₂ : FinProductProj c factor)
-    (ω : FinProductProj.get proj₁ = FinProductProj.get proj₂)
-    : proj₁ = proj₂
-:= dlist.get.inj ω
-
-/-! #brief get on comp.
--/
-theorem FinProductProj.get_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    {proj : FinProductProj c factor}
-    {c' : C^.obj} {f : C^.hom c' c}
-    {n : fin (list.length factor)}
-    : FinProductProj.get (FinProductProj.comp proj f) n = C^.circ (FinProductProj.get proj n) f
-:= dlist.get_map _ _ _
-
-/-! #brief An inverse to FinProductProj.get.
--/
-definition FinProductProj.enum {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (f : ∀ (n : fin (list.length factor)), C^.hom c (list.get factor n))
-    : FinProductProj c factor
-:= dlist.enum f
-
-/-! #brief enum and get are inverses.
--/
-theorem FinProductProj.enum_get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : FinProductProj c factor)
-    : FinProductProj.enum (FinProductProj.get proj) = proj
-:= dlist.enum_get
-
-/-! #brief enum and get are inverses.
--/
-theorem FinProductProj.get_enum {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (f : ∀ (n : fin (list.length factor)), C^.hom c (list.get factor n))
-    (n : fin (list.length factor))
-    : FinProductProj.get (FinProductProj.enum f) n = f n
-:= dlist.get_enum _ _
-
-/-! #brief Appending lists of projections.
--/
-definition FinProductProj.append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : FinProductProj c factor₁)
-    (proj₂ : FinProductProj c factor₂)
-    : FinProductProj c (factor₁ ++ factor₂)
-:= dlist.append proj₁ proj₂
-
-/-! #brief Splitting lists of projections.
--/
-definition FinProductProj.split_left {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : FinProductProj c (factor₁ ++ factor₂))
-    : FinProductProj c factor₁
-:= dlist.split_left factor₁ proj
-
-/-! #brief Splitting lists of projections.
--/
-definition FinProductProj.split_right {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : FinProductProj c (factor₁ ++ factor₂))
-    : FinProductProj c factor₂
-:= dlist.split_right factor₁ proj
-
-/-! #brief Equality of FinProductProj.append
--/
-theorem FinProductProj.append_eq {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ proj₂ : FinProductProj c (factor₁ ++ factor₂))
-    (ωleft : FinProductProj.split_left proj₁ = FinProductProj.split_left proj₂)
-    (ωright : FinProductProj.split_right proj₁ = FinProductProj.split_right proj₂)
-    : proj₁ = proj₂
-:= dlist.append_eq ωleft ωright
-
-/-! #brief Action of split_left on append.
--/
-theorem FinProductProj.split_left_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : FinProductProj c factor₁)
-    (proj₂ : FinProductProj c factor₂)
-    : FinProductProj.split_left (FinProductProj.append proj₁ proj₂)
-       = proj₁
-:= dlist.split_left_append
-
-/-! #brief Action of split_right on append.
--/
-theorem FinProductProj.split_right_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : FinProductProj c factor₁)
-    (proj₂ : FinProductProj c factor₂)
-    : FinProductProj.split_right (FinProductProj.append proj₁ proj₂)
-       = proj₂
-:= dlist.split_right_append
-
-/-! #brief Action of split_left on comp.
--/
-theorem FinProductProj.split_left_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : FinProductProj c (factor₁ ++ factor₂))
-    {c' : C^.obj} (f : C^.hom c' c)
-    : FinProductProj.split_left (FinProductProj.comp proj f)
-       = FinProductProj.comp (FinProductProj.split_left proj) f
-:= dlist.split_left_map _
-
-/-! #brief Action of split_right on comp.
--/
-theorem FinProductProj.split_right_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : FinProductProj c (factor₁ ++ factor₂))
-    {c' : C^.obj} (f : C^.hom c' c)
-    : FinProductProj.split_right (FinProductProj.comp proj f)
-       = FinProductProj.comp (FinProductProj.split_right proj) f
-:= dlist.split_right_map _
-
-/-! #brief Action of get on an append.
--/
-theorem FinProductProj.get_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : FinProductProj c factor₁)
-    (proj₂ : FinProductProj c factor₂)
-    (n : ℕ) (ωn : n < list.length factor₁)
-    : FinProductProj.get (FinProductProj.append proj₁ proj₂) (fin.mk n (list.length.grow_left ωn))
-       == FinProductProj.get proj₁ (fin.mk n ωn)
-:= dlist.get_append
-
-/-! #brief Action of get on split_left.
--/
-theorem FinProductProj.get_split_left {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    {proj : FinProductProj c (factor₁ ++ factor₂)}
-    {n : ℕ} {ωn : n < list.length factor₁}
-    : FinProductProj.get (FinProductProj.split_left proj) (fin.mk n ωn)
-       = cast_hom list.get_append_left
-          ∘∘ FinProductProj.get proj (fin.mk n (list.length.grow_left ωn))
-:= begin
-     apply eq_of_heq,
-     refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
-     apply dlist.get_split_left
-   end
-
-/-! #brief Action of get on split_right.
--/
-theorem FinProductProj.get_split_right {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    {proj : FinProductProj c (factor₁ ++ factor₂)}
-    {n : ℕ} {ωn : n < list.length factor₂}
-    : FinProductProj.get (FinProductProj.split_right proj) (fin.mk n ωn)
-       = cast_hom list.get_append_right
-          ∘∘ FinProductProj.get proj (fin.mk (n + list.length factor₁) (list.length.grow_right ωn))
-:= begin
-     apply eq_of_heq,
-     refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
-     apply dlist.get_split_right
-   end
 
 /-! #brief Helper for making a finite product cone.
 -/
 definition FinProductCone.mk {C : Cat.{ℓobj ℓhom}}
     {factor : list C^.obj}
     (c : C^.obj)
-    (proj : FinProductProj c factor)
+    (proj : HomsOut c factor)
     : FinProductCone C factor
-:= ProductCone.mk c (FinProductProj.get proj)
+:= ProductCone.mk c (HomsOut.get proj)
 
 /-! #brief A finite product in a category.
 -/
@@ -390,25 +204,25 @@ instance HasFinProduct.HasProduct (C : Cat.{ℓobj ℓhom})
 definition HasFinProduct.show {C : Cat.{ℓobj ℓhom}}
     {factor : list C^.obj}
     (p : C^.obj)
-    (proj : FinProductProj p factor)
-    (univ : ∀ (c : C^.obj) (hom : FinProductProj c factor)
+    (proj : HomsOut p factor)
+    (univ : ∀ (c : C^.obj) (hom : HomsOut c factor)
             , C^.hom c p)
-    (ωuniv : ∀ (c : C^.obj) (hom : FinProductProj c factor)
-             , hom = FinProductProj.comp proj (univ c hom))
-    (ωuniq : ∀ (c : C^.obj) (hom : FinProductProj c factor) (h : C^.hom c p)
-               (ωcomm : hom = FinProductProj.comp proj h)
+    (ωuniv : ∀ (c : C^.obj) (hom : HomsOut c factor)
+             , hom = HomsOut.comp proj (univ c hom))
+    (ωuniq : ∀ (c : C^.obj) (hom : HomsOut c factor) (h : C^.hom c p)
+               (ωcomm : hom = HomsOut.comp proj h)
              , h = univ c hom)
     : HasFinProduct C factor
-:= HasProduct.show C p (FinProductProj.get proj)
-    (λ c hom, univ c (FinProductProj.enum hom))
-    (λ c hom n, let hom' : FinProductProj c factor := FinProductProj.enum hom in
+:= HasProduct.show C p (HomsOut.get proj)
+    (λ c hom, univ c (HomsOut.enum hom))
+    (λ c hom n, let hom' : HomsOut c factor := HomsOut.enum hom in
                 let f := (λ a j, @Cat.circ C _ _ a j (univ c hom'))
                 in begin
                      refine eq.trans (eq.symm (dlist.get_enum hom n)) _,
                      refine eq.trans _ (dlist.get_map f proj n),
-                     exact congr_arg (λ bb, FinProductProj.get bb n) (ωuniv c _)
+                     exact congr_arg (λ bb, HomsOut.get bb n) (ωuniv c _)
                  end)
-    (λ c hom h ωcomm, let hom' : FinProductProj c factor := FinProductProj.enum hom in
+    (λ c hom h ωcomm, let hom' : HomsOut c factor := HomsOut.enum hom in
                       let f := (λ a j, @Cat.circ C _ _ a j h)
                       in ωuniq c _ h (dlist.enum_eq_map f proj hom @ωcomm))
 
@@ -442,7 +256,7 @@ definition finproduct.π (C : Cat.{ℓobj ℓhom})
 definition finproduct.univ (C : Cat.{ℓobj ℓhom})
     (factor : list C^.obj)
     [factor_HasFinProduct : HasFinProduct C factor]
-    {c : C^.obj} (hom : FinProductProj c factor)
+    {c : C^.obj} (hom : HomsOut c factor)
     : C^.hom c (finproduct C factor)
 := product.univ C (list.get factor) (FinProductCone.mk c hom)
 
@@ -451,9 +265,9 @@ definition finproduct.univ (C : Cat.{ℓobj ℓhom})
 definition finproduct.univ.mediates (C : Cat.{ℓobj ℓhom})
     (factor : list C^.obj)
     [factor_HasFinProduct : HasFinProduct C factor]
-    {c : C^.obj} (hom : FinProductProj c factor)
+    {c : C^.obj} (hom : HomsOut c factor)
     (n : fin (list.length factor))
-    : FinProductProj.get hom n = C^.circ (finproduct.π C factor n) (finproduct.univ C factor hom)
+    : HomsOut.get hom n = C^.circ (finproduct.π C factor n) (finproduct.univ C factor hom)
 := product.univ.mediates C (list.get factor) (FinProductCone.mk c hom) n
 
 /-! #brief The mediating map from the cone to the product is unique.
@@ -461,9 +275,9 @@ definition finproduct.univ.mediates (C : Cat.{ℓobj ℓhom})
 definition finproduct.univ.uniq (C : Cat.{ℓobj ℓhom})
     (factor : list C^.obj)
     [factor_HasFinProduct : HasFinProduct C factor]
-    {c : C^.obj} (hom : FinProductProj c factor)
+    {c : C^.obj} (hom : HomsOut c factor)
     (m : C^.hom c (finproduct C factor))
-    (ω : hom = FinProductProj.comp (finproduct.cone C factor)^.Proj m)
+    (ω : hom = HomsOut.comp (finproduct.cone C factor)^.Proj m)
     : m = finproduct.univ C factor hom
 := product.univ.uniq C (list.get factor) (FinProductCone.mk c hom) m
     begin
@@ -492,6 +306,30 @@ definition finproduct.uniq {C : Cat.{ℓobj ℓhom}}
           (finproduct.iso factor_HasFinProduct₂ factor_HasFinProduct₁)
 := product.uniq factor_HasFinProduct₁ factor_HasFinProduct₂
 
+
+
+/- -----------------------------------------------------------------------
+Finite products of homs.
+----------------------------------------------------------------------- -/
+
+/-! #brief The product of a list of homs.
+-/
+definition finproduct.hom {C : Cat.{ℓobj ℓhom}}
+    {ccs : list (prod C^.obj C^.obj)}
+    (fns : HomsList C ccs)
+    [ccs_domFinProduct : HasFinProduct C (list.map prod.fst ccs)]
+    [ccs_codomFinProduct : HasFinProduct C (list.map prod.snd ccs)]
+    : C^.hom (finproduct C (list.map prod.fst ccs))
+             (finproduct C (list.map prod.snd ccs))
+:= finproduct.univ _ _ (homs_comp_out fns (finproduct.cone C (list.map prod.fst ccs))^.Proj)
+
+example (C : Cat) {x₁ x₂ y₁ y₂ : ⟦C⟧}
+        [x_HasFinProduct : HasFinProduct C [x₁, x₂] ]
+        [y_HasFinProduct : HasFinProduct C [y₁, y₂] ]
+        (f₁ : ⟦C: x₁ →→ y₁⟧)
+        (f₂ : ⟦C: x₂ →→ y₂⟧)
+        : ⟦C: finproduct C [x₁, x₂] →→ finproduct C [y₁, y₂] ⟧
+:= finproduct.hom (f₁ ↗ f₂ ↗↗)
 
 
 /- -----------------------------------------------------------------------
@@ -539,19 +377,19 @@ definition HasFinProduct.flatten.Proj {C : Cat.{ℓobj ℓhom}}
     (factor₁ factor₂ factor₃ : list C^.obj)
     [factor₂_HasFinProduct : HasFinProduct C factor₂]
     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
-    : FinProductProj (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+    : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
                      (factor₁ ++ factor₂ ++ factor₃)
-:= let prj₁₂₃ : FinProductProj (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
+:= let prj₁₂₃ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
                               (factor₁ ++ [finproduct C factor₂] ++ factor₃)
            := (@finproduct.cone _ _ factor₁₂₃_HasFinProduct)^.Proj in
-   let f₁ : FinProductProj (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₁
-         := FinProductProj.split_left (FinProductProj.split_left prj₁₂₃) in
-   let f₂ : FinProductProj (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) [finproduct C factor₂]
-         := FinProductProj.split_right (FinProductProj.split_left prj₁₂₃) in
-   let f₂' := FinProductProj.comp (@finproduct.cone _ _ factor₂_HasFinProduct)^.Proj (dlist.head f₂) in
-   let f₃ : FinProductProj (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₃
-         := FinProductProj.split_right prj₁₂₃
-   in FinProductProj.append (FinProductProj.append f₁ f₂') f₃
+   let f₁ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₁
+         := HomsOut.split_left (HomsOut.split_left prj₁₂₃) in
+   let f₂ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) [finproduct C factor₂]
+         := HomsOut.split_right (HomsOut.split_left prj₁₂₃) in
+   let f₂' := HomsOut.comp (@finproduct.cone _ _ factor₂_HasFinProduct)^.Proj (dlist.head f₂) in
+   let f₃ : HomsOut (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)) factor₃
+         := HomsOut.split_right prj₁₂₃
+   in HomsOut.append (HomsOut.append f₁ f₂') f₃
 
 /-! #brief The projections used by the universal map for the flattened product.
 -/
@@ -560,18 +398,18 @@ definition HasFinProduct.flatten.univ.Proj {C : Cat.{ℓobj ℓhom}}
     [factor₂_HasFinProduct : HasFinProduct C factor₂]
     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
     (c : C^.obj)
-    (hom : FinProductProj c (factor₁ ++ factor₂ ++ factor₃))
-    : FinProductProj c (factor₁ ++ [finproduct C factor₂] ++ factor₃)
-:= let f₁ : FinProductProj c factor₁
-         := FinProductProj.split_left (FinProductProj.split_left hom) in
-   let f₂ : FinProductProj c [finproduct C factor₂]
+    (hom : HomsOut c (factor₁ ++ factor₂ ++ factor₃))
+    : HomsOut c (factor₁ ++ [finproduct C factor₂] ++ factor₃)
+:= let f₁ : HomsOut c factor₁
+         := HomsOut.split_left (HomsOut.split_left hom) in
+   let f₂ : HomsOut c [finproduct C factor₂]
          := dlist.cons _
                (finproduct.univ C factor₂
-                 (FinProductProj.split_right (FinProductProj.split_left hom)))
+                 (HomsOut.split_right (HomsOut.split_left hom)))
                _ (dlist.nil _) in
-   let f₃ : FinProductProj c factor₃
-         := FinProductProj.split_right hom
-   in FinProductProj.append (FinProductProj.append f₁ f₂) f₃
+   let f₃ : HomsOut c factor₃
+         := HomsOut.split_right hom
+   in HomsOut.append (HomsOut.append f₁ f₂) f₃
 
 /-! #brief Universal map for the flattened product.
 -/
@@ -580,7 +418,7 @@ definition HasFinProduct.flatten.univ {C : Cat.{ℓobj ℓhom}}
     [factor₂_HasFinProduct : HasFinProduct C factor₂]
     [factor₁₂₃_HasFinProduct : HasFinProduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃)]
     (c : C^.obj)
-    (hom : FinProductProj c (factor₁ ++ factor₂ ++ factor₃))
+    (hom : HomsOut c (factor₁ ++ factor₂ ++ factor₃))
     : C^.hom c (finproduct C (factor₁ ++ [finproduct C factor₂] ++ factor₃))
 := finproduct.univ C (factor₁ ++ [finproduct C factor₂] ++ factor₃)
                      (HasFinProduct.flatten.univ.Proj factor₁ factor₂ factor₃ c hom)
@@ -599,29 +437,29 @@ definition HasFinProduct.flatten {C : Cat.{ℓobj ℓhom}}
     (HasFinProduct.flatten.univ factor₁ factor₂ factor₃)
     begin
       intros c hom,
-      apply FinProductProj.append_eq,
-      apply FinProductProj.append_eq,
-      { repeat { rw FinProductProj.split_left_comp },
+      apply HomsOut.append_eq,
+      apply HomsOut.append_eq,
+      { repeat { rw HomsOut.split_left_comp },
         unfold HasFinProduct.flatten.Proj,
-        repeat { rw FinProductProj.split_left_append },
-        apply FinProductProj.get.inj,
+        repeat { rw HomsOut.split_left_append },
+        apply HomsOut.get.inj,
         apply funext, intro n, cases n with n ωn,
-        rw FinProductProj.get_comp,
-        repeat { rw FinProductProj.get_split_left },
+        rw HomsOut.get_comp,
+        repeat { rw HomsOut.get_split_left },
         repeat { rw C^.circ_assoc },
         repeat { rw cast_hom.circ },
         rw -C^.circ_assoc,
         apply cast_hom.circ.congr_right,
         unfold HasFinProduct.flatten.univ,
-        refine heq.trans _ (heq_of_eq (Cat.circ.congr_left (eq.symm (FinProductProj.get_enum _ _)))),
+        refine heq.trans _ (heq_of_eq (Cat.circ.congr_left (eq.symm (HomsOut.get_enum _ _)))),
         refine heq.trans _ (heq_of_eq (finproduct.univ.mediates C
                                         (factor₁ ++ [finproduct C factor₂] ++ factor₃)
                                         (HasFinProduct.flatten.univ.Proj factor₁ factor₂ factor₃ c hom)
                                         {val := n, is_lt := list.length.grow_left (list.length.grow_left ωn)})),
         unfold HasFinProduct.flatten.univ.Proj,
-        refine heq.trans _ (heq.symm (FinProductProj.get_append _ _ _ _)),
-        refine heq.trans _ (heq.symm (FinProductProj.get_append _ _ _ _)),
-        repeat { rw FinProductProj.get_split_left },
+        refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
+        refine heq.trans _ (heq.symm (HomsOut.get_append _ _ _ _)),
+        repeat { rw HomsOut.get_split_left },
         rw [C^.circ_assoc, cast_hom.circ],
         refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
         apply heq.refl
