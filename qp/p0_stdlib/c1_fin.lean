@@ -56,7 +56,7 @@ theorem fin.cast
         {ω : N₁ = N₂}
         {n : fin N₁}
       , cast (congr_arg fin ω) n = { val := n^.val, is_lt := cast (by subst ω) n^.is_lt }
-| N .N (eq.refl .N) n := fin.eq_of_veq rfl
+| N .(N) (eq.refl .(N)) n := fin.eq_of_veq rfl
 
 /-! #brief Get the nth element out of a list.
 -/

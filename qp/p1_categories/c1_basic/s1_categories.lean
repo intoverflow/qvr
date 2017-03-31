@@ -67,7 +67,7 @@ theorem Cat.circ.congr_left {C : Cat.{ℓobj ℓhom}}
         {f : C^.hom x y}
         (ωg : g₁ = g₂)
       , C^.circ g₁ f = C^.circ g₂ f
-| g .g f (eq.refl .g) := rfl
+| g .(g) f (eq.refl .(g)) := rfl
 
 /-! #brief Right congruence for circ.
 -/
@@ -77,7 +77,7 @@ theorem Cat.circ.congr_right {C : Cat.{ℓobj ℓhom}}
         {f₁ f₂ : C^.hom x y}
         (ωf : f₁ = f₂)
       , C^.circ g f₁ = C^.circ g f₂
-| g f .f (eq.refl .f) := rfl
+| g f .(f) (eq.refl .(f)) := rfl
 
 /-! #brief Bi-congruence for circ.
 -/
@@ -88,7 +88,7 @@ theorem Cat.circ.congr {C : Cat.{ℓobj ℓhom}}
         (ωg : g₁ = g₂)
         (ωf : f₁ = f₂)
       , C^.circ g₁ f₁ = C^.circ g₂ f₂
-| g .g f .f (eq.refl .g) (eq.refl .f) := rfl
+| g .(g) f .(f) (eq.refl .(g)) (eq.refl .(f)) := rfl
 
 -- An object in a category.
 -- \[[ \]]
@@ -503,8 +503,8 @@ theorem OverObj.eq {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
          (ωobj : A^.dom = B^.dom)
          (ωhom : A^.down == B^.down)
       , A = B
-| (OverObj.mk obj hom) (OverObj.mk .obj .hom)
-  (eq.refl .obj) (heq.refl .hom)
+| (OverObj.mk obj hom) (OverObj.mk .(obj) .(hom))
+  (eq.refl .(obj)) (heq.refl .(hom))
 := rfl
 
 /-! #brief A hom in an over category.
@@ -522,7 +522,7 @@ theorem OverHom.eq {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
     : ∀ {f₁ f₂ : OverHom C X A B}
       , f₁^.hom = f₂^.hom
       → f₁ = f₂
-| (OverHom.mk hom ω₁) (OverHom.mk .hom ω₂) (eq.refl .hom)
+| (OverHom.mk hom ω₁) (OverHom.mk .(hom) ω₂) (eq.refl .(hom))
 := rfl
 
 /-! #brief Heterogeneous equality of homs in an over category.
@@ -533,8 +533,8 @@ theorem OverHom.heq {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
          {f₂ : OverHom C X A₂ B₂}
       , A₁ = A₂ → B₁ = B₂ → f₁^.hom == f₂^.hom
       → f₁ == f₂
-| (OverObj.mk a fa) (OverObj.mk b fb) (OverObj.mk .a .fa) (OverObj.mk .b .fb)
-  (OverHom.mk f ωf₁) (OverHom.mk .f ωf₂) (eq.refl ._) (eq.refl ._) (heq.refl ._)
+| (OverObj.mk a fa) (OverObj.mk b fb) (OverObj.mk .(a) .(fa)) (OverObj.mk .(b) .(fb))
+  (OverHom.mk f ωf₁) (OverHom.mk .(f) ωf₂) (eq.refl ._) (eq.refl ._) (heq.refl ._)
 := heq.refl _
 
 /-! #brief The identity hom in an over category.
@@ -764,7 +764,7 @@ theorem Cat.circ.Iso {C : Cat.{ℓobj ℓhom}}
 Monomorphism and epimorphisms.
 ----------------------------------------------------------------------- -/
 
-/-! brief A monomorphism.
+/-! #brief A monomorphism.
 -/
 class Monic {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
     (g : C^.hom x y)
@@ -781,7 +781,25 @@ definition Monic.show {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
     : Monic g
 := { inj := @ω }
 
-/-! brief An epimorphism.
+/-! #brief In LeanCat, monics are injective.
+-/
+theorem LeanCat.Monic.inj {X Y : LeanCat.{ℓ}^.obj}
+    {f : LeanCat.{ℓ}^.hom X Y}
+    (f_Monic : @Monic LeanCat.{ℓ} X Y f)
+    : function.injective f
+:= λ x₁ x₂ ωx
+   , let f₁ : X → X := λ x, x₁ in
+     let f₂ : X → X := λ x, x₂ in
+     let ωf : f₁ = f₂
+           := begin
+                apply @Monic.inj LeanCat.{ℓ} X Y f,
+                apply funext, intro x, exact ωx
+              end
+     in calc x₁ = f₁ x₁  : rfl
+             ... = f₂ x₁ : by rw ωf
+             ... = x₂    : rfl
+
+/-! #brief An epimorphism.
 -/
 @[class] definition Epic {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
     (f : C^.hom x y)
@@ -828,7 +846,7 @@ definition cast_hom {C : Cat.{ℓobj ℓhom}}
     : ∀ {c₁ c₂ : C^.obj}
         (ω : c₁ = c₂)
       , C^.hom c₁ c₂
-| c .c (eq.refl .c) := C^.id c
+| c .(c) (eq.refl .(c)) := C^.id c
 
 /-! #brief composition of casting homs.
 -/
@@ -838,7 +856,7 @@ theorem cast_hom.circ {C : Cat.{ℓobj ℓhom}}
         {ω₂₃ : c₂ = c₃}
       , C^.circ (cast_hom ω₂₃) (cast_hom ω₁₂)
          = cast_hom (eq.trans ω₁₂ ω₂₃)
-| c .c .c (eq.refl .c) (eq.refl .c) := C^.circ_id_left
+| c .(c) .(c) (eq.refl .(c)) (eq.refl .(c)) := C^.circ_id_left
 
 /-! #brief Left congruence of composition with casting homs.
 -/
@@ -850,7 +868,7 @@ theorem cast_hom.circ.congr_left {C : Cat.{ℓobj ℓhom}}
         {g₂ : C^.hom c₂ d}
         (ωg : g₁ == g₂)
       , C^.circ g₁ (cast_hom ω₁) = C^.circ g₂ (cast_hom ω₂)
-| b .b .b d (eq.refl .b) (eq.refl .b) g .g (heq.refl .g) := rfl
+| b .(b) .(b) d (eq.refl .(b)) (eq.refl .(b)) g .(g) (heq.refl .(g)) := rfl
 
 /-! #brief Right congruence of composition with casting homs.
 -/
@@ -862,7 +880,7 @@ theorem cast_hom.circ.congr_right {C : Cat.{ℓobj ℓhom}}
         {f₂ : C^.hom b c₂}
         (ωf : f₁ == f₂)
       , C^.circ (cast_hom ω₁) f₁ = C^.circ (cast_hom ω₂) f₂
-| b c .c .c (eq.refl .c) (eq.refl .c) f .f (heq.refl .f) := rfl
+| b c .(c) .(c) (eq.refl .(c)) (eq.refl .(c)) f .(f) (heq.refl .(f)) := rfl
 
 /-! #brief Casting homs and heq.
 -/
@@ -871,7 +889,7 @@ theorem cast_hom.circ_left_heq {C : Cat.{ℓobj ℓhom}}
         (ω : c₁ = c₂)
         (f : C^.hom b c₁)
       , C^.circ (cast_hom ω) f == f
-| b c .c (eq.refl .c) f := heq_of_eq C^.circ_id_left
+| b c .(c) (eq.refl .(c)) f := heq_of_eq C^.circ_id_left
 
 /-! #brief Casting homs and heq.
 -/
@@ -880,7 +898,7 @@ theorem cast_hom.circ_right_heq {C : Cat.{ℓobj ℓhom}}
         (ω : c₁ = c₂)
         (g : C^.hom c₂ d)
       , C^.circ g (cast_hom ω) == g
-| c .c d (eq.refl .c) g := heq_of_eq C^.circ_id_right
+| c .(c) d (eq.refl .(c)) g := heq_of_eq C^.circ_id_right
 
 
 /-! #brief Casting homs are isos.
@@ -890,7 +908,7 @@ theorem cast_hom.Iso {C : Cat.{ℓobj ℓhom}}
         (ω₁₂ : c₁ = c₂)
         (ω₂₁ : c₂ = c₁)
       , Iso (cast_hom ω₁₂) (cast_hom ω₂₁)
-| c .c (eq.refl .c) (eq.refl .c) := Cat.id.Iso c
+| c .(c) (eq.refl .(c)) (eq.refl .(c)) := Cat.id.Iso c
 
 /-! #brief Casting homs are monic.
 -/
@@ -898,7 +916,7 @@ instance cast_hom.Monic {C : Cat.{ℓobj ℓhom}}
     : ∀ {c₁ c₂ : C^.obj}
         (ω : c₁ = c₂)
       , Monic (cast_hom ω)
-| c .c (eq.refl .c) := Cat.id.Monic c
+| c .(c) (eq.refl .(c)) := Cat.id.Monic c
 
 /-! #brief Casting homs are epic.
 -/
@@ -906,7 +924,7 @@ instance cast_hom.Epic {C : Cat.{ℓobj ℓhom}}
     : ∀ {c₁ c₂ : C^.obj}
         (ω : c₁ = c₂)
       , Epic (cast_hom ω)
-| c .c (eq.refl .c) := Cat.id.Epic c
+| c .(c) (eq.refl .(c)) := Cat.id.Epic c
 
 
 /- -----------------------------------------------------------------------
@@ -960,7 +978,7 @@ definition final_hom {C : Cat.{ℓobj ℓhom}}
 /-! #brief The final hom is unique.
 -/
 theorem final_hom.uniq (C : Cat.{ℓobj ℓhom})
-    [C_HasFinal : HasFinal C]
+    {C_HasFinal : HasFinal C}
     {c : C^.obj} {f : C^.hom c (final C)}
     : f = final_hom c
 := (HasFinal.final C)^.hom_uniq
@@ -968,7 +986,7 @@ theorem final_hom.uniq (C : Cat.{ℓobj ℓhom})
 /-! #brief The final hom to the final object is the identity.
 -/
 theorem final_hom.id (C : Cat.{ℓobj ℓhom})
-    [C_HasFinal : HasFinal C]
+    {C_HasFinal : HasFinal C}
     : final_hom (final C) = C^.id (final C)
 := eq.symm (final_hom.uniq C)
 
@@ -1053,10 +1071,29 @@ definition init_hom {C : Cat.{ℓobj ℓhom}}
 /-! #brief The initial hom is unique.
 -/
 definition init_hom.uniq (C : Cat.{ℓobj ℓhom})
-    [C_HasInit : HasInit C]
+    {C_HasInit : HasInit C}
     {c : C^.obj} {f : C^.hom (init C) c}
     : f = init_hom c
 := @final_hom.uniq (OpCat C) C_HasInit c f
+
+/-! #brief The unique iso between two initial objects.
+-/
+definition init.iso {C : Cat.{ℓobj ℓhom}}
+    (C_HasInit₁ C_HasInit₂ : HasInit C)
+    : C^.hom (@init C C_HasInit₁) (@init C C_HasInit₂)
+:= @init_hom C C_HasInit₁ (@init C C_HasInit₂)
+
+/-! #brief Initial objects are unique up-to unique isomorphism.
+-/
+theorem HasInit_uniq {C : Cat.{ℓobj ℓhom}}
+    (C_HasInit₁ C_HasInit₂ : HasInit C)
+    : Iso (init.iso C_HasInit₁ C_HasInit₂)
+          (init.iso C_HasInit₂ C_HasInit₁)
+:= { id₁ := eq.trans (@init_hom.uniq _ C_HasInit₁ _ _)
+                     (eq.symm (@init_hom.uniq _ C_HasInit₁ _ _))
+   , id₂ := eq.trans (@init_hom.uniq _ C_HasInit₂ _ _)
+                     (eq.symm (@init_hom.uniq _ C_HasInit₂ _ _))
+   }
 
 /-! #brief Initial and final are dual concepts.
 -/
@@ -1104,9 +1141,16 @@ instance PropCat.HasInit
 /-! #brief LeanCat has an initial object.
 -/
 instance LeanCat.HasInit
-    : HasInit LeanCat
+    : HasInit LeanCat.{ℓ}
 := SortCat.HasInit
 
+/-! #brief Initial objects in LeanCat are uninhabited.
+-/
+theorem LeanCat.Init.elim
+    [LeanCat_HasInit : HasInit LeanCat.{ℓ}]
+    (e : init LeanCat.{ℓ})
+    : false
+:= by cases (init.iso LeanCat_HasInit LeanCat.HasInit e)
 
 /-! #brief SortCat has a final object.
 -/
@@ -1123,293 +1167,37 @@ instance PropCat.HasFinal
 /-! #brief LeanCat has a final object.
 -/
 instance LeanCat.HasFinal
-    : HasFinal LeanCat
+    : HasFinal LeanCat.{ℓ}
 := SortCat.HasFinal
 
+/-! #brief Final objects in LeanCat are uniquely inhabited.
+-/
+definition LeanCat.Final.intro
+    [LeanCat_HasFinal : HasFinal LeanCat.{ℓ}]
+    : final LeanCat.{ℓ}
+:= final.iso LeanCat.HasFinal LeanCat_HasFinal punit.star
+
+/-! #brief Final objects in LeanCat are uniquely.
+-/
+theorem LeanCat.Final.uniq
+    {LeanCat_HasFinal : HasFinal LeanCat.{ℓ}}
+    {u₁ u₂ : final LeanCat.{ℓ}}
+    : u₁ = u₂
+:= let f₁ : LeanCat.{ℓ}^.hom punit (final LeanCat.{ℓ})
+         := λ u, u₁ in
+   let f₂ : LeanCat.{ℓ}^.hom punit (final LeanCat.{ℓ})
+         := λ u, u₂ in
+   let ωf : f₁ = f₂
+         := by calc f₁ = @final_hom _ LeanCat_HasFinal punit : @final_hom.uniq _ LeanCat_HasFinal _ f₁
+                    ... = f₂ : eq.symm (@final_hom.uniq _ LeanCat_HasFinal _ f₂)
+   in by calc u₁ = f₁ punit.star : rfl
+              ... = f₂ punit.star : by rw ωf
+              ... = u₂ : rfl
 
 /-! #brief The category of natural numbers has an initial object.
 -/
 instance NatCat.HasInit
     :HasInit NatCat
 := HasInit.show nat.zero nat.zero_le (λ c h, proof_irrel _ _)
-
-
-
-/- -----------------------------------------------------------------------
-Boxes full of homs.
------------------------------------------------------------------------ -/
-
-/-! #brief Type of dlist used for defining Hom.
--/
-@[reducible] definition HomAt (C : Cat.{ℓobj ℓhom})
-    : prod C^.obj C^.obj → Sort ℓhom
-:= λ cc, C^.hom cc^.fst cc^.snd
-
-/-! #brief The domain/codomain pair of a hom.
--/
-@[reducible] definition hom_at {C : Cat.{ℓobj ℓhom}}
-    {x : C^.obj} {y : C^.obj}
-    (f : C^.hom x y)
-    : prod C^.obj C^.obj
-:= (x, y)
-
-/-! #brief A list of homs in a category.
--/
-definition HomsList (C : Cat.{ℓobj ℓhom})
-    (ccs : list (prod C^.obj C^.obj))
-:= dlist (HomAt C) ccs
-
-/-! #brief The nil HomsList.
--/
-definition HomsList.nil {C : Cat.{ℓobj ℓhom}}
-    : HomsList C []
-:= dlist.nil _
-
-/-! #brief Push another hom onto a HomsList.
--/
-definition HomsList.cons {C : Cat.{ℓobj ℓhom}}
-    {x y : C^.obj} (f : C^.hom x y)
-    {ccs : list (prod C^.obj C^.obj)} (tail : HomsList C ccs)
-    : HomsList C ((x,y) :: ccs)
-:= dlist.cons _ f _ tail
-
-infixr `↗` : 50 := HomsList.cons
-notation f `↗↗` := HomsList.cons f HomsList.nil
-
-example {C : Cat.{ℓobj ℓhom}}
-        {a₁ a₂ b₁ b₂ c₁ c₂ : C^.obj}
-        (fa : C^.hom a₁ a₂)
-        (fb : C^.hom b₁ b₂)
-        (fc : C^.hom c₁ c₂)
-        : HomsList C [(a₁, a₂), (b₁, b₂), (c₁, c₂)]
-:= fa ↗ fb ↗ fc ↗↗
-
-
-
-/- -----------------------------------------------------------------------
-Boxes full of homs out of an object.
------------------------------------------------------------------------ -/
-
-/-! #brief Outward homs.
--/
-definition HomsOut {C : Cat.{ℓobj ℓhom}}
-    (c : C^.obj)
-    (factor : list C^.obj)
-    : Type (max ℓobj ℓhom)
-:= dlist (C^.hom c) factor
-
-/-! #brief Composition with outward homs.
--/
-definition HomsOut.comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : HomsOut c factor)
-    {c' : C^.obj} (f : C^.hom c' c)
-    : HomsOut c' factor
-:= dlist.map (λ a j, C^.circ j f) proj
-
-/-! #brief HomsOut.comp distributes over composition of homs.
--/
-definition HomsOut.comp_circ {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : HomsOut c factor)
-    {c₁ c₂ : C^.obj} (g : C^.hom c₂ c) (f : C^.hom c₁ c₂)
-    : HomsOut.comp proj (C^.circ g f)
-       = HomsOut.comp (HomsOut.comp proj g) f
-:= begin
-     unfold HomsOut.comp,
-     apply eq.symm,
-     refine eq.trans (dlist.map_map _ _) _,
-     refine congr_arg (λ f, dlist.map f proj) _,
-     apply funext, intro a, apply funext, intro j,
-     apply eq.symm C^.circ_assoc
-   end
-
-/-! #brief Composition of a HomsList with a HomsOut.
--/
-definition homs_comp_out {C : Cat.{ℓobj ℓhom}}
-    : ∀ {ccs : list (prod C^.obj C^.obj)}
-        (fns : HomsList C ccs)
-        {c : C^.obj}
-        (c_proj : HomsOut c (list.map prod.fst ccs))
-      , HomsOut c (list.map prod.snd ccs)
-:= λ ccs fns c c_proj
-   , begin
-       induction ccs with cc ccs rec,
-       { apply dlist.nil },
-       { cases fns with cc f ccs fns',
-         cases cc with c₁ c₂,
-         cases c_proj with c₁ p ccs c_proj',
-         apply dlist.cons _ (C^.circ f p) _ (rec fns' c_proj')
-       }
-     end
-
-/-! #brief Fetching a hom out of HomsOut.
--/
-definition HomsOut.get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : HomsOut c factor)
-    (n : fin (list.length factor))
-    : C^.hom c (list.get factor n)
-:= dlist.get proj n
-
-/-! #brief get is injective.
--/
-theorem HomsOut.get.inj {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj₁ proj₂ : HomsOut c factor)
-    (ω : HomsOut.get proj₁ = HomsOut.get proj₂)
-    : proj₁ = proj₂
-:= dlist.get.inj ω
-
-/-! #brief get on comp.
--/
-theorem HomsOut.get_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    {proj : HomsOut c factor}
-    {c' : C^.obj} {f : C^.hom c' c}
-    {n : fin (list.length factor)}
-    : HomsOut.get (HomsOut.comp proj f) n = C^.circ (HomsOut.get proj n) f
-:= dlist.get_map _ _ _
-
-/-! #brief An inverse to HomsOut.get.
--/
-definition HomsOut.enum {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (f : ∀ (n : fin (list.length factor)), C^.hom c (list.get factor n))
-    : HomsOut c factor
-:= dlist.enum f
-
-/-! #brief enum and get are inverses.
--/
-theorem HomsOut.enum_get {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (proj : HomsOut c factor)
-    : HomsOut.enum (HomsOut.get proj) = proj
-:= dlist.enum_get
-
-/-! #brief enum and get are inverses.
--/
-theorem HomsOut.get_enum {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor : list C^.obj}
-    (f : ∀ (n : fin (list.length factor)), C^.hom c (list.get factor n))
-    (n : fin (list.length factor))
-    : HomsOut.get (HomsOut.enum f) n = f n
-:= dlist.get_enum _ _
-
-/-! #brief Appending lists of outward homs.
--/
-definition HomsOut.append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : HomsOut c factor₁)
-    (proj₂ : HomsOut c factor₂)
-    : HomsOut c (factor₁ ++ factor₂)
-:= dlist.append proj₁ proj₂
-
-/-! #brief Splitting lists of outward homs.
--/
-definition HomsOut.split_left {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : HomsOut c (factor₁ ++ factor₂))
-    : HomsOut c factor₁
-:= dlist.split_left factor₁ proj
-
-/-! #brief Splitting lists of outward homs.
--/
-definition HomsOut.split_right {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : HomsOut c (factor₁ ++ factor₂))
-    : HomsOut c factor₂
-:= dlist.split_right factor₁ proj
-
-/-! #brief Equality of HomsOut.append
--/
-theorem HomsOut.append_eq {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ proj₂ : HomsOut c (factor₁ ++ factor₂))
-    (ωleft : HomsOut.split_left proj₁ = HomsOut.split_left proj₂)
-    (ωright : HomsOut.split_right proj₁ = HomsOut.split_right proj₂)
-    : proj₁ = proj₂
-:= dlist.append_eq ωleft ωright
-
-/-! #brief Action of split_left on append.
--/
-theorem HomsOut.split_left_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : HomsOut c factor₁)
-    (proj₂ : HomsOut c factor₂)
-    : HomsOut.split_left (HomsOut.append proj₁ proj₂)
-       = proj₁
-:= dlist.split_left_append
-
-/-! #brief Action of split_right on append.
--/
-theorem HomsOut.split_right_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : HomsOut c factor₁)
-    (proj₂ : HomsOut c factor₂)
-    : HomsOut.split_right (HomsOut.append proj₁ proj₂)
-       = proj₂
-:= dlist.split_right_append
-
-/-! #brief Action of split_left on comp.
--/
-theorem HomsOut.split_left_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : HomsOut c (factor₁ ++ factor₂))
-    {c' : C^.obj} (f : C^.hom c' c)
-    : HomsOut.split_left (HomsOut.comp proj f)
-       = HomsOut.comp (HomsOut.split_left proj) f
-:= dlist.split_left_map _
-
-/-! #brief Action of split_right on comp.
--/
-theorem HomsOut.split_right_comp {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj : HomsOut c (factor₁ ++ factor₂))
-    {c' : C^.obj} (f : C^.hom c' c)
-    : HomsOut.split_right (HomsOut.comp proj f)
-       = HomsOut.comp (HomsOut.split_right proj) f
-:= dlist.split_right_map _
-
-/-! #brief Action of get on an append.
--/
-theorem HomsOut.get_append {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    (proj₁ : HomsOut c factor₁)
-    (proj₂ : HomsOut c factor₂)
-    (n : ℕ) (ωn : n < list.length factor₁)
-    : HomsOut.get (HomsOut.append proj₁ proj₂) (fin.mk n (list.length.grow_left ωn))
-       == HomsOut.get proj₁ (fin.mk n ωn)
-:= dlist.get_append
-
-/-! #brief Action of get on split_left.
--/
-theorem HomsOut.get_split_left {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    {proj : HomsOut c (factor₁ ++ factor₂)}
-    {n : ℕ} {ωn : n < list.length factor₁}
-    : HomsOut.get (HomsOut.split_left proj) (fin.mk n ωn)
-       = cast_hom list.get_append_left
-          ∘∘ HomsOut.get proj (fin.mk n (list.length.grow_left ωn))
-:= begin
-     apply eq_of_heq,
-     refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
-     apply dlist.get_split_left
-   end
-
-/-! #brief Action of get on split_right.
--/
-theorem HomsOut.get_split_right {C : Cat.{ℓobj ℓhom}} {c : C^.obj}
-    {factor₁ factor₂ : list C^.obj}
-    {proj : HomsOut c (factor₁ ++ factor₂)}
-    {n : ℕ} {ωn : n < list.length factor₂}
-    : HomsOut.get (HomsOut.split_right proj) (fin.mk n ωn)
-       = cast_hom list.get_append_right
-          ∘∘ HomsOut.get proj (fin.mk (n + list.length factor₁) (list.length.grow_right ωn))
-:= begin
-     apply eq_of_heq,
-     refine heq.trans _ (heq.symm (cast_hom.circ_left_heq _ _)),
-     apply dlist.get_split_right
-   end
 
 end qp

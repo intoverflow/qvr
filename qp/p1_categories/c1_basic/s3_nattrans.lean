@@ -33,7 +33,7 @@ theorem NatTrans.eq
     : ∀ {η₁ η₂ : NatTrans F₁ F₂}
          (ω : η₁^.com = η₂^.com)
       , η₁ = η₂
-| (NatTrans.mk com ω₁) (NatTrans.mk .com ω₂) (eq.refl .com) := rfl
+| (NatTrans.mk com ω₁) (NatTrans.mk .(com) ω₂) (eq.refl .(com)) := rfl
 
 /-! #brief Heterogeneous equality of natural transformations.
 -/
@@ -46,7 +46,7 @@ theorem NatTrans.heq
          (ω₂ : F₁₂ = F₂₂)
          (ωcom : F₁₁ = F₂₁ → F₁₂ = F₂₂ → η₁^.com == η₂^.com)
        , η₁ == η₂
-| F₁ F₂ .F₁ .F₂ η₁ η₂ (eq.refl .F₁) (eq.refl .F₂) ωcom
+| F₁ F₂ .(F₁) .(F₂) η₁ η₂ (eq.refl .(F₁)) (eq.refl .(F₂)) ωcom
 := heq_of_eq (NatTrans.eq (eq_of_heq (ωcom rfl rfl)))
          
 
@@ -129,6 +129,12 @@ definition FunCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂}
    , circ_id_left := @NatTrans.comp_id_left C D
    , circ_id_right := @NatTrans.comp_id_right C D
    }
+
+/-! #brief A presheaf category.
+-/
+definition PreShCat (C : Cat.{ℓobj₁ ℓhom₁})
+    : Cat.{(max ℓobj₁ (ℓhom₁ + 1)) ((max ℓobj₁ (ℓhom₁ + 1)) + 1)}
+:= FunCat (OpCat C) LeanCat.{ℓhom₁}
 
 
 

@@ -64,7 +64,7 @@ theorem Fun.heq
                   (f₁ : C₁^.hom x₁ y₁) (f₂ : C₂^.hom x₂ y₂)
                 , f₁ == f₂ → (F₁^.hom f₁) == (F₂^.hom f₂))
       , F₁ == F₂
-| C D F₁ .C .D F₂ (eq.refl .C) (eq.refl .D) ωobj ωhom
+| C D F₁ .(C) .(D) F₂ (eq.refl .(C)) (eq.refl .(D)) ωobj ωhom
 := begin
      apply heq_of_eq,
      apply Fun.eq,
@@ -288,32 +288,18 @@ definition CatOfCats.HomFun
 The Lean universe-level functors.
 ----------------------------------------------------------------------- -/
 
-/-! #brief Lift the universe level of a type by 1.
--/
-inductive Lean.Level1 (A : Type.{ℓ₁}) : Type (ℓ₁ + 1)
-| lift : A → Lean.Level1
-
-/-! #brief Apply a function to a Lean.Level1.
--/
-definition Lean.Level1.map {A : Type.{ℓ₁}} {B : Type.{ℓ₂}}
-    (f : A → B)
-    : Lean.Level1 A → Lean.Level1 B
-| (Lean.Level1.lift a) := Lean.Level1.lift (f a)
-
-/-! #brief Increasing the universe level by 1.
--/
-definition LeanCat.Level1
-    : Fun LeanCat.{ℓ₁} LeanCat.{ℓ₁ + 1}
-:= { obj := Lean.Level1
-   , hom := @Lean.Level1.map
-   , hom_id := λ X, begin apply funext, intro x, cases x, trivial end
-   , hom_circ := λ X Y Z g f, begin apply funext, intro x, cases x, trivial end
-   }
-
 /-! #brief Lift the universe level to the max.
 -/
 inductive Lean.LevelMax (A : Type.{ℓ₁}) : Type (max ℓ₁ ℓ₂)
 | lift : A → Lean.LevelMax
+
+-- /-! #brief Lean.LevelMax.lift is injective.
+-- -/
+-- theorem Lean.LevelMax.lift.inj {A : Type.{ℓ₁}}
+--     : ∀ {a₁ a₂ : A}
+--         (ω : Lean.LevelMax.lift.{ℓ₁ ℓ₂} a₁ = Lean.LevelMax.lift.{ℓ₁ ℓ₂} a₂)
+--       , a₁ = a₂
+-- | a .(a) (eq.refl .(Lean.LevelMax.lift.{ℓ₁ ℓ₂} a)) := rfl
 
 /-! #brief Apply a function to a Lean.Level1.
 -/
@@ -332,7 +318,23 @@ definition LeanCat.LevelMax
    , hom_circ := λ X Y Z g f, begin apply funext, intro x, cases x, trivial end
    }
 
+/-! #brief Lift the universe level of a type by 1.
+-/
+@[reducible] definition Lean.Level1 (A : Type.{ℓ₁}) : Type (ℓ₁ + 1)
+:= Lean.LevelMax.{ℓ₁ (ℓ₁ + 1)} A
 
+/-! #brief Apply a function to a Lean.Level1.
+-/
+definition Lean.Level1.map {A : Type.{ℓ₁}} {B : Type.{ℓ₂}}
+    (f : A → B)
+    : Lean.Level1 A → Lean.Level1 B
+:= Lean.LevelMax.map f
+
+/-! #brief Increasing the universe level by 1.
+-/
+definition LeanCat.Level1
+    : Fun LeanCat.{ℓ₁} LeanCat.{ℓ₁ + 1}
+:= LeanCat.LevelMax.{ℓ₁ (ℓ₁ + 1)}
 
 /- -----------------------------------------------------------------------
 Bijections of categories and conjugate functors.
@@ -419,7 +421,7 @@ definition CastFun
     : ∀ {C₁ C₂ : Cat.{ℓobj ℓhom}}
         (ω : C₁ = C₂)
        , Fun C₁ C₂
-| C .C (eq.refl .C) := Fun.id C
+| C .(C) (eq.refl .(C)) := Fun.id C
 
 /-! #brief The casting functor is trivial on eq.refl.
 -/
@@ -427,7 +429,7 @@ theorem CastFun.refl
     : ∀ {C : Cat.{ℓobj ℓhom}}
          (ω : C = C)
       , CastFun ω = Fun.id C
-| C (eq.refl .C) := rfl
+| C (eq.refl .(C)) := rfl
 
 /-! #brief The casting functor is compatible with transitivity.
 -/
@@ -436,7 +438,7 @@ theorem CastFun.trans
         (ω₂₃ : C₂ = C₃)
         (ω₁₂ : C₁ = C₂)
       , CastFun ω₂₃ □□ CastFun ω₁₂ = CastFun (eq.trans ω₁₂ ω₂₃)
-| C .C .C (eq.refl .C) (eq.refl .C) := Fun.comp_id_right
+| C .(C) .(C) (eq.refl .(C)) (eq.refl .(C)) := Fun.comp_id_right
 
 /-! #brief The casting functor is a bijection of categories.
 -/
@@ -445,7 +447,7 @@ theorem CastFun.Bij
          (ω₁₂ : C₁ = C₂)
          (ω₂₁ : C₂ = C₁)
       , Cat.Bij (CastFun ω₁₂) (CastFun ω₂₁)
-| C .C (eq.refl .C) (eq.refl .C) := Fun.id.Bij C
+| C .(C) (eq.refl .(C)) (eq.refl .(C)) := Fun.id.Bij C
 
 /-! #brief A pair of conjugate functors.
 -/
@@ -928,7 +930,7 @@ theorem OverFun.heq {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom�
     : ∀ {F₁ F₂ : Fun C D}
          (ω : F₁ = F₂)
       , OverFun X F₁ == OverFun X F₂
-| F .F (eq.refl .F) := heq.refl _
+| F .(F) (eq.refl .(F)) := heq.refl _
 
 /-! #brief OverFun preserves identity functors.
 -/
@@ -1029,7 +1031,7 @@ theorem ConeHom.eq {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂
     : ∀ {f₁ f₂ : ConeHom F X Y}
       , f₁^.mediate = f₂^.mediate
       → f₁ = f₂
-| (ConeHom.mk f ω₁) (ConeHom.mk .f ω₂) (eq.refl .f) := rfl
+| (ConeHom.mk f ω₁) (ConeHom.mk .(f) ω₂) (eq.refl .(f)) := rfl
 
 /-! #brief An identity hom in a cone category.
 -/

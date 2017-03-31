@@ -595,4 +595,49 @@ instance PresCoLimit.InitFun_PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{
                   }
       }
 
+
+
+/- -----------------------------------------------------------------------
+Limits and adjoints.
+----------------------------------------------------------------------- -/
+
+/-! #brief Right adjoints preserve all limits.
+-/
+definition Adj.right.PresLimit
+    {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C}
+    (adj : Adj L R)
+    {X : Cat.{ℓobjx ℓhomx}} (F : Fun X D)
+    : PresLimit F R
+:= PresLimit.show
+     (λ F_HasLimit c hom ω
+      , adj^.right_adj
+         (@limit.univ _ _ F F_HasLimit
+           { obj := L^.obj c
+           , hom := λ x, adj^.left_adj (hom x)
+           , comm := λ x₁ x₂ f, begin rw ω f, exact sorry end
+           }))
+     (λ F_HasLimit c hom ωcomm x, sorry)
+     (λ F_HasLimit c hom ωcomm h ω, sorry)
+
+/-! #brief Left adjoints preserve all co-limits.
+-/
+definition Adj.left.PresCoLimit
+    {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C}
+    (adj : Adj L R)
+    {X : Cat.{ℓobjx ℓhomx}} (F : Fun X C)
+    : PresCoLimit F L
+:= PresCoLimit.show
+     (λ F_HasLimit c hom ω
+      , adj^.left_adj
+         (@colimit.univ _ _ F F_HasLimit
+           { obj := R^.obj c
+           , hom := λ x, adj^.right_adj (hom x)
+           , comm := λ x₁ x₂ f, begin rw ω f, exact sorry end
+           }))
+     (λ F_HasLimit c hom ωcomm x, sorry)
+     (λ F_HasLimit c hom ωcomm h ω, sorry)
+
+
 end qp

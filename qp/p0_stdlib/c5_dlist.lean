@@ -28,7 +28,7 @@ definition dlist.eq {A : Type ℓ₁} {B : A → Sort ℓ₂}
          (ωb : b₁ = b₂)
          (ωbb : bb₁ = bb₂)
        , dlist.cons a b₁ aa bb₁ = dlist.cons a b₂ aa bb₂
-| a aa b .b bb .bb (eq.refl .b) (eq.refl .bb) := rfl
+| a aa b .(b) bb .(bb) (eq.refl .(b)) (eq.refl .(bb)) := rfl
 
 -- /-! #brief The head of a dlist.
 -- -/
@@ -44,7 +44,7 @@ definition dlist.map {A : Type ℓ₁} {B₁ B₂ : A → Sort ℓ₂} (f : ∀ 
     : ∀ {aa : list A}
       , dlist B₁ aa → dlist B₂ aa
 | [] bb := dlist.nil B₂
-| (a :: aa) (dlist.cons .a b .aa bb) := dlist.cons a (f b) aa (dlist.map bb)
+| (a :: aa) (dlist.cons .(a) b .(aa) bb) := dlist.cons a (f b) aa (dlist.map bb)
 
 /-! #brief Mapping a map.
 -/
@@ -54,7 +54,7 @@ theorem dlist.map_map {A : Type ℓ₁} {B₁ B₂ B₃ : A → Sort ℓ₂}
     : ∀ {aa : list A} {bb : dlist B₁ aa}
       , dlist.map @g (dlist.map @f bb) = dlist.map (λ a b, g (f b)) bb
 | [] bb := rfl
-| (a :: aa) (dlist.cons .a b .aa bb)
+| (a :: aa) (dlist.cons .(a) b .(aa) bb)
 := begin
      apply dlist.eq,
      { trivial },
@@ -69,8 +69,8 @@ definition dlist.get {A : Type ℓ₁} {B : A → Sort ℓ₂}
         (n : fin (list.length aa))
       , B (list.get aa n)
 | [] bb n := fin.zero_elim n
-| (a :: aa) (dlist.cons .a b .aa bb) (fin.mk 0 ω) := b
-| (a :: aa) (dlist.cons .a b .aa bb) (fin.mk (nat.succ n) ω)
+| (a :: aa) (dlist.cons .(a) b .(aa) bb) (fin.mk 0 ω) := b
+| (a :: aa) (dlist.cons .(a) b .(aa) bb) (fin.mk (nat.succ n) ω)
 := dlist.get bb { val := n, is_lt := nat.lt_of_succ_lt_succ ω }
 
 theorem dlist.get.simp {A : Type ℓ₁} {B : A → Sort ℓ₂}
@@ -80,6 +80,14 @@ theorem dlist.get.simp {A : Type ℓ₁} {B : A → Sort ℓ₂}
        == dlist.get bb { val := n, is_lt := nat.lt_of_succ_lt_succ ω }
 := heq.refl _
 
+/-! #brief Congruence for dlist.get.
+-/
+theorem dlist.congr_get {A : Type ℓ₁} {B : A → Sort ℓ₂}
+    {aa : list A} {bb₁ bb₂ : dlist B aa}
+    (ωbb : bb₁ = bb₂) (n : fin (list.length aa))
+    : dlist.get bb₁ n = dlist.get bb₂ n
+:= by rw ωbb
+
 /-! #brief Getting an item out of a map.
 -/
 theorem dlist.get_map {A : Type ℓ₁} {B₁ B₂ : A → Sort ℓ₂} (f : ∀ {a : A}, B₁ a → B₂ a)
@@ -87,8 +95,8 @@ theorem dlist.get_map {A : Type ℓ₁} {B₁ B₂ : A → Sort ℓ₂} (f : ∀
         (n : fin (list.length aa))
       , dlist.get (dlist.map @f bb) n = f (dlist.get bb n)
 | [] bb n := fin.zero_elim n
-| (a :: aa) (dlist.cons .a b .aa bb) (fin.mk 0 ω) := rfl
-| (a :: aa) (dlist.cons .a b .aa bb) (fin.mk (nat.succ n) ω)
+| (a :: aa) (dlist.cons .(a) b .(aa) bb) (fin.mk 0 ω) := rfl
+| (a :: aa) (dlist.cons .(a) b .(aa) bb) (fin.mk (nat.succ n) ω)
 := begin
      dsimp [dlist.map],
      apply eq_of_heq,
@@ -113,8 +121,8 @@ theorem dlist.drop_get {A : Type ℓ₁} {B : A → Sort ℓ₂}
          {n : ℕ} {ω : n < list.length aa}
       , dlist.get (dlist.cons a b aa bb) (fin.mk (nat.succ n) (nat.succ_lt_succ ω)) == dlist.get bb (fin.mk n ω)
 | a b [] bb n ω := fin.zero_elim (fin.mk n ω)
-| a₁ b₁ (a₂ :: aa) (dlist.cons .a₂ b₂ .aa bb) 0 ω := heq.refl _
-| a₁ b₁ (a₂ :: aa) (dlist.cons .a₂ b₂ .aa bb) (nat.succ n) ω
+| a₁ b₁ (a₂ :: aa) (dlist.cons .(a₂) b₂ .(aa) bb) 0 ω := heq.refl _
+| a₁ b₁ (a₂ :: aa) (dlist.cons .(a₂) b₂ .(aa) bb) (nat.succ n) ω
 := begin
      refine heq.trans (dlist.get.simp _ _ _ _ _ _) _,
      refine heq.trans (@dlist.drop_get _ _ _ _ n (nat.lt_of_succ_lt_succ ω)) _,
@@ -139,7 +147,7 @@ theorem dlist.enum_eq_map {A : Type ℓ₁} {B₁ B₂ : A → Sort ℓ₂} (f :
         (ωh : ∀ (n : fin (list.length aa)), h n = f (dlist.get bb n))
       , dlist.enum h = @dlist.map A B₁ B₂ @f aa bb
 | [] bb h ωh := rfl
-| (a :: aa) (dlist.cons .a b .aa bb) h ωh
+| (a :: aa) (dlist.cons .(a) b .(aa) bb) h ωh
 := begin
      dsimp [dlist.enum, dlist.map],
      rw ωh,
@@ -177,7 +185,7 @@ theorem dlist.enum_get {A : Type ℓ₁} {B : A → Sort ℓ₂}
         {bb : dlist B aa}
       , dlist.enum (dlist.get bb) = bb
 | [] bb := begin cases bb, trivial end
-| (a :: aa) (dlist.cons .a b .aa bb)
+| (a :: aa) (dlist.cons .(a) b .(aa) bb)
 := begin
      apply dlist.eq,
      { trivial },
@@ -210,7 +218,7 @@ definition dlist.append {A : Type ℓ₁} {B : A → Sort ℓ₂}
         {aa₂ : list A} (bb₂ : dlist B aa₂)
       , dlist B (aa₁ ++ aa₂)
 | [] bb₁ aa₂ bb₂ := bb₂
-| (a :: aa₁) (dlist.cons .a b .aa₁ bb₁) aa₂ bb₂ := dlist.cons a b (aa₁ ++ aa₂) (dlist.append bb₁ bb₂)
+| (a :: aa₁) (dlist.cons .(a) b .(aa₁) bb₁) aa₂ bb₂ := dlist.cons a b (aa₁ ++ aa₂) (dlist.append bb₁ bb₂)
 
 /-! #brief Splitting apart a dlist at an append (left part).
 -/
@@ -368,6 +376,26 @@ theorem dlist.get_split_right {A : Type ℓ₁} {B : A → Sort ℓ₂}
          == dlist.get bb (fin.mk (n + list.length aa₁) (list.length.grow_right ωn))
 := λ aa₁ aa₂ bb n ωn
    , sorry
+
+/-! #brief Repeating an item as a dlist.
+-/
+definition dlist.repeat {A : Type ℓ₁} {B : A → Sort ℓ₂}
+    {a : A} (b : B a)
+    : ∀ (N : ℕ)
+      , dlist B (list.repeat a N)
+| 0 := dlist.nil B
+| (nat.succ n) := dlist.cons a b (list.repeat a n) (dlist.repeat n)
+
+/-! #brief Action of get on repeat.
+-/
+theorem dlist.get_repeat {A : Type ℓ₁} {B : A → Sort ℓ₂}
+    {a : A} {b : B a}
+    : ∀ {N : ℕ} {n : fin N}
+      , dlist.get (dlist.repeat b N) (fin.mk n^.val begin rw list.length_repeat, exact n^.is_lt end)
+         == b
+| 0 n := fin.zero_elim n
+| (nat.succ N) (fin.mk 0 ω0) := heq.refl _
+| (nat.succ N) (fin.mk (nat.succ n) ωn) := @dlist.get_repeat N (fin.mk n (nat.le_of_lt_succ ωn))
 
 end stdaux
 end qp
