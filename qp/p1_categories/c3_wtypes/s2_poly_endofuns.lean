@@ -36,7 +36,6 @@ definition PolyEndoFun {C : Cat.{ℓobj ℓhom}}
     {x y : C^.obj}
     (f : C^.hom x y) [f_HasPullbacksAlong : HasPullbacksAlong C f]
     [x_HasPullbacksAlong : HasPullbacksAlong C (final_hom x)]
-    [y_HasPullbacksAlong : HasPullbacksAlong C (final_hom y)]
     : Fun C C
 := OverFinal.from C
     □□ DepPolyEndoFun f (final_hom x) (final_hom y)
@@ -56,8 +55,11 @@ Polynomial endofunctors.
      [C_HasDepProdFun : HasDepProdFun C]
      [f_HasPullbacksAlong : HasPullbacksAlong C f]
      [x_HasPullbacksAlong : HasPullbacksAlong C (@final_hom _ C_HasFinal x)]
-     [y_HasPullbacksAlong : HasPullbacksAlong C (@final_hom _ C_HasFinal y)]
-   , HasInitAlg (@PolyEndoFun _ C_HasFinal C_HasDepProdFun x y f f_HasPullbacksAlong x_HasPullbacksAlong y_HasPullbacksAlong)
+   , HasInitAlg (@PolyEndoFun C
+                   C_HasFinal C_HasDepProdFun
+                   x y f
+                   f_HasPullbacksAlong
+                   x_HasPullbacksAlong)
 
 /-! #brief The carrier of a W-type.
 -/
@@ -68,7 +70,6 @@ definition wtype.carr {C : Cat.{ℓobj ℓhom}}
     [C_HasDepProdFun : HasDepProdFun C]
     [f_HasPullbacksAlong : HasPullbacksAlong C f]
     [x_HasPullbacksAlong : HasPullbacksAlong C (final_hom x)]
-    [y_HasPullbacksAlong : HasPullbacksAlong C (final_hom y)]
     : C^.obj
 := @initalg.carr _ _ f_HasWType
 
