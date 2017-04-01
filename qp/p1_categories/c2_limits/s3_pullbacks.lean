@@ -126,17 +126,15 @@ instance HasAllPullbacks.HasPullback (C : Cat.{ℓobj ℓhom})
 -/
 class HasPullbacksAlong (C : Cat.{ℓobj ℓhom})
     {base t : C^.obj} (f : C^.hom base t)
-:= (has_pullback : ∀ {factor : list C^.obj}
-                     (maps : HomsIn factor t)
-                   , HasPullback C (f ↗→ maps))
+:= (has_pullback : ∀ {y : C^.obj} (map : C^.hom y t)
+                   , HasPullback C (f ↗→ map ↗→↗))
 
 instance HasPullbacksAlong.HasPullback (C : Cat.{ℓobj ℓhom})
     {base t : C^.obj} (f : C^.hom base t)
-    {factor : list C^.obj}
-    (maps : HomsIn factor t)
+    {y : C^.obj} (map : C^.hom y t)
     [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    : HasPullback C (f ↗→ maps)
-:= HasPullbacksAlong.has_pullback f maps
+    : HasPullback C (f ↗→ map ↗→↗)
+:= HasPullbacksAlong.has_pullback f map
 
 /-! #brief Helper for showing a category has a pullback.
 -/
@@ -571,11 +569,11 @@ instance HasAllFinProducts.final_hom.HasPullbacksAlong
     (x : C^.obj)
     : HasPullbacksAlong C (final_hom x)
 := { has_pullback
-      := λ factor maps
-         , HasPullback.show C (final_hom x↗→maps)
-            (finproduct C (x :: factor))
-            (final_hom (finproduct C (x :: factor)))
-            (finproduct.cone C (x :: factor))^.Proj
+      := λ y map
+         , HasPullback.show C (final_hom x ↗→ map ↗→↗)
+            (finproduct C [x, y])
+            (final_hom (finproduct C [x, y]))
+            (finproduct.cone C [x, y])^.Proj
             begin
               apply eq.symm,
               apply dlist.eq,
