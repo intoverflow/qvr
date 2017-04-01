@@ -531,7 +531,6 @@ definition DepSum_BaseChange.Adj {C : Cat.{ℓobj ℓhom}}
 class HasDepProdFun (C : Cat.{ℓobj ℓhom})
 := (depprod
      : ∀ {x y : C^.obj} (f : C^.hom x y)
-         [f_HasPullbacksAlong : HasPullbacksAlong C f]
        , Fun (OverCat C x) (OverCat C y))
    (adj
      : ∀ {x y : C^.obj} (f : C^.hom x y)
@@ -544,7 +543,6 @@ definition DepProdFun {C : Cat.{ℓobj ℓhom}}
     [C_HasDepProdFun : HasDepProdFun C]
     {x y : C^.obj}
     (f : C^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Fun (OverCat C x) (OverCat C y)
 := HasDepProdFun.depprod f
 
