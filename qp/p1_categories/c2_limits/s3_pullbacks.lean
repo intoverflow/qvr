@@ -84,6 +84,15 @@ definition PullbackCone.mk {C : Cat.{ℓobj ℓhom}}
                        end
    }
 
+/-! #brief The projections out of a pullback cone.
+-/
+definition PullbackCone.Proj {C : Cat.{ℓobj ℓhom}}
+    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
+    {maps : HomsIn (base :: factor) t}
+    (cone : PullbackCone C maps)
+    : HomsOut cone^.obj (base :: factor)
+:= sorry -- HomsOut.enum (Cone.hom cone)
+
 /-! #brief A pullback in a category.
 -/
 @[class] definition HasPullback (C : Cat.{ℓobj ℓhom})
@@ -97,6 +106,36 @@ instance HasPullback.HasLimit {C : Cat.{ℓobj ℓhom}}
     [maps_HasPullback : HasPullback C maps]
     : HasLimit (PullbackDrgm C maps)
 := maps_HasPullback
+
+/-! #brief A category with all pullbacks.
+-/
+class HasAllPullbacks (C : Cat.{ℓobj ℓhom})
+:= (has_pullback : ∀ {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
+                     (maps : HomsIn (base :: factor) t)
+                   , HasPullback C maps)
+
+instance HasAllPullbacks.HasPullback (C : Cat.{ℓobj ℓhom})
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn (base :: factor) t)
+    : HasPullback C maps
+:= HasAllPullbacks.has_pullback maps
+
+/-! #brief A category with all pullbacks along a given hom.
+-/
+class HasAllPullbacksAlong (C : Cat.{ℓobj ℓhom})
+    {base t : C^.obj} (f : C^.hom base t)
+:= (has_pullback : ∀ {factor : list C^.obj}
+                     (maps : HomsIn factor t)
+                   , HasPullback C (f ↗→ maps))
+
+instance HasAllPullbacksAlong.HasPullback (C : Cat.{ℓobj ℓhom})
+    {base t : C^.obj} (f : C^.hom base t)
+    {factor : list C^.obj}
+    (maps : HomsIn factor t)
+    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    : HasPullback C (f ↗→ maps)
+:= HasAllPullbacksAlong.has_pullback f maps
 
 /-! #brief Helper for showing a category has a pullback.
 -/
@@ -365,6 +404,125 @@ definition IsPullback.show {C : Cat.{ℓobj ℓhom}}
    , ωpullback := rfl
    , ωπ₁ := eq.symm C^.circ_id_right
    , ωπ₂ := eq.symm C^.circ_id_right
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Maps between pullbacks.
+----------------------------------------------------------------------- -/
+
+/-! #brief Building a map between pullbacks.
+-/
+definition pullback.hom (C : Cat.{ℓobj ℓhom})
+    (base : C^.obj × C^.obj) (factor : list (C^.obj × C^.obj)) {t : C^.obj}
+    (maps₁ : HomsIn (list.map prod.fst (base :: factor)) t)
+    [maps₁_HasPullback : HasPullback C maps₁]
+    (maps₂ : HomsIn (list.map prod.snd (base :: factor)) t)
+    [maps₂_HasPullback : HasPullback C maps₂]
+    (fns : HomsList C (base :: factor))
+    : C^.hom (pullback C maps₁)
+             (pullback C maps₂)
+:= pullback.univ _ _
+    (PullbackCone.mk maps₂ (pullback C maps₁)
+      (HomsIn.get maps₂ fin.zero
+        ∘∘ HomsList.get fns fin.zero
+        ∘∘ pullback.π C maps₁ fin.zero)
+      (homs_comp_out fns (pullback.cone C maps₁)^.Proj)
+      sorry)
+
+
+
+/- -----------------------------------------------------------------------
+Base change.
+----------------------------------------------------------------------- -/
+
+/-! #brief A base change functor.
+-/
+definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj}
+    (f : C^.hom x y)
+    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    : Fun (OverCat C y) (OverCat C x)
+:= { obj := λ Y, { obj := pullback C (f ↗→ Y^.hom ↗→↗)
+                 , hom := pullback.π C (f ↗→ Y^.hom ↗→↗) (@fin_of 1 0)
+                 }
+   , hom := λ X Y h, { hom := pullback.hom C
+                               (x, x) [(X^.obj, Y^.obj)]
+                               (f ↗→ X^.hom ↗→↗)
+                               (f ↗→ Y^.hom ↗→↗)
+                               (C^.id x ↗ h^.hom ↗↗)
+                     , triangle := sorry
+                     }
+   , hom_id := λ Y, OverHom.eq sorry
+   , hom_circ := λ X Y Z G F, OverHom.eq sorry
+   }
+
+/-! #brief The dependent sum functor.
+-/
+definition DepSumFun {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj}
+    (f : C^.hom x y)
+    : Fun (OverCat C x) (OverCat C y)
+:= { obj := λ X
+            , { obj := X^.obj
+              , hom := C^.circ f X^.hom
+              }
+   , hom := λ X Y F
+            , { hom := F^.hom
+              , triangle
+                 := begin
+                      rw -C^.circ_assoc,
+                      exact Cat.circ.congr_right  F^.triangle
+                    end
+              }
+   , hom_id := λ X, rfl
+   , hom_circ := λ X Y Z G F, rfl
+   }
+
+/-! #brief A base change functor.
+-/
+definition DepSumFun_BaseChangeFun.Adj {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj}
+    (f : C^.hom x y)
+    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    : Adj (DepSumFun f) (BaseChangeFun f)
+:= { counit
+      := { com := λ Y, { hom := pullback.π C (f ↗→ Y^.hom ↗→↗) (@fin_of 0 1)
+                       , triangle := sorry
+                       }
+         , natural := sorry
+         }
+   , unit
+      := { com := λ X, { hom := pullback.univ C (f ↗→ (f ∘∘ X^.hom) ↗→↗)
+                                  (PullbackCone.mk (f ↗→ (f ∘∘ X^.hom) ↗→↗)
+                                    X^.dom
+                                    (f ∘∘ X^.hom)
+                                    (X^.hom ↗← ⟨⟨ X^.obj ⟩⟩ ↗←↗)
+                                    begin
+                                      apply dlist.eq,
+                                      { trivial },
+                                      apply dlist.eq,
+                                      { rw [-C^.circ_assoc, C^.circ_id_right] },
+                                      trivial
+                                    end)
+                       , triangle := sorry
+                       }
+         , natural := sorry
+         }
+   , id_left
+      := λ c
+         , OverHom.eq
+            begin
+              dsimp [OverCat, OverHom.id, OverHom.comp, DepSumFun],
+              exact sorry
+            end
+   , id_right
+      := λ c
+         , OverHom.eq
+            begin
+              exact sorry
+            end
    }
 
 end qp

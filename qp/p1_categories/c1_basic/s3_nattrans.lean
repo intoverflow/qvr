@@ -94,7 +94,7 @@ definition NatTrans.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓ
 
 -- Composition of natural transformations.
 -- \Diamond\Diamond
-infixl `◇◇` : 150 := NatTrans.comp
+infixl ` ◇◇ ` : 150 := NatTrans.comp
 
 /-! #brief Composition of natural transformations is associative.
 -/
@@ -283,7 +283,7 @@ definition NatTrans.whisk_left {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj�
 
 -- Left whisker composition.
 -- \Box\Diamond
-infixr `□◇` : 150 := NatTrans.whisk_left
+infixr ` □◇ ` : 150 := NatTrans.whisk_left
 
 /-! #brief Left whisker composition and identity functors.
 -/
@@ -350,7 +350,7 @@ definition NatTrans.whisk_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj
 
 -- Right whisker composition.
 -- \Diamond\Box
-infixl `◇□` : 150 := NatTrans.whisk_right
+infixl ` ◇□ ` : 150 := NatTrans.whisk_right
 
 /-! #brief Right whisker composition and identity functors.
 -/
@@ -423,7 +423,7 @@ structure Adj
 
 -- An adjunction of functors.
 -- \dashv
-notation L `⊣` R := Adj L R
+notation L ` ⊣ ` R := Adj L R
 
 /-! #brief The right adjoint of a hom.
 -/

@@ -104,7 +104,7 @@ notation `⟦` C ` : ` x ` →→ ` y `⟧` := Cat.hom C x y
 
 -- Composition of hom's in a category.
 -- \o\o
-infixl `∘∘` : 100 := Cat.circ _
+infixl ` ∘∘ ` : 100 := Cat.circ _
 
 /-! #brief A finite category.
 -/

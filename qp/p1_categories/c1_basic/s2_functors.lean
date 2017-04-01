@@ -117,7 +117,7 @@ definition Fun.comp {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom�
 
 -- Composition of functors.
 -- \Box\Box
-infixl `□□` : 150 := Fun.comp
+infixl ` □□ ` : 150 := Fun.comp
 
 @[simp] theorem Fun.comp.simp_obj {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
     (G : Fun C D) (F : Fun B C) (x : B^.obj)
