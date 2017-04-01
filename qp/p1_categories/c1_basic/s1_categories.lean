@@ -773,13 +773,49 @@ class Monic {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
              (ω : C^.circ g f₁ = C^.circ g f₂)
            , f₁ = f₂)
 
-/-! #brief Helper for showing a hom is epic.
+/-! #brief Helper for showing a hom is monic.
 -/
 definition Monic.show {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
-    (g : C^.hom x y)
+    {g : C^.hom x y}
     (ω : ∀ {a : C^.obj} {f₁ f₂ : C^.hom a x} (ωf : C^.circ g f₁ = C^.circ g f₂), f₁ = f₂)
     : Monic g
 := { inj := @ω }
+
+/-! #brief Using a monic.
+-/
+definition monic_cancel {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
+    (g : C^.hom x y)
+    [g_Monic : Monic g]
+    {a : C^.obj} {f₁ f₂ : C^.hom a x}
+    (ω : C^.circ g f₁ = C^.circ g f₂)
+    : f₁ = f₂
+:= Monic.inj ω
+
+/-! #brief Identity homs are monic.
+-/
+instance Cat.id.Monic {C : Cat.{ℓobj ℓhom}}
+    (c : C^.obj)
+    : Monic (C^.id c)
+:= Monic.show
+    (λ a f₁ f₂ ω, by calc f₁ = ⟨⟨c⟩⟩ ∘∘ f₁ : eq.symm C^.circ_id_left
+                         ... = ⟨⟨c⟩⟩ ∘∘ f₂ : ω
+                         ... = f₂ : C^.circ_id_left)
+
+/-! #brief Monics are closed under composition.
+-/
+instance Monic.circ {C : Cat.{ℓobj ℓhom}}
+    {x y z : C^.obj}
+    {g : C^.hom y z} [g_Monic : Monic g]
+    {f : C^.hom x y} [f_Monic : Monic f]
+    : Monic (C^.circ g f)
+:= Monic.show
+    (λ c f₁ f₂ ω
+     , begin
+         apply monic_cancel f,
+         apply monic_cancel g,
+         repeat { rw C^.circ_assoc },
+         exact ω
+       end)
 
 /-! #brief In LeanCat, monics are injective.
 -/
@@ -799,6 +835,7 @@ theorem LeanCat.Monic.inj {X Y : LeanCat.{ℓ}^.obj}
              ... = f₂ x₁ : by rw ωf
              ... = x₂    : rfl
 
+
 /-! #brief An epimorphism.
 -/
 @[class] definition Epic {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
@@ -809,31 +846,46 @@ theorem LeanCat.Monic.inj {X Y : LeanCat.{ℓ}^.obj}
 /-! #brief Helper for showing a hom is epic.
 -/
 definition Epic.show {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
-    (f : C^.hom x y)
+    {f : C^.hom x y}
     (ω : ∀ {z : C^.obj} (g₁ g₂ : C^.hom y z) (ωg : C^.circ g₁ f = C^.circ g₂ f), g₁ = g₂)
     : Epic f
-:= Monic.show f @ω
+:= Monic.show @ω
 
-/-! #brief Identity homs are monic.
+/-! #brief Using an epic.
 -/
-instance Cat.id.Monic {C : Cat.{ℓobj ℓhom}}
-    (c : C^.obj)
-    : Monic (C^.id c)
-:= Monic.show (C^.id c)
-    (λ a f₁ f₂ ω, by calc f₁ = ⟨⟨c⟩⟩ ∘∘ f₁ : eq.symm C^.circ_id_left
-                         ... = ⟨⟨c⟩⟩ ∘∘ f₂ : ω
-                         ... = f₂ : C^.circ_id_left)
+definition epic_cancel {C : Cat.{ℓobj ℓhom}} {x y : C^.obj}
+    (f : C^.hom x y)
+    [f_Epic : Epic f]
+    {z : C^.obj} {g₁ g₂ : C^.hom y z}
+    (ω : C^.circ g₁ f = C^.circ g₂ f)
+    : g₁ = g₂
+:= @Monic.inj (OpCat C) _ _ f f_Epic z g₁ g₂ ω
 
 /-! #brief Identity homs are epic.
 -/
 instance Cat.id.Epic {C : Cat.{ℓobj ℓhom}}
     (c : C^.obj)
     : Epic (C^.id c)
-:= Epic.show (C^.id c)
+:= Epic.show
     (λ z g₁ g₂ ω, by calc g₁ = g₁ ∘∘ ⟨⟨c⟩⟩ : eq.symm C^.circ_id_right
                          ... = g₂ ∘∘ ⟨⟨c⟩⟩ : ω
                          ... = g₂ : C^.circ_id_right)
 
+/-! #brief Epics are closed under composition.
+-/
+instance Epic.circ {C : Cat.{ℓobj ℓhom}}
+    {x y z : C^.obj}
+    {g : C^.hom y z} [g_Epic : Epic g]
+    {f : C^.hom x y} [f_Epic : Epic f]
+    : Epic (C^.circ g f)
+:= Epic.show
+    (λ c f₁ f₂ ω
+     , begin
+         apply epic_cancel g,
+         apply epic_cancel f,
+         repeat { rw -C^.circ_assoc },
+         exact ω
+       end)
 
 
 /- -----------------------------------------------------------------------

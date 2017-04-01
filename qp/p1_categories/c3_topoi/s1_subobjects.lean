@@ -8,7 +8,7 @@ namespace qp
 
 open stdaux
 
-universe variables ℓ ℓobj ℓhom
+universe variables ℓ ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂
 
 /-! #brief A subobject classifier.
 -/
@@ -90,62 +90,112 @@ definition HasSubobjClass.show {C : Cat.{ℓobj ℓhom}}
    , char := @char
    , char_pullback
       := λ C_HasFinal U X m m_Monic
-         , { has_pullback
-              := HasPullback.show C _ U
-                  (C^.circ (@char C_HasFinal U X m m_Monic) m)
-                  (m ↗← @final_hom _ C_HasFinal U ↗←↗)
-                  begin
-                    apply dlist.eq,
-                    { trivial },
-                    apply dlist.eq,
-                    { apply ωchar_comm },
-                    trivial
-                  end
-                  (λ V hom ωhom
-                   , begin
-                       cases hom with _ h _ hom,
-                       cases hom with _ h₂ _ _,
-                       cases bb,
-                       assert ωh₂ : h₂ = final_hom V,
-                       { apply final_hom.uniq },
-                       subst ωh₂,
-                       assert ωh : char m_Monic ∘∘ h = true ∘∘ final_hom V,
-                       { apply HomsList.congr_get ωhom (@fin_of 0 1) },
-                       exact univ m_Monic h ωh
-                     end)
-                  (λ V hom ωhom
-                   , begin
-                       cases hom with _ h _ hom,
-                       cases hom with _ h₂ _ _,
-                       cases bb,
-                       assert ωh₂ : h₂ = final_hom V,
-                       { apply final_hom.uniq },
-                       subst ωh₂,
-                       apply dlist.eq,
-                       { apply ωuniv },
-                       apply dlist.eq,
-                       { apply eq.symm (final_hom.uniq _) },
-                       trivial
-                     end)
-                  (λ V hom ωhom h ωh
-                   , begin
-                       cases hom with _ h₁ _ hom,
-                       cases hom with _ h₂ _ _,
-                       cases bb,
-                       assert ωh₂ : h₂ = final_hom V,
-                       { apply final_hom.uniq },
-                       subst ωh₂,
-                       assert ωh₁ : h₁ = m ∘∘ h,
-                       { apply dlist.congr_get ωh (@fin_of 1 0) },
-                       subst ωh₁,
-                       apply ωuniv_uniq
-                     end)
-           , ωpullback := rfl
-           , ωπ₁ := eq.symm C^.circ_id_right
-           , ωπ₂ := eq.symm C^.circ_id_right
-           }
+         , IsPullback.show
+            (λ V h₁ h₂ ωsquare
+             , @univ C_HasFinal U V X m m_Monic h₁
+                 begin
+                   assert ωh₂ : h₂ = final_hom V,
+                   { apply final_hom.uniq },
+                   subst ωh₂,
+                   exact ωsquare
+                 end)
+            (@ωchar_comm C_HasFinal U X m m_Monic)
+            (λ V h₁ h₂ ωsquare
+             , @ωuniv C_HasFinal U V X m m_Monic h₁
+                 begin
+                   assert ωh₂ : h₂ = final_hom V,
+                   { apply final_hom.uniq },
+                   subst ωh₂,
+                   exact ωsquare
+                 end)
+            (λ V h₁ h₂ ωsquare
+             , eq.trans (final_hom.uniq C) (eq.symm (final_hom.uniq C)))
+            (λ V h₁ h₂ ωsquare h ωh₁ ωh₂
+             , begin
+                 subst ωh₁,
+                 apply ωuniv_uniq
+               end)
    , char_uniq := @ωchar_uniq
    }
+
+
+
+/-! #brief Functor categories have pointwise subobject classifiers.
+-/
+definition FunCat.HasSubobjClass.char {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasFinal : HasFinal D]
+    [D_HasSubobjClass : HasSubobjClass D]
+    {U F : Fun C D}
+    {η : NatTrans U F}
+    (η_Monic : @Monic (FunCat C D) U F η)
+    : NatTrans F (ConstFun C (HasSubobjClass.prop D))
+:= { com := λ c, HasSubobjClass.char (NatTrans.com.Monic η_Monic c)
+   , natural
+      := λ x y f
+         , sorry
+   }
+
+/-! #brief Functor categories have pointwise subobject classifiers.
+-/
+definition FunCat.HasSubobjClass.univ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasFinal : HasFinal D]
+    [D_HasSubobjClass : HasSubobjClass D]
+    (FunCat_HasFinal : HasFinal (FunCat C D))
+    {U F G : Fun C D}
+    {ηUG : NatTrans U G}
+    (ηUG_Monic : @Monic (FunCat C D) U G ηUG)
+    (ηFG : NatTrans F G)
+    (ωη : FunCat.HasSubobjClass.char ηUG_Monic ◇◇ ηFG
+           = ConstTrans C (HasSubobjClass.true D)
+              ◇◇ final.iso FunCat_HasFinal FunCat.HasFinal
+              ◇◇ @final_hom (FunCat C D) FunCat_HasFinal F)
+    : NatTrans F U
+:= { com := λ c, ispullback.univ
+                     (HasSubobjClass.char_pullback (NatTrans.com.Monic ηUG_Monic c))
+                     (ηFG^.com c)
+                     (final_hom (F^.obj c))
+                     (begin
+                        refine eq.trans (NatTrans.congr_com ωη) _,
+                        dsimp [NatTrans.comp, ConstTrans],
+                        rw -D^.circ_assoc,
+                        apply Cat.circ.congr_right,
+                        apply final_hom.uniq
+                      end)
+   , natural
+      := λ x y f
+         , sorry
+   }
+
+/-! #brief Functor categories have pointwise subobject classifiers.
+-/
+instance FunCat.HasSubobjClass {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasFinal : HasFinal D]
+    [D_HasSubobjClass : HasSubobjClass D]
+    : HasSubobjClass (FunCat C D)
+:= HasSubobjClass.show
+    (λ FunCat_HasFinal, ConstFun C (HasSubobjClass.prop D))
+    (λ FunCat_HasFinal
+     , (FunCat C D)^.circ
+        (ConstTrans C (HasSubobjClass.true D))
+        (final.iso FunCat_HasFinal FunCat.HasFinal))
+    (λ FunCat_HasFinal U F η η_Monic
+     , FunCat.HasSubobjClass.char η_Monic)
+    (λ FunCat_HasFinal U F G ηUG ηUG_Monic ηFG ω
+     , FunCat.HasSubobjClass.univ FunCat_HasFinal ηUG_Monic ηFG ω)
+    (λ FunCat_HasFinal U F η η_Monic
+     , begin
+         apply NatTrans.eq,
+         apply funext, intro c,
+         dsimp [FunCat, NatTrans.comp, FunCat.HasSubobjClass.char, ConstTrans],
+         exact sorry
+       end)
+    (λ FunCat_HasFinal U F G η η_Monic h ωh
+     , begin exact sorry end)
+    (λ FunCat_HasFinal U X V m m_Monic h ωh
+     , begin exact sorry end)
+    (λ FunCat_HasFinal U X m m_Monic char' char'_IsPullback
+     , begin exact sorry end)
+
 
 
 /-! #brief Axiom of choice gives LeanCat a subobject classifier.

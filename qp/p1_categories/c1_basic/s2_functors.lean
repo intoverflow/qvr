@@ -165,6 +165,23 @@ theorem Fun.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓho
 
 
 /- -----------------------------------------------------------------------
+Constant functors.
+----------------------------------------------------------------------- -/
+
+/-! #brief A constant functor.
+-/
+definition ConstFun (C : Cat.{ℓobj₁ ℓhom₁}) {D : Cat.{ℓobj₂ ℓhom₂}}
+    (d : D^.obj)
+    : Fun C D
+:= { obj := λ c, d
+   , hom := λ c₁ c₂ f, D^.id d
+   , hom_id := λ c, rfl
+   , hom_circ := λ c₁ c₂ c₃ g f, eq.symm D^.circ_id_right
+   }
+
+
+
+/- -----------------------------------------------------------------------
 The initial and final functors.
 ----------------------------------------------------------------------- -/
 

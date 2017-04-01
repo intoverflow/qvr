@@ -48,7 +48,19 @@ theorem NatTrans.heq
        , η₁ == η₂
 | F₁ F₂ .(F₁) .(F₂) η₁ η₂ (eq.refl .(F₁)) (eq.refl .(F₂)) ωcom
 := heq_of_eq (NatTrans.eq (eq_of_heq (ωcom rfl rfl)))
-         
+
+/-! #brief Congruence for NatTrans.com
+-/
+theorem NatTrans.congr_com
+    {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    : ∀ {η₁ η₂ : NatTrans F₁ F₂}
+        (ωη : η₁ = η₂)
+        {c : C^.obj}
+      , η₁^.com c = η₂^.com c
+| η .(η) (eq.refl .(η)) c := rfl
+
+
 
 /- -----------------------------------------------------------------------
 Natural transformations are morphisms of functors.
@@ -114,6 +126,20 @@ theorem NatTrans.comp_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
 
 
 /- -----------------------------------------------------------------------
+Constant transformations.
+----------------------------------------------------------------------- -/
+
+/-! #brief A constant transformation.
+-/
+definition ConstTrans (C : Cat.{ℓobj₁ ℓhom₁}) {D : Cat.{ℓobj₂ ℓhom₂}}
+    {d₁ d₂ : D^.obj} (h : D^.hom d₁ d₂)
+    : NatTrans (ConstFun C d₁) (ConstFun C d₂)
+:= { com := λ c, h
+   , natural := λ c₁ c₂ f, eq.trans D^.circ_id_right (eq.symm D^.circ_id_left)
+   }
+
+
+/- -----------------------------------------------------------------------
 Functor categories.
 ----------------------------------------------------------------------- -/
 
@@ -135,6 +161,32 @@ definition FunCat (C : Cat.{ℓobj₁ ℓhom₁}) (D : Cat.{ℓobj₂ ℓhom₂}
 definition PreShCat (C : Cat.{ℓobj₁ ℓhom₁})
     : Cat.{(max ℓobj₁ (ℓhom₁ + 1)) ((max ℓobj₁ (ℓhom₁ + 1)) + 1)}
 := FunCat (OpCat C) LeanCat.{ℓhom₁}
+
+/-! #brief Functor categories have pointwise final objects.
+-/
+definition FunCat.HasFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasFinal : HasFinal D]
+    : HasFinal (FunCat C D)
+:= HasFinal.show (ConstFun C (final D))
+    (λ F, { com := λ c, final_hom (F^.obj c)
+          , natural
+             := λ c₁ c₂ f
+                , eq.trans (final_hom.uniq D) (eq.symm D^.circ_id_left)
+          })
+    (λ F η, NatTrans.eq (funext (λ c, final_hom.uniq D)))
+
+/-! #brief Functor categories have pointwise initial objects.
+-/
+definition FunCat.HasInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasInit : HasInit D]
+    : HasInit (FunCat C D)
+:= HasFinal.show (ConstFun C (init D))
+    (λ F, { com := λ c, init_hom (F^.obj c)
+          , natural
+             := λ c₁ c₂ f
+                , eq.trans D^.circ_id_right (eq.symm (init_hom.uniq D))
+          })
+    (λ F η, NatTrans.eq (funext (λ c, init_hom.uniq D)))
 
 
 
@@ -192,6 +244,22 @@ theorem NatTrans.Iso_on_com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
    , id₂ := NatTrans.eq (funext (λ c, (ω c)^.id₂))
    }
 
+
+
+/- -----------------------------------------------------------------------
+Monics.
+----------------------------------------------------------------------- -/
+
+/-! #brief Monic natural transformations have monic components.
+-/
+theorem NatTrans.com.Monic {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    {η : NatTrans F₁ F₂}
+    (η_Monic : @Monic (FunCat C D) F₁ F₂ η)
+    (c : C^.obj)
+    : Monic (η^.com c)
+:= Monic.show (λ d f₁ f₂ ω
+               , begin exact sorry end)
 
 
 /- -----------------------------------------------------------------------

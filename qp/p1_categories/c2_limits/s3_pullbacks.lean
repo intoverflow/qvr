@@ -254,7 +254,7 @@ definition pullback.uniq {C : Cat.{ℓobj ℓhom}}
 
 /-! #brief A pullback square.
 -/
-structure IsPullback {C : Cat.{ℓobj ℓhom}}
+class IsPullback {C : Cat.{ℓobj ℓhom}}
     {p x y t : C^.obj}
     (base : C^.hom x t) (p₁ : C^.hom p x)
     (map : C^.hom y t)  (p₂ : C^.hom p y)
@@ -263,5 +263,108 @@ structure IsPullback {C : Cat.{ℓobj ℓhom}}
    (ωπ₁ : @pullback.π C x [y] t _ has_pullback (@fin_of 1 0) = p₁ ∘∘ cast_hom ωpullback)
    (ωπ₂ : @pullback.π C x [y] t _ has_pullback (@fin_of 0 1) = p₂ ∘∘ cast_hom ωpullback)
 
+/-! #brief Pullback squares have the usual commutative diagram.
+-/
+theorem ispullback.square {C : Cat.{ℓobj ℓhom}}
+    {p x y t : C^.obj}
+    {base : C^.hom x t} {p₁ : C^.hom p x}
+    {map : C^.hom y t}  {p₂ : C^.hom p y}
+    (isPullback : IsPullback base p₁ map p₂)
+    : C^.circ base p₁ = C^.circ map p₂
+:= sorry
+
+/-! #brief The universal map into a pullback square.
+-/
+definition ispullback.univ {C : Cat.{ℓobj ℓhom}}
+    {p x y t : C^.obj}
+    {base : C^.hom x t} {p₁ : C^.hom p x}
+    {map : C^.hom y t}  {p₂ : C^.hom p y}
+    (isPullback : IsPullback base p₁ map p₂)
+    {c : C^.obj} (h₁ : C^.hom c x) (h₂ : C^.hom c y)
+    (ωsquare : C^.circ base h₁ = C^.circ map h₂)
+    : C^.hom c p
+:= C^.circ
+    (cast_hom (IsPullback.ωpullback base p₁ map p₂))
+    (@pullback.univ _ _ _ _ _ (IsPullback.has_pullback base p₁ map p₂)
+      (PullbackCone.mk _ c (C^.circ base h₁) (h₁ ↗← h₂ ↗←↗)
+        begin
+          apply dlist.eq,
+          { trivial },
+          apply dlist.eq,
+          { exact ωsquare },
+          trivial
+        end))
+
+/-! #brief Helper for showing one has a pullback square.
+-/
+definition IsPullback.show {C : Cat.{ℓobj ℓhom}}
+    {p x y t : C^.obj}
+    {base : C^.hom x t} {p₁ : C^.hom p x}
+    {map : C^.hom y t}  {p₂ : C^.hom p y}
+    (univ
+      : ∀ {c : C^.obj} (h₁ : C^.hom c x) (h₂ : C^.hom c y)
+          (ωsquare : C^.circ base h₁ = C^.circ map h₂)
+        , C^.hom c p)
+    (ωsquare
+      : C^.circ base p₁ = C^.circ map p₂)
+    (ωuniv₁
+      : ∀ {c : C^.obj} (h₁ : C^.hom c x) (h₂ : C^.hom c y)
+          (ωsquare : C^.circ base h₁ = C^.circ map h₂)
+        , h₁ = C^.circ p₁ (univ h₁ h₂ ωsquare))
+    (ωuniv₂
+      : ∀ {c : C^.obj} (h₁ : C^.hom c x) (h₂ : C^.hom c y)
+          (ωsquare : C^.circ base h₁ = C^.circ map h₂)
+        , h₂ = C^.circ p₂ (univ h₁ h₂ ωsquare))
+    (ωuniv_uniq
+      : ∀ {c : C^.obj} (h₁ : C^.hom c x) (h₂ : C^.hom c y)
+          (ωsquare : C^.circ base h₁ = C^.circ map h₂)
+          (univ' : C^.hom c p)
+          (ωuniv'₁ : h₁ = C^.circ p₁ univ')
+          (ωuniv'₂ : h₂ = C^.circ p₂ univ')
+        , univ' = univ h₁ h₂ ωsquare)
+    : IsPullback base p₁ map p₂
+:= { has_pullback
+      := HasPullback.show C (base ↗→ map ↗→↗) p
+          (C^.circ base p₁)
+          (p₁ ↗← p₂ ↗←↗)
+          begin
+            apply dlist.eq,
+            { trivial },
+            apply dlist.eq,
+            { exact ωsquare },
+            trivial
+          end
+          (λ c homs ωhoms
+           , begin
+               cases homs with _ h₁ _ homs,
+               cases homs with _ h₂ _ _,
+               cases bb,
+               apply univ h₁ h₂,
+               apply HomsList.congr_get ωhoms (@fin_of 0 1)
+             end)
+          (λ c homs ωhoms
+           , begin
+               cases homs with _ h₁ _ homs,
+               cases homs with _ h₂ _ _,
+               cases bb,
+               apply dlist.eq,
+               { apply ωuniv₁ },
+               apply dlist.eq,
+               { apply ωuniv₂ },
+               trivial
+             end)
+          (λ c homs ωhoms h ωh
+           , begin
+               cases homs with _ h₁ _ homs,
+               cases homs with _ h₂ _ _,
+               cases bb,
+               apply ωuniv_uniq,
+               { apply dlist.congr_get ωh (@fin_of 1 0) },
+               { apply dlist.congr_get ωh (@fin_of 0 1) }
+             end)
+   , ωpullback := rfl
+   , ωπ₁ := eq.symm C^.circ_id_right
+   , ωπ₂ := eq.symm C^.circ_id_right
+   }
 
 end qp
