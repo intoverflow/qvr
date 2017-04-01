@@ -3,12 +3,13 @@ Pullbacks and pushouts.
 ----------------------------------------------------------------------- -/
 
 import .s1_limits
+import .s2_products
 
 namespace qp
 
 open stdaux
 
-universe variables ℓobj ℓhom --ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂
+universe variables ℓobj ℓhom
 
 
 
@@ -123,19 +124,19 @@ instance HasAllPullbacks.HasPullback (C : Cat.{ℓobj ℓhom})
 
 /-! #brief A category with all pullbacks along a given hom.
 -/
-class HasAllPullbacksAlong (C : Cat.{ℓobj ℓhom})
+class HasPullbacksAlong (C : Cat.{ℓobj ℓhom})
     {base t : C^.obj} (f : C^.hom base t)
 := (has_pullback : ∀ {factor : list C^.obj}
                      (maps : HomsIn factor t)
                    , HasPullback C (f ↗→ maps))
 
-instance HasAllPullbacksAlong.HasPullback (C : Cat.{ℓobj ℓhom})
+instance HasPullbacksAlong.HasPullback (C : Cat.{ℓobj ℓhom})
     {base t : C^.obj} (f : C^.hom base t)
     {factor : list C^.obj}
     (maps : HomsIn factor t)
-    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : HasPullback C (f ↗→ maps)
-:= HasAllPullbacksAlong.has_pullback f maps
+:= HasPullbacksAlong.has_pullback f maps
 
 /-! #brief Helper for showing a category has a pullback.
 -/
@@ -442,7 +443,7 @@ Base change.
 definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
     {x y : C^.obj}
     (f : C^.hom x y)
-    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Fun (OverCat C y) (OverCat C x)
 := { obj := λ Y, { obj := pullback C (f ↗→ Y^.hom ↗→↗)
                  , hom := pullback.π C (f ↗→ Y^.hom ↗→↗) (@fin_of 1 0)
@@ -485,7 +486,7 @@ definition DepSumFun {C : Cat.{ℓobj ℓhom}}
 definition DepSum_BaseChange.Adj {C : Cat.{ℓobj ℓhom}}
     {x y : C^.obj}
     (f : C^.hom x y)
-    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Adj (DepSumFun f) (BaseChangeFun f)
 := { counit
       := { com := λ Y, { hom := pullback.π C (f ↗→ Y^.hom ↗→↗) (@fin_of 0 1)
@@ -530,11 +531,11 @@ definition DepSum_BaseChange.Adj {C : Cat.{ℓobj ℓhom}}
 class HasDepProdFun (C : Cat.{ℓobj ℓhom})
 := (depprod
      : ∀ {x y : C^.obj} (f : C^.hom x y)
-         [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+         [f_HasPullbacksAlong : HasPullbacksAlong C f]
        , Fun (OverCat C x) (OverCat C y))
    (adj
      : ∀ {x y : C^.obj} (f : C^.hom x y)
-         [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+         [f_HasPullbacksAlong : HasPullbacksAlong C f]
        , Adj (BaseChangeFun f) (depprod f))
 
 /-! #brief A dependent product functor.
@@ -543,7 +544,7 @@ definition DepProdFun {C : Cat.{ℓobj ℓhom}}
     [C_HasDepProdFun : HasDepProdFun C]
     {x y : C^.obj}
     (f : C^.hom x y)
-    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Fun (OverCat C x) (OverCat C y)
 := HasDepProdFun.depprod f
 
@@ -553,8 +554,44 @@ definition BaseChange_DepProd.Adj {C : Cat.{ℓobj ℓhom}}
     [C_HasDepProdFun : HasDepProdFun C]
     {x y : C^.obj}
     (f : C^.hom x y)
-    [f_HasAllPullbacksAlong : HasAllPullbacksAlong C f]
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Adj (BaseChangeFun f) (DepProdFun f)
 := HasDepProdFun.adj f
+
+
+
+/- -----------------------------------------------------------------------
+Pullbacks along final homs.
+----------------------------------------------------------------------- -/
+
+/-! Categories with products have pullbacks along final homs.
+-/
+instance HasAllFinProducts.final_hom.HasPullbacksAlong
+    (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    [C_HasAllFinProducts : HasAllFinProducts C]
+    (x : C^.obj)
+    : HasPullbacksAlong C (final_hom x)
+:= { has_pullback
+      := λ factor maps
+         , HasPullback.show C (final_hom x↗→maps)
+            (finproduct C (x :: factor))
+            (final_hom (finproduct C (x :: factor)))
+            (finproduct.cone C (x :: factor))^.Proj
+            begin
+              apply eq.symm,
+              apply dlist.eq,
+              { apply final_hom.uniq },
+              -- induction maps with _ m _ maps rec,
+              -- { trivial },
+              -- apply dlist.eq,
+              -- { apply final_hom.uniq },
+              -- apply rec
+              exact sorry
+            end
+            begin exact sorry end
+            begin exact sorry end
+            begin exact sorry end
+   }
 
 end qp

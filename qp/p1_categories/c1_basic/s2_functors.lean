@@ -526,6 +526,46 @@ theorem Fun.conj {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}} {D₁ D₂ : Cat.{ℓob
    , id₂ := eq.symm conj^.id₁
    }
 
+
+
+/- -----------------------------------------------------------------------
+Over-categories over final objects.
+----------------------------------------------------------------------- -/
+
+/-! #brief The over-category over a final is iso to the original category.
+-/
+definition OverFinal.to (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : Fun C (OverCat C (final C))
+:= { obj := λ c, { obj := c, hom := final_hom c }
+   , hom := λ c₁ c₂ f, { hom := f, triangle := eq.symm (final_hom.uniq C) }
+   , hom_id := λ c, OverHom.eq rfl
+   , hom_circ := λ c₁ c₂ c₃ g f, OverHom.eq rfl
+   }
+
+/-! #brief The over-category over a final is iso to the original category.
+-/
+definition OverFinal.from (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : Fun (OverCat C (final C)) C
+:= { obj := λ c, c^.obj
+   , hom := λ c₁ c₂ f, f^.hom
+   , hom_id := λ c, rfl
+   , hom_circ := λ c₁ c₂ c₃ g f, rfl
+   }
+
+/-! #brief The over-category over a final is iso to the original category.
+-/
+definition OverFinal.Bij (C : Cat.{ℓobj ℓhom})
+    [C_HasFinal : HasFinal C]
+    : Cat.Bij (OverFinal.to C) (OverFinal.from C)
+:= { id₁ := rfl
+   , id₂ := Fun.eq
+             (λ c, OverObj.eq rfl (heq_of_eq (eq.symm (final_hom.uniq C))))
+             (λ ω x y f, OverHom.heq (ω _) (ω _) (heq.refl _))
+   }
+
+
 /- -----------------------------------------------------------------------
 Forgetful functors between the algebraic categories.
 ----------------------------------------------------------------------- -/

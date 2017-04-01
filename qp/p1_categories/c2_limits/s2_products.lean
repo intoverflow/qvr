@@ -199,6 +199,17 @@ instance HasFinProduct.HasProduct (C : Cat.{ℓobj ℓhom})
     : HasProduct C (list.get factor)
 := factor_HasProduct
 
+/-! #brief A category with all finite products.
+-/
+class HasAllFinProducts (C : Cat.{ℓobj ℓhom})
+:= (has_product : ∀ (factor : list C^.obj), HasFinProduct C factor)
+
+instance HasAllFinProducts.HasFinProduct (C : Cat.{ℓobj ℓhom})
+    [C_HasAllFinProducts : HasAllFinProducts C]
+    (factor : list C^.obj)
+    : HasFinProduct C factor
+:= HasAllFinProducts.has_product factor
+
 /-! #brief Helper for showing a category has a finite product.
 -/
 definition HasFinProduct.show {C : Cat.{ℓobj ℓhom}}
