@@ -28,6 +28,18 @@ instance HasLimit.ConeCat_HasFinal {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj�
     : HasFinal (ConeCat L)
 := L_HasLimit
 
+/-! #brief A category with all limits.
+-/
+class HasAllLimits (C : Cat.{ℓobj₁ ℓhom₁})
+:= (has_limit : ∀ {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
+                , HasLimit L)
+
+instance HasAllLimits.HasLimit {C : Cat.{ℓobj₁ ℓhom₁}}
+    [C_HasAllLimits : HasAllLimits.{ℓobjx ℓhomx ℓobj₁ ℓhom₁} C]
+    {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
+    : HasLimit L
+:= HasAllLimits.has_limit L
+
 /-! #brief Helper for showing a functor has a limit.
 -/
 definition HasLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
@@ -330,6 +342,18 @@ instance HasCoLimit.Op_HasLimit {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ 
     [L_HasCoLimit : HasCoLimit L]
     : HasLimit (OpFun L)
 := L_HasCoLimit
+
+/-! #brief A category with all co-limits.
+-/
+class HasAllCoLimits (C : Cat.{ℓobj₁ ℓhom₁})
+:= (has_colimit : ∀ {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
+                  , HasCoLimit L)
+
+instance HasAllCoLimits.HasCoLimit {C : Cat.{ℓobj₁ ℓhom₁}}
+    [C_HasAllCoLimits : HasAllCoLimits.{ℓobjx ℓhomx ℓobj₁ ℓhom₁} C]
+    {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
+    : HasCoLimit L
+:= HasAllCoLimits.has_colimit L
 
 /-! #brief Helper for showing a functor has a co-limit.
 -/
