@@ -1035,6 +1035,14 @@ theorem final_hom.uniq (C : Cat.{ℓobj ℓhom})
     : f = final_hom c
 := (HasFinal.final C)^.hom_uniq
 
+/-! #brief The initial hom is unique.
+-/
+definition final_hom.uniq' (C : Cat.{ℓobj ℓhom})
+    {C_HasFinal : HasFinal C}
+    {c : C^.obj} {f g : C^.hom c (final C)}
+    : f = g
+:= eq.trans (final_hom.uniq C) (eq.symm (final_hom.uniq C))
+
 /-! #brief The final hom to the final object is the identity.
 -/
 theorem final_hom.id (C : Cat.{ℓobj ℓhom})
@@ -1127,6 +1135,14 @@ definition init_hom.uniq (C : Cat.{ℓobj ℓhom})
     {c : C^.obj} {f : C^.hom (init C) c}
     : f = init_hom c
 := @final_hom.uniq (OpCat C) C_HasInit c f
+
+/-! #brief The initial hom is unique.
+-/
+definition init_hom.uniq' (C : Cat.{ℓobj ℓhom})
+    {C_HasInit : HasInit C}
+    {c : C^.obj} {f g : C^.hom (init C) c}
+    : f = g
+:= eq.trans (init_hom.uniq C) (eq.symm (init_hom.uniq C))
 
 /-! #brief The unique iso between two initial objects.
 -/

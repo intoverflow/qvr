@@ -40,6 +40,17 @@ instance HasAllLimits.HasLimit {C : Cat.{ℓobj₁ ℓhom₁}}
     : HasLimit L
 := HasAllLimits.has_limit L
 
+/-! #brief A category with all limits out of another category.
+-/
+class HasAllLimitsFrom (C : Cat.{ℓobj₁ ℓhom₁}) (X : Cat.{ℓobjx ℓhomx})
+:= (has_limit : ∀ (L : Fun X C), HasLimit L)
+
+instance HasAllLimitsFrom.HasLimit (C : Cat.{ℓobj₁ ℓhom₁}) {X : Cat.{ℓobjx ℓhomx}}
+    (L : Fun X C)
+    [C_HasAllLimitsFrom_X : HasAllLimitsFrom C X]
+    : HasLimit L
+:= HasAllLimitsFrom.has_limit L
+
 /-! #brief Helper for showing a functor has a limit.
 -/
 definition HasLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
@@ -184,6 +195,22 @@ Preservation of limits by functors.
     (L : Fun X B)
     (F : Fun B C)
 := PresFinal (LeftConeFun F L)
+
+/-! #brief A functor which preserves colimits out of a given category.
+-/
+class PresLimitsFrom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun B C)
+    (X : Cat.{ℓobjx ℓhomx})
+:= (pres_limit : ∀ (L : Fun X B)
+                 , PresLimit L F)
+
+instance PresLimitsFrom.PresLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun B C)
+    {X : Cat.{ℓobjx ℓhomx}}
+    [F_PresLimitsFrom : PresLimitsFrom F X]
+    (L : Fun X B)
+    : PresLimit L F
+:= PresLimitsFrom.pres_limit F L
 
 /-! #brief Functors which preserve limits yield instances of HasLimit.
 -/
@@ -355,6 +382,17 @@ instance HasAllCoLimits.HasCoLimit {C : Cat.{ℓobj₁ ℓhom₁}}
     : HasCoLimit L
 := HasAllCoLimits.has_colimit L
 
+/-! #brief A category with all co-limits out of another category.
+-/
+class HasAllCoLimitsFrom (C : Cat.{ℓobj₁ ℓhom₁}) (X : Cat.{ℓobjx ℓhomx})
+:= (has_colimit : ∀ (L : Fun X C), HasCoLimit L)
+
+instance HasAllCoLimitsFrom.HasCoLimit (C : Cat.{ℓobj₁ ℓhom₁}) {X : Cat.{ℓobjx ℓhomx}}
+    (L : Fun X C)
+    [C_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom C X]
+    : HasCoLimit L
+:= HasAllCoLimitsFrom.has_colimit L
+
 /-! #brief Helper for showing a functor has a co-limit.
 -/
 definition HasCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
@@ -453,7 +491,7 @@ theorem colimit.univ.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom
     (c : CoCone F)
     (m : C^.hom (colimit F) c^.obj)
     (ω : ∀ (x : X^.obj), c^.hom x = m ∘∘ colimit.in F x)
-    : m = limit.univ c
+    : m = colimit.univ c
 := limit.univ.uniq c m ω
 
 /-! #brief The unique iso between two co-limits of the same functor.
@@ -500,6 +538,22 @@ instance PresCoLimit.HasCoLimit {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ 
     (F : Fun B C) [F_PresCoLimit : PresCoLimit L F]
     : HasCoLimit (Fun.comp F L)
 := PresLimit.HasLimit (OpFun L) (OpFun F)
+
+/-! #brief A functor which preserves colimits out of a given category.
+-/
+class PresCoLimitsFrom {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun B C)
+    (X : Cat.{ℓobjx ℓhomx})
+:= (pres_colimit : ∀ (L : Fun X B)
+                   , PresCoLimit L F)
+
+instance PresCoLimitsFrom.PresCoLimit {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}}
+    (F : Fun B C)
+    {X : Cat.{ℓobjx ℓhomx}}
+    [F_PresCoLimitsFrom : PresCoLimitsFrom F X]
+    (L : Fun X B)
+    : PresCoLimit L F
+:= PresCoLimitsFrom.pres_colimit F L
 
 /-! #brief Helper for showing that a functor preserves a co-limit.
 -/

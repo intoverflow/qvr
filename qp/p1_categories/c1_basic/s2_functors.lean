@@ -79,6 +79,24 @@ theorem Fun.heq
      }
    end
 
+/-! #brief Congruence on objects.
+-/
+theorem Fun.congr_obj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    : ∀ {x y : C^.obj}
+        (ω : x = y)
+      , F^.obj x = F^.obj y
+| x .(x) (eq.refl .(x)) := rfl
+
+/-! #brief Congruence on homs.
+-/
+theorem Fun.congr_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    : ∀ {x y : C^.obj} {f₁ f₂ : C^.hom x y}
+        (ω : f₁ = f₂)
+      , F^.hom f₁ = F^.hom f₂
+| x y f .(f) (eq.refl .(f)) := rfl
+
 
 
 /- -----------------------------------------------------------------------
@@ -160,6 +178,84 @@ theorem Fun.comp_assoc {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓho
      apply Fun.eq,
      { intro x, rw [Fun.comp.simp_obj, Fun.id.simp_obj] },
      { intros ωobj x y f, rw [Fun.comp.simp_hom, Fun.id.simp_hom], apply heq.refl }
+   end
+
+/-! #brief Iterated composition of endofunctors.
+-/
+definition Fun.iter_comp {C : Cat.{ℓobj₁ ℓhom₁}}
+    (F : Fun C C)
+    : ℕ → Fun C C
+| 0 := Fun.id C
+| (nat.succ n) := Fun.comp F (Fun.iter_comp n)
+
+/-! #brief Fun.iter_comp absorbs on the left.
+-/
+definition Fun.iter_comp_fold_left {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun C C}
+    {n : ℕ}
+    : Fun.comp F (Fun.iter_comp F n)
+       = Fun.iter_comp F (nat.succ n)
+:= rfl
+
+/-! #brief Fun.iter_comp absorbs on the right.
+-/
+definition Fun.iter_comp_fold_right {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun C C}
+    : ∀ {n : ℕ}
+      , Fun.comp (Fun.iter_comp F n) F
+         = Fun.iter_comp F (nat.succ n)
+| 0 := rfl
+| (nat.succ n)
+:= begin
+     dsimp [Fun.iter_comp],
+     rw -Fun.comp_assoc,
+     rw Fun.iter_comp_fold_right,
+     trivial
+   end
+
+/-! #brief Iterated composition of endofunctors.
+-/
+definition Fun.iter_comp' {C : Cat.{ℓobj₁ ℓhom₁}}
+    (F : Fun C C)
+    : ℕ → Fun C C
+| 0 := Fun.id C
+| (nat.succ n) := Fun.comp (Fun.iter_comp' n) F
+
+/-! @brief Fun.iter_comp and Fun.iter_comp' are equal.
+-/
+theorem Fun.iter_comp_assoc {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun C C}
+    : ∀ {n : ℕ}
+      , Fun.iter_comp F n = Fun.iter_comp' F n
+| 0 := rfl
+| (nat.succ n)
+:= begin
+     dsimp [Fun.iter_comp, Fun.iter_comp'],
+     rw [-Fun.iter_comp_assoc, Fun.iter_comp_fold_left, Fun.iter_comp_fold_right]
+   end
+
+/-! #brief Fun.iter_comp absorbs on the left.
+-/
+definition Fun.iter_comp'_fold_left {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun C C}
+    {n : ℕ}
+    : Fun.comp F (Fun.iter_comp' F n)
+       = Fun.iter_comp' F (nat.succ n)
+:= begin
+     repeat { rw -Fun.iter_comp_assoc },
+     exact Fun.iter_comp_fold_left
+   end
+
+/-! #brief Fun.iter_comp absorbs on the right.
+-/
+definition Fun.iter_comp'_fold_right {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun C C}
+    {n : ℕ}
+    : Fun.comp (Fun.iter_comp' F n) F
+       = Fun.iter_comp' F (nat.succ n)
+:= begin
+     repeat { rw -Fun.iter_comp_assoc },
+     exact Fun.iter_comp_fold_right
    end
 
 
