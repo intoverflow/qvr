@@ -322,9 +322,9 @@ definition Adamek.CoCone {C : Cat.{ℓobj ℓhom}}
 -/
 definition Adamek {C : Cat.{ℓobj ℓhom}}
     [C_HasInit : HasInit C]
-    [C_HasAllCoLimitsFrom : HasAllCoLimitsFrom C NatCat]
     (F : Fun C C)
-    [F_PresCoLimitsFrom : PresCoLimitsFrom F NatCat]
+    [Adamek_HasCoLimit : HasCoLimit (AdamekFun F)]
+    [F_PresCoLimit : PresCoLimit (AdamekFun F) F]
     : HasInitAlg F
 := HasInit.show
     { carr := colimit (AdamekFun F)
