@@ -8,7 +8,7 @@ namespace qp
 
 open stdaux
 
-universe variables ℓobjx ℓhomx ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂
+universe variables ℓobjx ℓhomx ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂ ℓobj₃ ℓhom₃
 
 
 
@@ -259,6 +259,16 @@ definition PresLimit.show {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓhom
                                                      h^.mediate h^.factor)
                }
    }
+
+/-! #brief Preservation of limits by compositions of functors.
+-/
+definition PresLimit.comp {X : Cat.{ℓobjx ℓhomx}}
+    {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (L : Fun X B)
+    (F : Fun B C) [F_PresLimit : PresLimit L F]
+    (G : Fun C D) [G_PresLimit : PresLimit (Fun.comp F L) G]
+    : PresLimit L (Fun.comp G F)
+:= sorry -- TODO: prove by showing preservation of final composes.
 
 /-! #brief A limit of a functor.
 -/
@@ -589,6 +599,17 @@ definition PresCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓh
     (λ L_HasCoLimit c hom ωcomm, @mediate L_HasCoLimit c hom (λ x₂ x₁ f, ωcomm f))
     (λ L_HasCoLimit c hom ωcomm, @ωmediate L_HasCoLimit c hom (λ x₂ x₁ f, ωcomm f))
     (λ L_HasCoLimit c hom ωcomm, @ωuniq L_HasCoLimit c hom (λ x₂ x₁ f, ωcomm f))
+
+/-! #brief Preservation of co-limits by compositions of functors.
+-/
+definition PresCoLimit.comp {X : Cat.{ℓobjx ℓhomx}}
+    {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj₂ ℓhom₂}} {D : Cat.{ℓobj₃ ℓhom₃}}
+    (L : Fun X B)
+    (F : Fun B C) [F_PresCoLimit : PresCoLimit L F]
+    (G : Fun C D) [G_PresCoLimit : PresCoLimit (Fun.comp F L) G]
+    : PresCoLimit L (Fun.comp G F)
+:= @PresLimit.comp (OpCat X) (OpCat B) (OpCat C) (OpCat D)
+      (OpFun L) (OpFun F) F_PresCoLimit (OpFun G) G_PresCoLimit
 
 /-! #brief A co-limit of a functor.
 -/

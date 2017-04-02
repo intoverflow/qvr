@@ -1181,6 +1181,15 @@ theorem IsFinal_dual_IsInit (C : Cat.{ℓobj ℓhom})
 Examples of initial and final objects in categories.
 ----------------------------------------------------------------------- -/
 
+/-! #brief Over-categories have initial objects.
+-/
+instance OverCat.HasInit (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
+    [C_HasInit : HasInit C]
+    : HasInit (OverCat C X)
+:= HasInit.show { obj := init C, hom := init_hom X }
+    (λ Y, { hom := init_hom Y^.obj, triangle := init_hom.uniq' C })
+    (λ Y h, OverHom.eq (init_hom.uniq C))
+
 /-! #brief UnitCat has an initial object.
 -/
 instance UnitCat.HasInit

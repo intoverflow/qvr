@@ -563,7 +563,7 @@ Pullbacks along final homs.
 /-! Categories with products have pullbacks along final homs.
 -/
 instance HasAllFinProducts.final_hom.HasPullbacksAlong
-    (C : Cat.{ℓobj ℓhom})
+    {C : Cat.{ℓobj ℓhom}}
     [C_HasFinal : HasFinal C]
     [C_HasAllFinProducts : HasAllFinProducts C]
     (x : C^.obj)
