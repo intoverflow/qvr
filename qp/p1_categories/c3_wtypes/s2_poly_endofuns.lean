@@ -138,28 +138,28 @@ W-types.
 /-! #brief A W-type.
 -/
 @[class] definition HasWType (C : Cat.{ℓobj ℓhom})
-    {x y : C^.obj} (f : C^.hom x y)
+    {b a : C^.obj} (disp : C^.hom b a)
 := ∀ [C_HasFinal : HasFinal C]
      [C_HasAllFinProducts : HasAllFinProducts C]
      [C_HasDepProdFun : HasDepProdFun C]
    , HasInitAlg (@PolyEndoFun C
                    C_HasFinal C_HasAllFinProducts C_HasDepProdFun
-                   x y f)
+                   b a disp)
 
 /-! #brief Adámek's construction for W-types.
 -/
 definition HasWType.Adamek (C : Cat.{ℓobj ℓhom})
     [C_HasInit : HasInit C]
     [C_HasAllCoLimitsFrom : HasAllCoLimitsFrom C NatCat]
-    {x y : C^.obj} (f : C^.hom x y)
+    {b a : C^.obj} (disp : C^.hom b a)
     (f_PresCoLimitsFrom
-      : HasDepProdFun C → PresCoLimitsFrom (DepProdFun f) NatCat)
-    : HasWType C f
+      : HasDepProdFun C → PresCoLimitsFrom (DepProdFun disp) NatCat)
+    : HasWType C disp
 := λ C_HasFinal C_HasAllFinProducts C_HasDepProdFun
    , @PolyEndoFun.Adamek C
        C_HasInit C_HasFinal
        C_HasAllFinProducts C_HasDepProdFun C_HasAllCoLimitsFrom
-       x y f
+       b a disp
        (f_PresCoLimitsFrom C_HasDepProdFun)
 
 /-! #brief The carrier of a W-type.
@@ -168,9 +168,9 @@ definition wtype.carr {C : Cat.{ℓobj ℓhom}}
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasFinal : HasFinal C]
     [C_HasDepProdFun : HasDepProdFun C]
-    {x y : C^.obj} (f : C^.hom x y)
-    [f_HasWType : HasWType C f]
+    {b a : C^.obj} (disp : C^.hom b a)
+    [disp_HasWType : HasWType C disp]
     : C^.obj
-:= @initalg.carr _ _ f_HasWType
+:= @initalg.carr _ _ disp_HasWType
 
 end qp
