@@ -436,6 +436,34 @@ definition pullback.hom (C : Cat.{ℓobj ℓhom})
 Base change.
 ----------------------------------------------------------------------- -/
 
+/-! #brief Action of base change on objects.
+-/
+definition BaseChangeFun.obj {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj}
+    (f : C^.hom x y)
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
+    (Y : OverObj C y)
+    : OverObj C x
+:= { obj := pullback C (f ↗→ Y^.hom ↗→↗)
+   , hom := pullback.π C (f ↗→ Y^.hom ↗→↗) (@fin_of 1 0)
+   }
+
+/-! #brief Action of base change on homs.
+-/
+definition BaseChangeFun.hom {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj}
+    (f : C^.hom x y)
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
+    (Y₁ Y₂ : OverObj C y) (h : OverHom C y Y₁ Y₂)
+    : OverHom C x (BaseChangeFun.obj f Y₁) (BaseChangeFun.obj f Y₂)
+:= { hom := pullback.hom C
+             (x, x) [(Y₁^.obj, Y₂^.obj)]
+             (f ↗→ Y₁^.hom ↗→↗)
+             (f ↗→ Y₂^.hom ↗→↗)
+             (C^.id x ↗ h^.hom ↗↗)
+   , triangle := sorry
+   }
+
 /-! #brief A base change functor.
 -/
 definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
@@ -443,16 +471,8 @@ definition BaseChangeFun {C : Cat.{ℓobj ℓhom}}
     (f : C^.hom x y)
     [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Fun (OverCat C y) (OverCat C x)
-:= { obj := λ Y, { obj := pullback C (f ↗→ Y^.hom ↗→↗)
-                 , hom := pullback.π C (f ↗→ Y^.hom ↗→↗) (@fin_of 1 0)
-                 }
-   , hom := λ X Y h, { hom := pullback.hom C
-                               (x, x) [(X^.obj, Y^.obj)]
-                               (f ↗→ X^.hom ↗→↗)
-                               (f ↗→ Y^.hom ↗→↗)
-                               (C^.id x ↗ h^.hom ↗↗)
-                     , triangle := sorry
-                     }
+:= { obj := BaseChangeFun.obj f
+   , hom := BaseChangeFun.hom f
    , hom_id := λ Y, OverHom.eq sorry
    , hom_circ := λ X Y Z G F, OverHom.eq sorry
    }
