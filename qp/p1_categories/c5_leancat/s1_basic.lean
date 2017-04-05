@@ -275,7 +275,12 @@ instance LeanCat.HasPullback
       // @HomsList.repeat LeanCat _ _
           (λ p', HomsIn.get maps (fin_of 0) (finproduct.π LeanCat (base :: factor) (fin_of 0) p))
           (list.length (base :: factor))
-          = homs_in_comp_out maps (finproduct.cone LeanCat (base :: factor))^.Proj }
+          = homs_in_comp_out
+             maps
+             (HomsOut.comp
+                (finproduct.cone LeanCat (base :: factor))^.Proj
+                (λ (p' : finproduct LeanCat (base :: factor)), p))
+    }
     (λ p, HomsIn.get maps (fin_of 0) (finproduct.π LeanCat (base :: factor) (fin_of 0) p^.val))
     (HomsOut.comp (finproduct.cone LeanCat (base :: factor))^.Proj (λ p, p^.val))
     begin
@@ -320,30 +325,28 @@ Exponentials.
 
 /-! #brief LeanCat has exponential objects.
 -/
-instance LeanCat.HasExp₁ (T S₀ : LeanCat.{ℓ}^.obj) (S : list LeanCat.{ℓ}^.obj)
-    : @HasExp LeanCat T (S₀ :: S)
-:= { exp := λ LeanCat_HasAllFinProducts
-            , finproduct LeanCat (S₀ :: S) → T
+instance LeanCat.HasExp (X Y : LeanCat.{ℓ}^.obj)
+    : @HasExp LeanCat X Y
+:= { exp := Y → X
    , ev
-      := λ LeanCat_HasAllFinProducts p
-         , let factors := ((finproduct LeanCat (S₀ :: S) → T) :: S₀ :: S)
-           in @finproduct.π LeanCat factors (@HasAllFinProducts.HasFinProduct _ LeanCat_HasAllFinProducts factors) (@fin_of (nat.succ _) 0) p
-             (finproduct.iso _ (LeanCat.HasFinProduct factors) p)^.snd
+      := λ exp_Y_HasFinProduct p
+         , let f := @finproduct.π _ _ exp_Y_HasFinProduct (@fin_of 1 0)
+        in let y := @finproduct.π _ _ exp_Y_HasFinProduct (@fin_of 0 1)
+        in f p (y p)
    , univ
-      := λ LeanCat_HasAllFinProducts A f a s
-         , let a_s : finproduct LeanCat (A :: S₀ :: S)
-                  := (a, s)
-           in sorry -- f begin end
-   , factor := λ LeanCat_HasAllFinProducts A e
+      := λ Z Z_Y_HasFinProduct e z y
+         , e (finproduct.iso (LeanCat.HasFinProduct [Z, Y]) Z_Y_HasFinProduct (z, y))
+   , factor := λ exp_Y_HasFinProduct Z Z_Y_HasFinProduct e
                , begin
-                   apply funext, intro p,
+                   apply funext, intro zy,
+                   rw LeanCat.simp_circ,
                    dsimp,
-                   rw [LeanCat.simp_circ],
                    exact sorry
                  end
-   , uniq := λ LeanCat_HasAllFinProducts ev' ωev'
+   , uniq := λ exp_Y_HasFinProduct ev' ωev'
              , begin
-                 apply funext, intro p,
+                 apply funext, intro fy,
+                 dsimp,
                  exact sorry
                end
    }
@@ -354,54 +357,66 @@ instance LeanCat.HasExp₁ (T S₀ : LeanCat.{ℓ}^.obj) (S : list LeanCat.{ℓ}
 Exponentials in OverCat LeanCat.
 ----------------------------------------------------------------------- -/
 
--- /-! #brief LeanCat has exponential objects.
--- -/
--- definition LeanCat.Over.exp
---       (T₀ : LeanCat.{ℓ}^.obj)
---       (T S : (OverCat LeanCat T₀)^.obj)
---       : OverObj LeanCat.{ℓ} T₀
--- := { obj := Σ (t₀ : T₀)
---             , {s : S^.obj // S^.hom s = t₀}
---               → {t : T^.obj // T^.hom t = t₀}
---    , hom := λ t₀f, t₀f^.fst
---    }
+/-! #brief LeanCat has exponential objects.
+-/
+definition LeanCat.Over.exp
+      (T₀ : LeanCat.{ℓ}^.obj)
+      (T S : (OverCat LeanCat T₀)^.obj)
+      : OverObj LeanCat.{ℓ} T₀
+:= { obj := Σ (t₀ : T₀)
+            , {s : S^.dom // S^.hom s = t₀}
+              → {t : T^.obj // T^.hom t = t₀}
+   , hom := sigma.fst
+   }
 
--- /-! #brief LeanCat has exponential objects.
--- -/
--- instance LeanCat.Over.HasExp
---       (T₀ : LeanCat.{ℓ}^.obj)
---       (T S : (OverCat LeanCat T₀)^.obj)
---     : @HasExp (OverCat LeanCat T₀) T S
--- := { exp := LeanCat.Over.exp T₀ T S
---    , ev
---       := λ p_HasProd
---          , { hom := λ p, let f := (@finproduct.π (OverCat LeanCat T₀) [LeanCat.Over.exp T₀ T S, S] p_HasProd (@fin_of 1 0))^.hom p
---                       in let x := (@finproduct.π (OverCat LeanCat T₀) [LeanCat.Over.exp T₀ T S, S] p_HasProd (@fin_of 0 1))^.hom p
---                       in (f^.snd { val := x, property := sorry })^.val
---            , triangle := sorry
---            }
---    , univ
---       := λ A A_HasProd f
---          , { hom := λ a, ⟨ A^.hom a
---                          , λ s, { val := let foo := @finproduct.univ (OverCat LeanCat T₀) [A, S] A_HasProd A
---                                                       (OverHom.id LeanCat T₀ A
---                                                         ↗← { hom := LeanCat.const_hom s^.val
---                                                             , triangle := begin end
---                                                             }
---                                                         ↗←↗)
---                                          in f^.hom begin end -- (foo^.hom a)
---                                 , property := begin end
---                                 }
---                          ⟩
---            , triangle := begin end
---            }
---    , factor := λ A p_HasProd A_HasProd e
---                , begin
---                  end
---    , uniq := λ p_HasProd ev' ωev'
---              , begin
---                end
---    }
+/-! #brief LeanCat has exponential objects.
+-/
+instance LeanCat.Over.HasExp
+      (T₀ : LeanCat.{ℓ}^.obj)
+      (X Y : (OverCat LeanCat T₀)^.obj)
+    : @HasExp (OverCat LeanCat T₀) X Y
+:= { exp := LeanCat.Over.exp T₀ X Y
+   , ev
+      := λ p_HasProd
+         , { hom := λ p, let f := (@finproduct.π (OverCat LeanCat T₀) [LeanCat.Over.exp T₀ X Y, Y] p_HasProd (@fin_of 1 0))^.hom p
+                      in let y := (@finproduct.π (OverCat LeanCat T₀) [LeanCat.Over.exp T₀ X Y, Y] p_HasProd (@fin_of 0 1))^.hom p
+                      in (f^.snd { val := y, property := sorry })^.val
+           , triangle := sorry
+           }
+   , univ
+      := λ A A_HasProd f
+         , let a_y : ∀ (a : A^.obj)
+                       (y : {s // Y^.hom s = A^.hom a})
+                     , OverObj.dom (finproduct (OverCat LeanCat T₀) [A, Y])
+                   := λ a y
+                      , { val := (a, y^.val)
+                        , property
+                           := begin
+                                apply dlist.eq,
+                                { trivial, },
+                                apply dlist.eq,
+                                { apply funext, intro a_y, apply eq.symm y^.property },
+                                trivial
+                              end
+                        }
+        in let a_y' := λ a y, ((finproduct.iso (LeanCat.Over.HasFinProduct T₀ [A, Y]) A_HasProd)^.hom (a_y a y))
+        in { hom
+              := λ a
+                 , ⟨ A^.hom a
+                   , λ y, { val := f^.hom (a_y' a y)
+                          , property := begin
+                                          refine eq.trans (congr_fun (eq.symm f^.triangle) (a_y' a y)) _,
+                                          exact sorry
+                                        end
+                          }
+                   ⟩
+         , triangle := sorry
+         }
+   , factor := λ A p_HasProd A_HasProd e
+               , sorry
+   , uniq := λ p_HasProd ev' ωev'
+             , sorry
+   }
 
 
 

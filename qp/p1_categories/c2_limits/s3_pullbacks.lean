@@ -595,23 +595,23 @@ definition OverCat.HasFinProduct₀ (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
 /-! #brief Existence of products in an over-category.
 -/
 definition OverCat.HasFinProduct₁ (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
-    (factor₀ : (OverCat C c)^.obj) (factors : list (OverCat C c)^.obj)
-    [factors_HasPullback : HasPullback C (HomsIn.of_list_OverObj (factor₀ :: factors))]
-    : HasFinProduct (OverCat C c) (factor₀ :: factors)
+    (factors : list (OverCat C c)^.obj)
+    [factors_HasPullback : HasPullback C (HomsIn.of_list_OverObj factors)]
+    : HasFinProduct (OverCat C c) factors
 := let pb : OverObj C c
-         := { obj := pullback C (HomsIn.of_list_OverObj (factor₀ :: factors))
-            , hom := pullback.πbase C (HomsIn.of_list_OverObj (factor₀ :: factors))
+         := { obj := pullback C (HomsIn.of_list_OverObj factors)
+            , hom := pullback.πbase C (HomsIn.of_list_OverObj factors)
             }
-in HasProduct.show (OverCat C c) (list.get (factor₀ :: factors))
+in HasProduct.show (OverCat C c) (list.get factors)
     pb
     (λ n, { hom := cast_hom sorry
-                    ∘∘ pullback.π C (HomsIn.of_list_OverObj (factor₀ :: factors))
+                    ∘∘ pullback.π C (HomsIn.of_list_OverObj factors)
                         { val := n^.val, is_lt := cast sorry n^.is_lt }
           , triangle := sorry
           })
     (λ X homs
-     , { hom := pullback.univ C (HomsIn.of_list_OverObj (factor₀ :: factors))
-                 (PullbackCone.mk (HomsIn.of_list_OverObj (factor₀ :: factors)) X^.obj
+     , { hom := pullback.univ C (HomsIn.of_list_OverObj factors)
+                 (PullbackCone.mk (HomsIn.of_list_OverObj factors) X^.obj
                    X^.hom
                    (HomsOut.enum
                      (λ n, cast_hom sorry
@@ -630,7 +630,7 @@ instance OverCat.HasFinProduct (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
       , HasFinProduct (OverCat C c) factors
 | [] := OverCat.HasFinProduct₀ C c
 | (factor₀ :: factors)
-:= @OverCat.HasFinProduct₁ C c factor₀ factors
+:= @OverCat.HasFinProduct₁ C c (factor₀ :: factors)
      (HasAllPullbacks.HasPullback C _)
 
 
