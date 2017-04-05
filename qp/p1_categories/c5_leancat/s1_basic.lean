@@ -272,14 +272,9 @@ instance LeanCat.HasPullback
     : HasPullback LeanCat maps
 := HasPullback.show LeanCat.{ℓ} maps
     { p : finproduct LeanCat (base :: factor)
-      // @HomsList.repeat LeanCat _ _
-          (λ p', HomsIn.get maps (fin_of 0) (finproduct.π LeanCat (base :: factor) (fin_of 0) p))
-          (list.length (base :: factor))
-          = homs_in_comp_out
-             maps
-             (HomsOut.comp
-                (finproduct.cone LeanCat (base :: factor))^.Proj
-                (λ (p' : finproduct LeanCat (base :: factor)), p))
+      // ∀ (n : fin (list.length (base :: factor)))
+         , HomsIn.get maps (fin_of 0) (finproduct.π LeanCat (base :: factor) (fin_of 0) p)
+            = HomsIn.get maps n (finproduct.π LeanCat (base :: factor) n p)
     }
     (λ p, HomsIn.get maps (fin_of 0) (finproduct.π LeanCat (base :: factor) (fin_of 0) p^.val))
     (HomsOut.comp (finproduct.cone LeanCat (base :: factor))^.Proj (λ p, p^.val))
@@ -392,11 +387,10 @@ instance LeanCat.Over.HasExp
                       , { val := (a, y^.val)
                         , property
                            := begin
-                                apply dlist.eq,
-                                { trivial, },
-                                apply dlist.eq,
-                                { apply funext, intro a_y, apply eq.symm y^.property },
-                                trivial
+                                intro nωn, cases nωn with n ωn,
+                                cases n with n, { trivial },
+                                cases n with n, { apply eq.symm y^.property },
+                                apply nat.not_lt_add_right n 2 ωn
                               end
                         }
         in let a_y' := λ a y, ((finproduct.iso (LeanCat.Over.HasFinProduct T₀ [A, Y]) A_HasProd)^.hom (a_y a y))

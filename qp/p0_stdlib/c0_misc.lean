@@ -44,6 +44,27 @@ definition {ℓ} prod.diag {X : Type ℓ} (x : X)
     : prod X X
 := (x, x)
 
+/-! #brief Handy absurd lemma.
+-/
+theorem nat.not_lt_add_left
+    {P : Prop} (n : ℕ)
+    : ∀ (m : ℕ) (ω : n + m < n)
+      , P
+| 0 ω := absurd ω (nat.lt_irrefl n)
+| (nat.succ m) ω := nat.not_lt_add_left m
+                     (by calc n + m < n + nat.succ m : nat.self_lt_succ _
+                              ...   < n              : ω)
+
+/-! #brief Handy absurd lemma.
+-/
+theorem nat.not_lt_add_right
+    {P : Prop} (n : ℕ)
+    : ∀ (m : ℕ) (ω : n + m < m)
+      , P
+| 0 ω := by cases ω
+| (nat.succ m) ω := nat.not_lt_add_right m (nat.lt_of_succ_lt_succ ω)
+
+
 /-! #brief The axiom of choice, for unique existance.
 -/
 noncomputable definition {ℓ} unique_choice {A : Type ℓ} {P : A → Prop}
