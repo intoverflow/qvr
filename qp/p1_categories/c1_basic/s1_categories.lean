@@ -180,12 +180,31 @@ definition SortCat : Cat.{ℓ ℓ}
    , circ_id_right := λ X Y f, rfl
    }
 
+/-! #brief Composition in SortCat.
+-/
+theorem SortCat.simp_circ
+    {X Y Z : SortCat.{ℓ}^.obj}
+    {g : SortCat^.hom Y Z} {f : SortCat^.hom X Y}
+    {x : X}
+    : SortCat^.circ g f x = g (f x)
+:= rfl
+
 /-! #brief The category of Lean propositions.
 -/
 definition PropCat : Cat.{0 0}
 := SortCat.{0}
 
 example : PropCat^.obj := true
+
+/-! #brief Composition in PropCat.
+-/
+theorem PropCat.simp_circ
+    {X Y Z : PropCat^.obj}
+    {g : PropCat^.hom Y Z} {f : PropCat^.hom X Y}
+    {x : X}
+    : PropCat^.circ g f x = g (f x)
+:= rfl
+
 
 /-! #brief The category of Lean types at level ℓ.
 -/
@@ -196,6 +215,15 @@ example : LeanCat.{0}^.obj := ℕ
 example : LeanCat.{1}^.obj := ℕ → LeanCat.{0}^.obj
 example : LeanCat.{ℓ}^.obj := punit
 example : LeanCat.{ℓ}^.obj := list punit
+
+/-! #brief Composition in LeanCat.
+-/
+theorem LeanCat.simp_circ
+    {X Y Z : LeanCat.{ℓ}^.obj}
+    {g : LeanCat^.hom Y Z} {f : LeanCat^.hom X Y}
+    {x : X}
+    : LeanCat^.circ g f x = g (f x)
+:= rfl
 
 
 
@@ -835,6 +863,16 @@ theorem LeanCat.Monic.inj {X Y : LeanCat.{ℓ}^.obj}
              ... = f₂ x₁ : by rw ωf
              ... = x₂    : rfl
 
+/-! #brief In LeanCat, left-inverses witness monics.
+-/
+definition LeanCat.Monic.by_witness {X Y : Type ℓ}
+    {f : X → Y}
+    {g : Y → X}
+    (ωfg : ∀ {x : X}, g (f x) = x)
+    : @Monic LeanCat.{ℓ} X Y f
+:= Monic.show
+    (λ T f₁ f₂ ω
+     , sorry)
 
 /-! #brief An epimorphism.
 -/
@@ -886,6 +924,7 @@ instance Epic.circ {C : Cat.{ℓobj ℓhom}}
          repeat { rw -C^.circ_assoc },
          exact ω
        end)
+
 
 
 /- -----------------------------------------------------------------------
@@ -1181,7 +1220,7 @@ theorem IsFinal_dual_IsInit (C : Cat.{ℓobj ℓhom})
 Examples of initial and final objects in categories.
 ----------------------------------------------------------------------- -/
 
-/-! #brief Over-categories have initial objects.
+/-! #brief OverCat has an initial object when the global category does.
 -/
 instance OverCat.HasInit (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
     [C_HasInit : HasInit C]
@@ -1189,6 +1228,15 @@ instance OverCat.HasInit (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
 := HasInit.show { obj := init C, hom := init_hom X }
     (λ Y, { hom := init_hom Y^.obj, triangle := init_hom.uniq' C })
     (λ Y h, OverHom.eq (init_hom.uniq C))
+
+/-! #brief OverCat has a final object.
+-/
+instance OverCat.HasFinal (C : Cat.{ℓobj ℓhom}) (X : C^.obj)
+    : HasFinal (OverCat C X)
+:= HasFinal.show
+    { obj := X, hom := C^.id X }
+    (λ Z, { hom := Z^.hom, triangle := eq.symm C^.circ_id_left })
+    (λ Z h, OverHom.eq (eq.symm (eq.trans h^.triangle C^.circ_id_left )))
 
 /-! #brief UnitCat has an initial object.
 -/

@@ -9,7 +9,7 @@ namespace qp
 
 open stdaux
 
-universe variables ℓobj ℓhom
+universe variables ℓobjx ℓhomx ℓobj ℓhom
 
 
 
@@ -38,10 +38,10 @@ definition CoSpanCat (N : ℕ) : Cat.{0 1}
 /-! #brief A cospan diagram.
 -/
 definition PullbackDrgm (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
-    : Fun (CoSpanCat (list.length (base :: factor))) C
-:= { obj := λ a, option.cases_on a t (list.get (base :: factor))
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
+    : Fun (CoSpanCat (list.length factor)) C
+:= { obj := λ a, option.cases_on a t (list.get factor)
    , hom := λ a₁ a₂ f, begin cases f, { apply C^.id }, { exact HomsIn.get maps n } end
    , hom_id := λ a, rfl
    , hom_circ := λ a₁ a₂ a₃ g f
@@ -55,20 +55,20 @@ definition PullbackDrgm (C : Cat.{ℓobj ℓhom})
 /-! #brief A cone over a pullback.
 -/
 definition PullbackCone (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     : Type (max ℓobj ℓhom)
 := Cone (PullbackDrgm C maps)
 
 /-! #brief Helper for making a pullback cone.
 -/
 definition PullbackCone.mk {C : Cat.{ℓobj ℓhom}}
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     (c : C^.obj)
     (to_t : C^.hom c t)
-    (proj : HomsOut c (base :: factor))
-    (ωproj : HomsList.repeat to_t (list.length (base :: factor))
+    (proj : HomsOut c factor)
+    (ωproj : HomsList.repeat to_t (list.length factor)
               = homs_in_comp_out maps proj)
     : PullbackCone C maps
 := { obj := c
@@ -88,22 +88,22 @@ definition PullbackCone.mk {C : Cat.{ℓobj ℓhom}}
 /-! #brief The projections out of a pullback cone.
 -/
 definition PullbackCone.Proj {C : Cat.{ℓobj ℓhom}}
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    {maps : HomsIn (base :: factor) t}
+    {factor : list C^.obj} {t : C^.obj}
+    {maps : HomsIn factor t}
     (cone : PullbackCone C maps)
-    : HomsOut cone^.obj (base :: factor)
+    : HomsOut cone^.obj factor
 := sorry -- HomsOut.enum (Cone.hom cone)
 
 /-! #brief A pullback in a category.
 -/
 @[class] definition HasPullback (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
 := HasLimit (PullbackDrgm C maps)
 
 instance HasPullback.HasLimit {C : Cat.{ℓobj ℓhom}}
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     [maps_HasPullback : HasPullback C maps]
     : HasLimit (PullbackDrgm C maps)
 := maps_HasPullback
@@ -139,36 +139,33 @@ instance HasPullbacksAlong.HasPullback (C : Cat.{ℓobj ℓhom})
 /-! #brief Helper for showing a category has a pullback.
 -/
 definition HasPullback.show (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     (p : C^.obj)
     (to_t : C^.hom p t)
-    (proj : HomsOut p (base :: factor))
-    (ωproj : HomsList.repeat to_t (list.length (base :: factor))
+    (proj : HomsOut p factor)
+    (ωproj : HomsList.repeat to_t (list.length factor)
               = homs_in_comp_out maps proj)
-    (univ : ∀ (c : C^.obj) (hom : HomsOut c (base :: factor))
+    (univ : ∀ {c : C^.obj} (to_t' : C^.hom c t) (hom : HomsOut c factor)
               (ωhom : HomsList.repeat
-                       (C^.circ (HomsIn.get maps (fin_of 0))
-                                (HomsOut.get hom (fin_of 0)))
-                       (list.length (base :: factor))
+                       to_t'
+                       (list.length factor)
                        = homs_in_comp_out maps hom)
             , C^.hom c p)
-    (ωuniv : ∀ (c : C^.obj) (hom : HomsOut c (base :: factor))
+    (ωuniv : ∀ {c : C^.obj} (to_t' : C^.hom c t) (hom : HomsOut c factor)
               (ωhom : HomsList.repeat
-                       (C^.circ (HomsIn.get maps (fin_of 0))
-                                (HomsOut.get hom (fin_of 0)))
-                       (list.length (base :: factor))
+                       to_t'
+                       (list.length factor)
                        = homs_in_comp_out maps hom)
-             , hom = HomsOut.comp proj (univ c hom ωhom))
-    (ωuniq : ∀ (c : C^.obj) (hom : HomsOut c (base :: factor))
+             , hom = HomsOut.comp proj (univ to_t' hom ωhom))
+    (ωuniq : ∀ {c : C^.obj} (to_t' : C^.hom c t) (hom : HomsOut c factor)
               (ωhom : HomsList.repeat
-                       (C^.circ (HomsIn.get maps (fin_of 0))
-                                (HomsOut.get hom (fin_of 0)))
-                       (list.length (base :: factor))
+                       to_t'
+                       (list.length factor)
                        = homs_in_comp_out maps hom)
                (h : C^.hom c p)
                (ωcomm : hom = HomsOut.comp proj h)
-             , h = univ c hom ωhom)
+             , h = univ to_t' hom ωhom)
     : HasPullback C maps
 := HasLimit.show p (λ x, option.cases_on x to_t ((HomsOut.get proj)))
     (λ x₁ x₂ f, begin
@@ -181,7 +178,7 @@ definition HasPullback.show (C : Cat.{ℓobj ℓhom})
                    rw ωproj
                  }
                end)
-    (λ c hom ωcomm, univ c (HomsOut.enum (λ n, hom (some n)))
+    (λ c hom ωcomm, univ (hom none) (HomsOut.enum (λ n, hom (some n)))
      begin
        exact sorry
      end)
@@ -191,8 +188,8 @@ definition HasPullback.show (C : Cat.{ℓobj ℓhom})
 /-! #brief Pullbacks are cones.
 -/
 definition pullback.cone (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     [maps_HasPullback : HasPullback C maps]
     : PullbackCone C maps
 := limit.cone (PullbackDrgm C maps)
@@ -200,8 +197,8 @@ definition pullback.cone (C : Cat.{ℓobj ℓhom})
 /-! #brief The pullback of a collection of homs.
 -/
 definition pullback (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     [maps_HasPullback : HasPullback C maps]
     : C^.obj
 := limit (PullbackDrgm C maps)
@@ -209,18 +206,18 @@ definition pullback (C : Cat.{ℓobj ℓhom})
 /-! #brief Projection out of a pullback.
 -/
 definition pullback.π (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     [maps_HasPullback : HasPullback C maps]
-    (n : fin (list.length (base :: factor)))
-    : C^.hom (pullback C maps) (list.get (base :: factor) n)
+    (n : fin (list.length factor))
+    : C^.hom (pullback C maps) (list.get factor n)
 := limit.out (PullbackDrgm C maps) (some n)
 
 /-! #brief Projection out of a pullback to the base.
 -/
 definition pullback.πbase (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     [maps_HasPullback : HasPullback C maps]
     : C^.hom (pullback C maps) t
 := limit.out (PullbackDrgm C maps) none
@@ -228,8 +225,8 @@ definition pullback.πbase (C : Cat.{ℓobj ℓhom})
 /-! #brief Every cone is mediated through the pullback.
 -/
 definition pullback.univ (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     [maps_HasPullback : HasPullback C maps]
     (c : PullbackCone C maps)
     : C^.hom c^.obj (pullback C maps)
@@ -238,53 +235,53 @@ definition pullback.univ (C : Cat.{ℓobj ℓhom})
 /-! #brief Every cone is mediated through the pullback.
 -/
 definition pullback.univ.mediates (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     {maps_HasPullback : HasPullback C maps}
     (c : PullbackCone C maps)
-    (n : fin (list.length (base :: factor)))
-    : c^.hom (some n) = C^.circ (@pullback.π C base factor t maps maps_HasPullback n) (pullback.univ C maps c)
+    (n : fin (list.length factor))
+    : c^.hom (some n) = C^.circ (@pullback.π C factor t maps maps_HasPullback n) (pullback.univ C maps c)
 := limit.univ.mediates c (some n)
 
 /-! #brief Every cone is mediated through the pullback.
 -/
 definition pullback.univ.mediates_base (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     {maps_HasPullback : HasPullback C maps}
     (c : PullbackCone C maps)
-    : c^.hom none = C^.circ (@pullback.πbase C base factor t maps maps_HasPullback) (pullback.univ C maps c)
+    : c^.hom none = C^.circ (@pullback.πbase C factor t maps maps_HasPullback) (pullback.univ C maps c)
 := limit.univ.mediates c none
 
 /-! #brief The mediating map from the cone to the pullback is unique.
 -/
 definition pullback.univ.uniq (C : Cat.{ℓobj ℓhom})
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    (maps : HomsIn (base :: factor) t)
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
     {maps_HasPullback : HasPullback C maps}
     (c : PullbackCone C maps)
     (m : C^.hom c^.obj (pullback C maps))
-    (ω : ∀ (n : fin (list.length (base :: factor)))
-         , c^.hom (some n) = (@pullback.π C base factor t maps maps_HasPullback n) ∘∘ m)
-    (ωbase : c^.hom none = (@pullback.πbase C base factor t maps maps_HasPullback) ∘∘ m)
+    (ω : ∀ (n : fin (list.length factor))
+         , c^.hom (some n) = (@pullback.π C factor t maps maps_HasPullback n) ∘∘ m)
+    (ωbase : c^.hom none = (@pullback.πbase C factor t maps maps_HasPullback) ∘∘ m)
     : m = pullback.univ C maps c
 := limit.univ.uniq c m (λ x, option.cases_on x ωbase ω)
 
 /-! #brief The unique iso between two pullbacks of the same homs.
 -/
 definition pullback.iso {C : Cat.{ℓobj ℓhom}}
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    {maps : HomsIn (base :: factor) t}
+    {factor : list C^.obj} {t : C^.obj}
+    {maps : HomsIn factor t}
     (maps_HasPullback₁ maps_HasPullback₂ : HasPullback C maps)
-    : C^.hom (@pullback C base factor t maps maps_HasPullback₁)
-             (@pullback C base factor t maps maps_HasPullback₂)
+    : C^.hom (@pullback C factor t maps maps_HasPullback₁)
+             (@pullback C factor t maps maps_HasPullback₂)
 := limit.iso maps_HasPullback₁ maps_HasPullback₂
 
 /-! #brief Pullbacks are unique up-to unique isomorphism.
 -/
 definition pullback.uniq {C : Cat.{ℓobj ℓhom}}
-    {base : C^.obj} {factor : list C^.obj} {t : C^.obj}
-    {maps : HomsIn (base :: factor) t}
+    {factor : list C^.obj} {t : C^.obj}
+    {maps : HomsIn factor t}
     (maps_HasPullback₁ maps_HasPullback₂ : HasPullback C maps)
     : Iso (pullback.iso maps_HasPullback₁ maps_HasPullback₂)
           (pullback.iso maps_HasPullback₂ maps_HasPullback₁)
@@ -297,9 +294,9 @@ class IsPullback {C : Cat.{ℓobj ℓhom}}
     (base : C^.hom x t) (p₁ : C^.hom p x)
     (map : C^.hom y t)  (p₂ : C^.hom p y)
 := (has_pullback : HasPullback C (base ↗→ map ↗→↗))
-   (ωpullback : @pullback C x [y] t _ has_pullback = p)
-   (ωπ₁ : @pullback.π C x [y] t _ has_pullback (@fin_of 1 0) = p₁ ∘∘ cast_hom ωpullback)
-   (ωπ₂ : @pullback.π C x [y] t _ has_pullback (@fin_of 0 1) = p₂ ∘∘ cast_hom ωpullback)
+   (ωpullback : @pullback C [x, y] t _ has_pullback = p)
+   (ωπ₁ : @pullback.π C [x, y] t _ has_pullback (@fin_of 1 0) = p₁ ∘∘ cast_hom ωpullback)
+   (ωπ₂ : @pullback.π C [x, y] t _ has_pullback (@fin_of 0 1) = p₂ ∘∘ cast_hom ωpullback)
 
 /-! #brief Pullback squares have the usual commutative diagram.
 -/
@@ -323,7 +320,7 @@ definition ispullback.univ {C : Cat.{ℓobj ℓhom}}
     : C^.hom c p
 := C^.circ
     (cast_hom (IsPullback.ωpullback base p₁ map p₂))
-    (@pullback.univ _ _ _ _ _ (IsPullback.has_pullback base p₁ map p₂)
+    (@pullback.univ _ _ _ _ (IsPullback.has_pullback base p₁ map p₂)
       (PullbackCone.mk _ c (C^.circ base h₁) (h₁ ↗← h₂ ↗←↗)
         begin
           apply dlist.eq,
@@ -372,15 +369,19 @@ definition IsPullback.show {C : Cat.{ℓobj ℓhom}}
             { exact ωsquare },
             trivial
           end
-          (λ c homs ωhoms
+          (λ c to_t homs ωhoms
            , begin
                cases homs with _ h₁ _ homs,
                cases homs with _ h₂ _ _,
                cases bb,
                apply univ h₁ h₂,
-               apply HomsList.congr_get ωhoms (@fin_of 0 1)
+               refine @eq.trans _  _ to_t _  _ _,
+               { apply eq.symm,
+                 apply HomsList.congr_get ωhoms (@fin_of 1 0)
+               },
+               { apply HomsList.congr_get ωhoms (@fin_of 0 1) }
              end)
-          (λ c homs ωhoms
+          (λ c to_t homs ωhoms
            , begin
                cases homs with _ h₁ _ homs,
                cases homs with _ h₂ _ _,
@@ -391,7 +392,7 @@ definition IsPullback.show {C : Cat.{ℓobj ℓhom}}
                { apply ωuniv₂ },
                trivial
              end)
-          (λ c homs ωhoms h ωh
+          (λ c to_t homs ωhoms h ωh
            , begin
                cases homs with _ h₁ _ homs,
                cases homs with _ h₂ _ _,
@@ -573,6 +574,64 @@ definition BaseChange_DepProd.Adj {C : Cat.{ℓobj ℓhom}}
     [f_HasPullbacksAlong : HasPullbacksAlong C f]
     : Adj (BaseChangeFun f) (DepProdFun f)
 := HasDepProdFun.adj f
+
+
+
+/- -----------------------------------------------------------------------
+Products in OverCat.
+----------------------------------------------------------------------- -/
+
+/-! #brief Existence of products in an over-category.
+-/
+definition OverCat.HasFinProduct₀ (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
+    : HasFinProduct (OverCat C c) []
+:= @HasFinProduct.show (OverCat C c) []
+    (@final (OverCat C c) (OverCat.HasFinal C c))
+    HomsOut.nil
+    (λ X homs, @final_hom (OverCat C c) (OverCat.HasFinal C c) X)
+    (λ X homs, begin cases homs, trivial end)
+    (λ X homs h ωh, @final_hom.uniq (OverCat C c) (OverCat.HasFinal C c) X h)
+
+/-! #brief Existence of products in an over-category.
+-/
+definition OverCat.HasFinProduct₁ (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
+    (factor₀ : (OverCat C c)^.obj) (factors : list (OverCat C c)^.obj)
+    [factors_HasPullback : HasPullback C (HomsIn.of_list_OverObj (factor₀ :: factors))]
+    : HasFinProduct (OverCat C c) (factor₀ :: factors)
+:= let pb : OverObj C c
+         := { obj := pullback C (HomsIn.of_list_OverObj (factor₀ :: factors))
+            , hom := pullback.πbase C (HomsIn.of_list_OverObj (factor₀ :: factors))
+            }
+in HasProduct.show (OverCat C c) (list.get (factor₀ :: factors))
+    pb
+    (λ n, { hom := cast_hom sorry
+                    ∘∘ pullback.π C (HomsIn.of_list_OverObj (factor₀ :: factors))
+                        { val := n^.val, is_lt := cast sorry n^.is_lt }
+          , triangle := sorry
+          })
+    (λ X homs
+     , { hom := pullback.univ C (HomsIn.of_list_OverObj (factor₀ :: factors))
+                 (PullbackCone.mk (HomsIn.of_list_OverObj (factor₀ :: factors)) X^.obj
+                   X^.hom
+                   (HomsOut.enum
+                     (λ n, cast_hom sorry
+                            ∘∘ (homs { val := n^.val, is_lt := cast sorry n^.is_lt})^.hom))
+                   sorry)
+       , triangle := sorry
+       })
+    (λ X hom n, sorry)
+    (λ X hom h ωh, sorry)
+
+/-! #brief Existence of products in an over-category.
+-/
+instance OverCat.HasFinProduct (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    : ∀ (factors : list (OverCat C c)^.obj)
+      , HasFinProduct (OverCat C c) factors
+| [] := OverCat.HasFinProduct₀ C c
+| (factor₀ :: factors)
+:= @OverCat.HasFinProduct₁ C c factor₀ factors
+     (HasAllPullbacks.HasPullback C _)
 
 
 

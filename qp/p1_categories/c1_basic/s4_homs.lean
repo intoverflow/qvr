@@ -53,6 +53,24 @@ example {C : Cat.{ℓobj ℓhom}}
         : HomsList C [(a₁, a₂), (b₁, b₂), (c₁, c₂)]
 := fa ↗ fb ↗ fc ↗↗
 
+/-! #brief Helper for equality of HomsList.cons.
+-/
+theorem HomsList.eq {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj} {f₁ f₂ : C^.hom x y}
+    {ccs : list (prod C^.obj C^.obj)} {tail₁ tail₂ : HomsList C ccs}
+    (ωf : f₁ = f₂)
+    (ωtail : tail₁ = tail₂)
+    : HomsList.cons f₁ tail₁ = HomsList.cons f₂ tail₂
+:= dlist.eq ωf ωtail
+
+/-! #brief Listing the identity homs.
+-/
+definition HomsList.id {C : Cat.{ℓobj ℓhom}}
+    : ∀ (factor : list C^.obj)
+      , HomsList C (list.map prod.diag factor)
+| [] := HomsList.nil
+| (factor :: factors) := HomsList.cons (C^.id factor) (HomsList.id factors)
+
 /-! #brief Fetching a hom out of HomsList.
 -/
 definition HomsList.get {C : Cat.{ℓobj ℓhom}}
@@ -367,6 +385,14 @@ definition HomsIn.cons {C : Cat.{ℓobj ℓhom}}
 
 infixr `↗→` : 50 := HomsIn.cons
 notation f `↗→↗` := HomsIn.cons f HomsIn.nil
+
+/-! #brief Converting a list of OverObj's into a HomsIn.
+-/
+definition HomsIn.of_list_OverObj {C : Cat.{ℓobj ℓhom}} {X : C^.obj}
+    : ∀ (factors : list (OverObj C X))
+      , HomsIn (list.map OverObj.dom factors) X
+| [] := HomsIn.nil
+| (O :: OO) := HomsIn.cons O^.hom (HomsIn.of_list_OverObj OO)
 
 /-! #brief Composition with inward homs.
 -/

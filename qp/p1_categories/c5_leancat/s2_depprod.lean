@@ -6,11 +6,13 @@ import ..c1_basic
 import ..c2_limits
 import ..c3_wtypes
 
+import .s1_basic
+
 namespace qp
 
 open stdaux
 
-universe variables ℓ
+universe variables ℓ ℓobjx ℓhomx
 
 
 /- -----------------------------------------------------------------------
@@ -27,6 +29,69 @@ definition LeanCat.DepProdFun.obj {B A : LeanCat.{ℓ}^.obj}
             , ∀ (b : {b : B // disp b = a})
               , { x : S^.obj // S^.hom x = b^.val}
    , hom := sigma.fst
+   }
+
+/-! #brief Function induced toward the dependent product of a monic.
+-/
+definition LeanCat.DepProdFun.obj.monic_to {B A : LeanCat.{ℓ}^.obj}
+    (disp : LeanCat.{ℓ}^.hom B A)
+    [disp_Monic : @Monic LeanCat.{ℓ} B A disp]
+    (S : OverObj LeanCat.{ℓ} B)
+    (s : S^.obj)
+    : (LeanCat.DepProdFun.obj disp S)^.obj
+:= { fst := disp (S^.hom s)
+   , snd := λ b
+            , { val := s
+              , property := eq.symm (LeanCat.Monic.inj disp_Monic b^.property)
+              }
+   }
+
+/-! #brief Function induced from the dependent product of a (strong) epic.
+-/
+definition LeanCat.DepProdFun.obj.epic_from.upon {B A : LeanCat.{ℓ}^.obj}
+    (disp : LeanCat.{ℓ}^.hom B A)
+    (undisp : LeanCat.{ℓ}^.hom A B)
+    {ωdisp_undisp : LeanCat.{ℓ}^.circ disp undisp = LeanCat.{ℓ}^.id A}
+    (S : OverObj LeanCat.{ℓ} B)
+    (af : (LeanCat.DepProdFun.obj disp S)^.obj)
+    : {b // disp b = af^.fst}
+:= { val := undisp af^.fst
+   , property := congr_fun ωdisp_undisp af^.fst
+   }
+
+/-! #brief Function induced from the dependent product of a (strong) epic.
+-/
+definition LeanCat.DepProdFun.obj.epic_from {B A : LeanCat.{ℓ}^.obj}
+    (disp : LeanCat.{ℓ}^.hom B A)
+    (undisp : LeanCat.{ℓ}^.hom A B)
+    (ωdisp_undisp : LeanCat.{ℓ}^.circ disp undisp = LeanCat.{ℓ}^.id A)
+    (S : OverObj LeanCat.{ℓ} B)
+    (af : (LeanCat.DepProdFun.obj disp S)^.obj)
+    : S^.obj
+:= (af^.snd (@LeanCat.DepProdFun.obj.epic_from.upon B A disp undisp ωdisp_undisp S af))^.val
+
+/-! #brief The dependent product functor is trivial on isos.
+-/
+definition LeanCat.DepProdFun.obj.Iso {B A : LeanCat.{ℓ}^.obj}
+    (disp : LeanCat.{ℓ}^.hom B A)
+    [disp_Monic : @Monic LeanCat.{ℓ} B A disp]
+    (undisp : LeanCat.{ℓ}^.hom A B)
+    (ωdisp_undisp : LeanCat.{ℓ}^.circ disp undisp = LeanCat.{ℓ}^.id A)
+    (S : OverObj LeanCat.{ℓ} B)
+    : @Iso LeanCat.{ℓ} _ _
+        (LeanCat.DepProdFun.obj.monic_to disp S)
+        (LeanCat.DepProdFun.obj.epic_from disp undisp ωdisp_undisp S)
+:= { id₁ := rfl
+   , id₂ := begin
+              apply funext,
+              intro a,
+              cases a with a f,
+              unfold LeanCat SortCat,
+              dsimp,
+              unfold LeanCat.DepProdFun.obj.monic_to,
+              unfold LeanCat.DepProdFun.obj.epic_from,
+              exact sorry
+            end
    }
 
 /-! #brief The dependent product functor on functions.
@@ -125,11 +190,12 @@ definition LeanCat.BaseChange_DepProd.Adj.counit_com
     : OverHom LeanCat.{ℓ} x
         (BaseChangeFun.obj f (LeanCat.DepProdFun.obj f X))
         X
-:= { hom := let pb₀ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 1 0)
-         in let pb₁ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 0 1)
-            in λ Z, ((pb₁ Z)^.snd { val := pb₀ Z, property := sorry })^.val
-   , triangle := sorry
-   }
+:= sorry
+-- := { hom := let pb₀ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 1 0)
+--          in let pb₁ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 0 1)
+--             in λ Z, ((pb₁ Z)^.snd { val := pb₀ Z, property := sorry })^.val
+--    , triangle := sorry
+--    }
 
 /-! #brief Counit of the BaseChangeFun/LeanCat.DepProdFun adjunction.
 -/
@@ -153,18 +219,19 @@ definition LeanCat.BaseChange_DepProd.Adj.unit_com.cone
     (Yy : OverObj.dom Y)
     (Xx : {b // f b = Y^.hom Yy})
     : PullbackCone LeanCat.{ℓ} (f ↗→ Y^.hom ↗→↗)
-:= @PullbackCone.mk LeanCat.{ℓ} _ _ _
-    (f ↗→ Y^.hom ↗→↗) {b // f b = Y^.hom Yy}
-    (λ Xx, f Xx^.val) (subtype.val ↗← (λ Xx, Yy) ↗←↗)
-    begin
-      apply dlist.eq,
-      { trivial },
-      apply dlist.eq,
-      { apply funext, intro Xx, cases Xx with Xx ωXx,
-        exact sorry
-      }
-      , trivial
-    end
+:= sorry
+-- := @PullbackCone.mk LeanCat.{ℓ} _ _ _
+--     (f ↗→ Y^.hom ↗→↗) {b // f b = Y^.hom Yy}
+--     (λ Xx, f Xx^.val) (subtype.val ↗← (λ Xx, Yy) ↗←↗)
+--     begin
+--       apply dlist.eq,
+--       { trivial },
+--       apply dlist.eq,
+--       { apply funext, intro Xx, cases Xx with Xx ωXx,
+--         exact sorry
+--       }
+--       , trivial
+--     end
 
 /-! #brief Component of the unit of the BaseChangeFun/LeanCat.DepProdFun adjunction.
 -/
@@ -176,16 +243,17 @@ definition LeanCat.BaseChange_DepProd.Adj.unit_com
     : OverHom LeanCat.{ℓ} y
         Y
         (LeanCat.DepProdFun.obj f (BaseChangeFun.obj f Y))
-:= { hom := λ Yy, { fst := Y^.hom Yy
-                  , snd := λ Xx
-                           , { val := pullback.univ LeanCat.{ℓ}
-                                       (f ↗→ Y^.hom ↗→↗)
-                                       (LeanCat.BaseChange_DepProd.Adj.unit_com.cone f Y Yy Xx) Xx
-                             , property := sorry
-                             }
-                  }
-   , triangle := sorry
-   }
+:= sorry
+-- := { hom := λ Yy, { fst := Y^.hom Yy
+--                   , snd := λ Xx
+--                            , { val := pullback.univ LeanCat.{ℓ}
+--                                        (f ↗→ Y^.hom ↗→↗)
+--                                        (LeanCat.BaseChange_DepProd.Adj.unit_com.cone f Y Yy Xx) Xx
+--                              , property := sorry
+--                              }
+--                   }
+--    , triangle := sorry
+--    }
 
 /-! #brief Unit of the BaseChangeFun/LeanCat.DepProdFun adjunction.
 -/
@@ -249,5 +317,94 @@ instance LeanCat.HasDepProdFun
 := { depprod := @LeanCat.DepProdFun
    , adj := @LeanCat.BaseChange_DepProd.Adj
    }
+
+
+
+-- /- -----------------------------------------------------------------------
+-- Preservation of colimits by LeanCat.DepProdFun.
+-- ----------------------------------------------------------------------- -/
+
+-- definition LeanCat.DepProdFun.PresCoLimit.ImportantFun
+--     {B A : LeanCat.{max ℓ ℓobjx}^.obj}
+--     (disp : LeanCat.{max ℓ ℓobjx}^.hom B A)
+--     [LeanCat_HasAllFinProducts : HasAllFinProducts LeanCat.{max ℓ ℓobjx}]
+-- := @BaseChangeFun LeanCat _ _ (@final_hom _ LeanCat.HasFinal B) (@HasAllFinProducts.final_hom.HasPullbacksAlong _ LeanCat.HasFinal LeanCat_HasAllFinProducts B)
+--      □□ @OverFinal.to _ LeanCat.HasFinal
+--      □□ @AdamekFun _ LeanCat.HasInit (@PolyEndoFun _ LeanCat.HasFinal LeanCat_HasAllFinProducts LeanCat.HasDepProdFun B A disp)
+
+-- /-! #brief LeanCat.DepProdFun preserves a certain colimit.
+-- -/
+-- definition LeanCat.DepProdFun.PresCoLimit.important
+--     {B A : LeanCat.{max ℓ ℓobjx}^.obj}
+--     (disp : LeanCat.{max ℓ ℓobjx}^.hom B A)
+--     [disp_Monic : @Monic LeanCat B A disp]
+--     [LeanCat_HasAllFinProducts : HasAllFinProducts LeanCat.{max ℓ ℓobjx}]
+--     --[fancy_colimit : HasCoLimit (LeanCat.DepProdFun.PresCoLimit.ImportantFun disp)]
+--     : PresCoLimit
+--         (LeanCat.DepProdFun.PresCoLimit.ImportantFun disp)
+--         (LeanCat.DepProdFun disp)
+-- := PresCoLimit.show
+--     (λ L_HasCoLimit C hom ωhom
+--      , { hom :=
+-- let foo : LeanCat.{max ℓ ℓobjx}^.hom
+--            (colimit (LeanCat.DepProdFun.PresCoLimit.ImportantFun disp))^.obj C^.obj
+--        := sorry -- use homs and disp monic to build a cocone.
+--                 -- note that you'll need to mediate via the iso
+--                 -- implied by L_HasCoLimit vs LeanCat.HasAllCoLimits.
+-- in begin
+--   intro af,
+--   apply foo,
+--   apply quot.mk _,
+--   dsimp [LeanCat.DepProdFun.PresCoLimit.ImportantFun, OverFun.out],
+--   dsimp [AdamekFun, AdamekFun.obj, Fun.iter_comp],
+--   dsimp [BaseChangeFun],
+--   dsimp [OverFinal.to],
+--   dsimp [Fun.comp],
+--   dsimp,
+--   cases af with a f,
+--   exact sorry
+-- end
+--        , triangle := sorry
+--        })
+--     sorry
+--     sorry
+
+
+-- definition LeanCat.DepProdFun.PresCoLimit.disp
+--     {A : Type (max ℓ ℓobjx)}
+--     (B : A → Type (max ℓ ℓobjx))
+--     : LeanCat.{max ℓ ℓobjx}^.hom (Σ a : A, B a) A
+-- := λ ab, ab^.fst
+
+-- /-! #brief LeanCat.DepProdFun preserves colimits.
+-- -/
+-- definition LeanCat.DepProdFun.PresCoLimit (X : Cat.{ℓobjx ℓhomx})
+--     {A : Type (max ℓ ℓobjx)}
+--     (B : A → Type (max ℓ ℓobjx))
+--     (free : ∀ (a : A), B a)
+--     (L : Fun X (OverCat LeanCat.{max ℓ ℓobjx} (Σ a : A, B a)))
+--     : PresCoLimit L (LeanCat.DepProdFun (LeanCat.DepProdFun.PresCoLimit.disp B))
+-- := PresCoLimit.show
+--     (λ L_HasCoLimit C hom ωhom
+--      , { hom := λ af,
+-- let foo : LeanCat.{max ℓ ℓobjx}^.hom
+--            (@colimit _ _ L L_HasCoLimit)^.obj C^.obj
+--        := sorry
+-- in begin
+-- apply foo,
+-- refine (af^.snd _)^.val,
+-- refine { val := { fst := af^.fst, snd := begin end }, property := rfl },
+-- end
+--     --  , { hom := λ Z, (hom nat.zero)^.hom
+--     --                    { fst := Z^.fst
+--     --                    , snd := λ b, { val := let foo := (Z^.snd b)^.val
+--     --                                           in begin end
+--     --                                  , property := begin end
+--     --                                  }
+--     --                    }
+--        , triangle := begin end
+--        })
+--     begin end
+--     begin end
 
 end qp

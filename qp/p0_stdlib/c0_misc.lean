@@ -22,6 +22,27 @@ theorem {ℓ₁ ℓ₂} hfunext
      exact ω a
    end
 
+/-! #brief The punit type is uniquely inhabited.
+-/
+theorem {ℓ} punit.uniq
+    : ∀ (u₁ u₂ : punit.{ℓ})
+      , u₁ = u₂
+| punit.star punit.star := rfl
+
+/-! #brief Equality helper for products.
+-/
+theorem {ℓ₁ ℓ₂} prod.eq {A : Type ℓ₁} {B : Type ℓ₂}
+    : ∀ {ab₁ ab₂ : prod A B}
+      , ab₁^.fst = ab₂^.fst
+      → ab₁^.snd = ab₂^.snd
+      → ab₁ = ab₂
+| (prod.mk a b) (prod.mk .(a) .(b)) (eq.refl .(a)) (eq.refl .(b)) := rfl
+
+/-! #brief The diagonal map.
+-/
+definition {ℓ} prod.diag {X : Type ℓ} (x : X)
+    : prod X X
+:= (x, x)
 
 /-! #brief The axiom of choice, for unique existance.
 -/

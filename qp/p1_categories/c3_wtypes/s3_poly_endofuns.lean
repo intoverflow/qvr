@@ -3,7 +3,7 @@ Polynomial endofunctors.
 ----------------------------------------------------------------------- -/
 
 import ..c2_limits
-import .s1_algebras
+import .s2_algebras
 
 namespace qp
 

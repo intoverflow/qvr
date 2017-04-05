@@ -1064,6 +1064,16 @@ instance PresInit.HasInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ �
 Functors and over and under categories.
 ----------------------------------------------------------------------- -/
 
+/-! #brief Functor from OverCat.
+-/
+definition OverFun.out (C : Cat.{ℓobj₁ ℓhom₁}) (c : C^.obj)
+    : Fun (OverCat C c) C
+:= { obj := λ x, x^.obj
+   , hom := λ x y f, f^.hom
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f, rfl
+   }
+
 /-! #brief Functors induce functors of over categories.
 -/
 definition OverFun {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
