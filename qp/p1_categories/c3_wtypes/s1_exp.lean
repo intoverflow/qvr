@@ -284,7 +284,9 @@ definition HasAllExp.BaseChange_DepProd.Adj.counit {C : Cat.{ℓobj ℓhom}}
     : NatTrans (BaseChangeFun f □□ HasAllExp.DepProdFun C f)
                (Fun.id (OverCat C B))
 := { com := HasAllExp.BaseChange_DepProd.Adj.counit.com f
-   , natural := sorry
+   , natural
+      := λ X Y h
+         , sorry
    }
 
 
@@ -298,7 +300,13 @@ definition HasAllExp.BaseChange_DepProd.Adj.unit.com {C : Cat.{ℓobj ℓhom}}
     : OverHom C A
         Q
         ((HasAllExp.DepProdFun C f □□ BaseChangeFun f)^.obj Q)
-:= { hom := sorry
+:= { hom :=
+(expon.univ (OverCat C A)
+begin
+  dsimp [Fun.comp, DepSumFun, BaseChangeFun, HasAllExp.DepProdFun, ExpFun, BaseChangeFun.obj, OverObj.dom],
+  exact sorry
+end
+)^.hom
    , triangle := sorry
    }
 
@@ -311,7 +319,9 @@ definition HasAllExp.BaseChange_DepProd.Adj.unit {C : Cat.{ℓobj ℓhom}}
     : NatTrans (Fun.id (OverCat C A))
                (HasAllExp.DepProdFun C f □□ BaseChangeFun f)
 := { com := HasAllExp.BaseChange_DepProd.Adj.unit.com f
-   , natural := sorry
+   , natural
+      := λ X Y h
+         , sorry
    }
 
 
