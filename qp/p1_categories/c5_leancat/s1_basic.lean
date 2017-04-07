@@ -338,10 +338,11 @@ instance LeanCat.HasExp (X Y : LeanCat.{ℓ}^.obj)
                    dsimp,
                    exact sorry
                  end
-   , uniq := λ exp_Y_HasFinProduct ev' ωev'
+   , uniq := λ exp_Y_HasFinProduct Z Z_Y_HasFinProduct e u ωu
              , begin
-                 apply funext, intro fy,
-                 dsimp,
+                 apply funext, intro z,
+                 apply funext, intro y,
+                 rw ωu,
                  exact sorry
                end
    }
@@ -408,7 +409,7 @@ instance LeanCat.Over.HasExp
          }
    , factor := λ A p_HasProd A_HasProd e
                , sorry
-   , uniq := λ p_HasProd ev' ωev'
+   , uniq := λ exp_Y_HasFinProduct Z Z_Y_HasFinProduct e u ωu
              , sorry
    }
 

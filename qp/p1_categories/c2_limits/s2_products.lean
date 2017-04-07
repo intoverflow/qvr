@@ -354,6 +354,18 @@ example (C : Cat) {x₁ x₂ y₁ y₂ : ⟦C⟧}
         : ⟦C: finproduct C [x₁, x₂] →→ finproduct C [y₁, y₂] ⟧
 := finproduct.hom (f₁ ↗ f₂ ↗↗)
 
+theorem finproduct.hom₂.circ {C : Cat} {x₁ x₂ y₁ y₂ z₁ z₂ : ⟦C⟧}
+        [x_HasFinProduct : HasFinProduct C [x₁, x₂] ]
+        [y_HasFinProduct : HasFinProduct C [y₁, y₂] ]
+        [z_HasFinProduct : HasFinProduct C [z₁, z₂] ]
+        (g₁ : C^.hom y₁ z₁) (g₂ : C^.hom y₂ z₂)
+        (f₁ : C^.hom x₁ y₁) (f₂ : C^.hom x₂ y₂)
+        : @finproduct.hom _ _ ((g₁ ∘∘ f₁) ↗ (g₂ ∘∘ f₂) ↗↗) x_HasFinProduct z_HasFinProduct
+           = @finproduct.hom _ _ (g₁ ↗ g₂ ↗↗) y_HasFinProduct z_HasFinProduct
+              ∘∘ @finproduct.hom _ _ (f₁ ↗ f₂ ↗↗) x_HasFinProduct y_HasFinProduct
+:= sorry
+
+
 
 /- -----------------------------------------------------------------------
 Isos between finite products.

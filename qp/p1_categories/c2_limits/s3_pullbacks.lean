@@ -136,6 +136,13 @@ instance HasPullbacksAlong.HasPullback (C : Cat.{ℓobj ℓhom})
     : HasPullback C (f ↗→ map ↗→↗)
 := HasPullbacksAlong.has_pullback f map
 
+instance HasAllPullbacks.HasPullbacksAlong (C : Cat.{ℓobj ℓhom})
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {base t : C^.obj} (f : C^.hom base t)
+    : HasPullbacksAlong C f
+:= { has_pullback := λ y map, HasAllPullbacks.has_pullback (f ↗→ map ↗→↗)
+   }
+
 /-! #brief Helper for showing a category has a pullback.
 -/
 definition HasPullback.show (C : Cat.{ℓobj ℓhom})
@@ -409,6 +416,21 @@ definition IsPullback.show {C : Cat.{ℓobj ℓhom}}
 
 
 /- -----------------------------------------------------------------------
+Maps from pullbacks to products.
+----------------------------------------------------------------------- -/
+
+/-! #brief The map from a pullback to the underlying product.
+-/
+definition pullback.to_finproduct (C : Cat.{ℓobj ℓhom})
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
+    [maps_HasPullback : HasPullback C maps]
+    [dom_HasFinProduct : HasFinProduct C factor]
+    : C^.hom (pullback C maps) (finproduct C factor)
+:= sorry
+
+
+/- -----------------------------------------------------------------------
 Maps between pullbacks.
 ----------------------------------------------------------------------- -/
 
@@ -633,6 +655,11 @@ instance OverCat.HasFinProduct (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
 := @OverCat.HasFinProduct₁ C c (factor₀ :: factors)
      (HasAllPullbacks.HasPullback C _)
 
+instance OverCat.HasAllFinProducts (C : Cat.{ℓobj ℓhom}) (c : C^.obj)
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    : HasAllFinProducts (OverCat C c)
+:= { has_product := OverCat.HasFinProduct C c
+   }
 
 
 /- -----------------------------------------------------------------------
