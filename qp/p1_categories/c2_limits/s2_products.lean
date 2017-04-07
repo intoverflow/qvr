@@ -354,6 +354,12 @@ example (C : Cat) {x₁ x₂ y₁ y₂ : ⟦C⟧}
         : ⟦C: finproduct C [x₁, x₂] →→ finproduct C [y₁, y₂] ⟧
 := finproduct.hom (f₁ ↗ f₂ ↗↗)
 
+theorem finproduct.hom₂.id {C : Cat} {x₁ x₂ : ⟦C⟧}
+        [x_HasFinProduct : HasFinProduct C [x₁, x₂] ]
+        : @finproduct.hom _ _ (⟨⟨x₁⟩⟩ ↗ ⟨⟨x₂⟩⟩ ↗↗) x_HasFinProduct x_HasFinProduct
+            = C^.id (finproduct C [x₁, x₂])
+:= sorry
+
 theorem finproduct.hom₂.circ {C : Cat} {x₁ x₂ y₁ y₂ z₁ z₂ : ⟦C⟧}
         [x_HasFinProduct : HasFinProduct C [x₁, x₂] ]
         [y_HasFinProduct : HasFinProduct C [y₁, y₂] ]

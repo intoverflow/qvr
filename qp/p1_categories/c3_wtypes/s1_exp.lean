@@ -119,8 +119,10 @@ theorem expon.univ_eval {C : Cat.{ℓobj ℓhom}}
     {X Y : C^.obj}
     [X_Y_HasExp : HasExp C X Y]
     [exp_Y_HasFinProduct : HasFinProduct C [expon C X Y, Y]]
-    : C^.id (expon C X Y) = expon.univ C (expon.eval C X Y)
-:= expon.univ.uniq _ _ begin exact sorry end
+    : expon.univ C (expon.eval C X Y) = C^.id (expon C X Y)
+:= eq.symm (expon.univ.uniq _ _
+              (eq.trans (eq.symm C^.circ_id_right)
+                (Cat.circ.congr_right (eq.symm finproduct.hom₂.id))))
 
 
 
@@ -153,32 +155,49 @@ definition expon.circ_left {C : Cat.{ℓobj ℓhom}}
 
 /-! #brief Exponential objects are unique up-to unique isomorphism.
 -/
-definition expon.iso₁ {C : Cat.{ℓobj ℓhom}}
+definition expon.iso {C : Cat.{ℓobj ℓhom}}
     {X Y : C^.obj}
     (X_Y_HasExp₁ X_Y_HasExp₂ : HasExp C X Y)
     [exp_Y_HasFinProduct₁ : HasFinProduct C [@expon C X Y X_Y_HasExp₁, Y]]
     : C^.hom (@expon C X Y X_Y_HasExp₁) (@expon C X Y X_Y_HasExp₂)
 := @expon.circ_left C X X Y X_Y_HasExp₁ X_Y_HasExp₂ exp_Y_HasFinProduct₁ (C^.id X)
 
-/-! #brief Exponential objects are unique up-to unique isomorphism.
--/
-definition expon.iso₂ {C : Cat.{ℓobj ℓhom}}
-    {X Y : C^.obj}
-    (X_Y_HasExp₁ X_Y_HasExp₂ : HasExp C X Y)
-    [exp_Y_HasFinProduct₂ : HasFinProduct C [@expon C X Y X_Y_HasExp₂, Y]]
-    : C^.hom (@expon C X Y X_Y_HasExp₂) (@expon C X Y X_Y_HasExp₁)
-:= @expon.circ_left C X X Y X_Y_HasExp₂ X_Y_HasExp₁ exp_Y_HasFinProduct₂ (C^.id X)
-
-/-! #brief Exponential objects are unique up-to unique isomorphism.
--/
-definition expon.iso {C : Cat.{ℓobj ℓhom}}
+theorem expon.iso.eq {C : Cat.{ℓobj ℓhom}}
     {X Y : C^.obj}
     (X_Y_HasExp₁ X_Y_HasExp₂ : HasExp C X Y)
     [exp_Y_HasFinProduct₁ : HasFinProduct C [@expon C X Y X_Y_HasExp₁, Y]]
     [exp_Y_HasFinProduct₂ : HasFinProduct C [@expon C X Y X_Y_HasExp₂, Y]]
-    : Iso (expon.iso₁ X_Y_HasExp₁ X_Y_HasExp₂)
-          (expon.iso₂ X_Y_HasExp₁ X_Y_HasExp₂)
-:= sorry
+    : expon.iso X_Y_HasExp₂ X_Y_HasExp₁ ∘∘ expon.iso X_Y_HasExp₁ X_Y_HasExp₂
+       = C^.id (@expon C X Y X_Y_HasExp₁)
+:= begin
+     unfold expon.iso expon.circ_left,
+     repeat { rw C^.circ_id_left },
+     rw -expon.univ_eval,
+     refine @expon.univ.uniq C X Y X_Y_HasExp₁ exp_Y_HasFinProduct₁ _ exp_Y_HasFinProduct₁ _ _ _,
+     refine eq.trans _
+             (Cat.circ.congr_right
+               (eq.trans 
+                 (eq.symm (finproduct.hom₂.circ
+                             (@expon.univ C _ _ X_Y_HasExp₁ _ exp_Y_HasFinProduct₂ (@expon.eval C X Y X_Y_HasExp₂ exp_Y_HasFinProduct₂)) ⟨⟨Y⟩⟩
+                             (@expon.univ C _ _ X_Y_HasExp₂ _ exp_Y_HasFinProduct₁ (@expon.eval C X Y X_Y_HasExp₁ exp_Y_HasFinProduct₁)) ⟨⟨Y⟩⟩))
+                 (by rw C^.circ_id_right))),
+     refine eq.trans _ (eq.symm C^.circ_assoc),
+     refine eq.trans _ (Cat.circ.congr_left (@expon.univ.factor C X Y X_Y_HasExp₁ _ _ exp_Y_HasFinProduct₂ _)),
+     apply expon.univ.factor
+   end
+
+/-! #brief Exponential objects are unique up-to unique isomorphism.
+-/
+definition expon.Iso {C : Cat.{ℓobj ℓhom}}
+    {X Y : C^.obj}
+    (X_Y_HasExp₁ X_Y_HasExp₂ : HasExp C X Y)
+    [exp_Y_HasFinProduct₁ : HasFinProduct C [@expon C X Y X_Y_HasExp₁, Y]]
+    [exp_Y_HasFinProduct₂ : HasFinProduct C [@expon C X Y X_Y_HasExp₂, Y]]
+    : Iso (expon.iso X_Y_HasExp₁ X_Y_HasExp₂)
+          (expon.iso X_Y_HasExp₂ X_Y_HasExp₁)
+:= { id₁ := expon.iso.eq X_Y_HasExp₁ X_Y_HasExp₂
+   , id₂ := expon.iso.eq X_Y_HasExp₂ X_Y_HasExp₁
+   }
 
 
 
@@ -199,7 +218,7 @@ definition ExpFun (C : Cat.{ℓobj ℓhom})
                , begin
                    dsimp [expon.circ_left],
                    rw C^.circ_id_left,
-                   apply eq.symm expon.univ_eval
+                   apply expon.univ_eval
                  end
    , hom_circ
       := λ X Y Z g f
@@ -233,48 +252,26 @@ definition HasAllExp.DepProdFun (C : Cat.{ℓobj ℓhom})
     [C_HasAllExp : HasAllExp (OverCat C A)]
     [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
     : Fun (OverCat C B) (OverCat C A)
-:= let f_obj : (OverCat C A)^.obj
-            := { obj := B, hom := f }
-in let codom_obj : (OverCat C B)^.obj → (OverCat C A)^.obj
-                := λ Q, { obj := Q^.obj
-                        , hom := C^.circ f Q^.hom
-                        }
-   in { obj := λ Q, (ExpFun (OverCat C A) f_obj)^.obj (codom_obj Q)
-   , hom := λ Q₁ Q₂ h, (ExpFun (OverCat C A) f_obj)^.hom
-                        { hom := h^.hom
-                        , triangle
-                           := begin
-                                dsimp [OverObj.down],
-                                rw -C^.circ_assoc,
-                                exact Cat.circ.congr_right h^.triangle
-                              end
-                        }
-   , hom_id
-      := λ Q
-         , eq.trans (congr_arg _ (OverHom.eq begin trivial end))
-                    (ExpFun (OverCat C A) f_obj)^.hom_id
-   , hom_circ
-      := λ Q₁ Q₂ Q₃ h g
-         , eq.trans (congr_arg _ (OverHom.eq begin trivial end))
-                    (ExpFun (OverCat C A) f_obj)^.hom_circ
-   }
-
+:= ExpFun (OverCat C A) { obj := B, hom := f }
+    □□ DepSumFun f
 
 
 /-! #brief Counit of the adjunction between base change and dependent product.
 -/
 definition HasAllExp.BaseChange_DepProd.Adj.counit.com {C : Cat.{ℓobj ℓhom}}
     {B A : C^.obj} (f : C^.hom B A)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_A_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
     : ∀ (Q : OverObj C B)
       , OverHom C B
           ((BaseChangeFun f □□ HasAllExp.DepProdFun C f)^.obj Q)
           Q
 | (OverObj.mk Q h)
 := { hom := (expon.eval (OverCat C A) (OverObj.mk Q (f ∘∘ h)) (OverObj.mk B f))^.hom
-             ∘∘ sorry
+              ∘∘ sorry
+-- begin
+--   dsimp [Fun.comp, BaseChangeFun, HasAllExp.DepProdFun, ExpFun, BaseChangeFun.obj, OverObj.dom],
+-- end
    , triangle := sorry
    }
 
@@ -282,9 +279,8 @@ definition HasAllExp.BaseChange_DepProd.Adj.counit.com {C : Cat.{ℓobj ℓhom}}
 -/
 definition HasAllExp.BaseChange_DepProd.Adj.counit {C : Cat.{ℓobj ℓhom}}
     {B A : C^.obj} (f : C^.hom B A)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
     : NatTrans (BaseChangeFun f □□ HasAllExp.DepProdFun C f)
                (Fun.id (OverCat C B))
 := { com := HasAllExp.BaseChange_DepProd.Adj.counit.com f
@@ -296,9 +292,8 @@ definition HasAllExp.BaseChange_DepProd.Adj.counit {C : Cat.{ℓobj ℓhom}}
 -/
 definition HasAllExp.BaseChange_DepProd.Adj.unit.com {C : Cat.{ℓobj ℓhom}}
     {B A : C^.obj} (f : C^.hom B A)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
     (Q : OverObj C A)
     : OverHom C A
         Q
@@ -311,9 +306,8 @@ definition HasAllExp.BaseChange_DepProd.Adj.unit.com {C : Cat.{ℓobj ℓhom}}
 -/
 definition HasAllExp.BaseChange_DepProd.Adj.unit {C : Cat.{ℓobj ℓhom}}
     {B A : C^.obj} (f : C^.hom B A)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
     : NatTrans (Fun.id (OverCat C A))
                (HasAllExp.DepProdFun C f □□ BaseChangeFun f)
 := { com := HasAllExp.BaseChange_DepProd.Adj.unit.com f
@@ -325,9 +319,8 @@ definition HasAllExp.BaseChange_DepProd.Adj.unit {C : Cat.{ℓobj ℓhom}}
 -/
 definition HasAllExp.BaseChange_DepProd.Adj (C : Cat.{ℓobj ℓhom})
     {B A : C^.obj} (f : C^.hom B A)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
     : Adj (BaseChangeFun f) (HasAllExp.DepProdFun C f)
 := { counit := HasAllExp.BaseChange_DepProd.Adj.counit f
    , unit := HasAllExp.BaseChange_DepProd.Adj.unit f
