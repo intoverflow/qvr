@@ -567,35 +567,35 @@ definition DepSum_BaseChange.Adj {C : Cat.{ℓobj ℓhom}}
             end
    }
 
-/-! #brief A category with dependent products.
--/
-class HasDepProdFun (C : Cat.{ℓobj ℓhom})
-:= (depprod
-     : ∀ {x y : C^.obj} (f : C^.hom x y)
-       , Fun (OverCat C x) (OverCat C y))
-   (adj
-     : ∀ {x y : C^.obj} (f : C^.hom x y)
-         [f_HasPullbacksAlong : HasPullbacksAlong C f]
-       , Adj (BaseChangeFun f) (depprod f))
+-- /-! #brief A category with dependent products.
+-- -/
+-- class HasDepProdFun (C : Cat.{ℓobj ℓhom})
+-- := (depprod
+--      : ∀ {x y : C^.obj} (f : C^.hom x y)
+--        , Fun (OverCat C x) (OverCat C y))
+--    (adj
+--      : ∀ {x y : C^.obj} (f : C^.hom x y)
+--          [f_HasPullbacksAlong : HasPullbacksAlong C f]
+--        , Adj (BaseChangeFun f) (depprod f))
 
-/-! #brief A dependent product functor.
--/
-definition DepProdFun {C : Cat.{ℓobj ℓhom}}
-    [C_HasDepProdFun : HasDepProdFun C]
-    {x y : C^.obj}
-    (f : C^.hom x y)
-    : Fun (OverCat C x) (OverCat C y)
-:= HasDepProdFun.depprod f
+-- /-! #brief A dependent product functor.
+-- -/
+-- definition DepProdFun {C : Cat.{ℓobj ℓhom}}
+--     [C_HasDepProdFun : HasDepProdFun C]
+--     {x y : C^.obj}
+--     (f : C^.hom x y)
+--     : Fun (OverCat C x) (OverCat C y)
+-- := HasDepProdFun.depprod f
 
-/-! #brief Base change is adjoint to dependent product.
--/
-definition BaseChange_DepProd.Adj {C : Cat.{ℓobj ℓhom}}
-    [C_HasDepProdFun : HasDepProdFun C]
-    {x y : C^.obj}
-    (f : C^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    : Adj (BaseChangeFun f) (DepProdFun f)
-:= HasDepProdFun.adj f
+-- /-! #brief Base change is adjoint to dependent product.
+-- -/
+-- definition BaseChange_DepProd.Adj {C : Cat.{ℓobj ℓhom}}
+--     [C_HasDepProdFun : HasDepProdFun C]
+--     {x y : C^.obj}
+--     (f : C^.hom x y)
+--     [f_HasPullbacksAlong : HasPullbacksAlong C f]
+--     : Adj (BaseChangeFun f) (DepProdFun f)
+-- := HasDepProdFun.adj f
 
 
 

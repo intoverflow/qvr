@@ -413,6 +413,20 @@ instance LeanCat.Over.HasExp
              , sorry
    }
 
+/-! #brief OverCat LeanCat has all exponentials.
+-/
+instance LeanCat.Over.HasAllExp
+    (T₀ : LeanCat.{ℓ}^.obj)
+    : @HasAllExp (OverCat LeanCat T₀)
+:= { has_exp := LeanCat.Over.HasExp T₀
+   }
+
+/-! #brief LeanCat has exponentials in all slices.
+-/
+instance LeanCat.HasAllLocalExp
+    : HasAllLocalExp LeanCat.{ℓ}
+:= { has_exp := LeanCat.Over.HasExp
+   }
 
 
 /- -----------------------------------------------------------------------

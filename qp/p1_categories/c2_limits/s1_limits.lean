@@ -403,6 +403,13 @@ instance HasAllCoLimitsFrom.HasCoLimit (C : Cat.{ℓobj₁ ℓhom₁}) {X : Cat.
     : HasCoLimit L
 := HasAllCoLimitsFrom.has_colimit L
 
+instance HasAllCoLimits.HasAllCoLimitsFrom (C : Cat.{ℓobj₁ ℓhom₁})
+    [C_HasAllCoLimits : HasAllCoLimits.{ℓobjx ℓhomx} C]
+    (X : Cat.{ℓobjx ℓhomx})
+    : HasAllCoLimitsFrom C X
+:= { has_colimit := λ L, HasAllCoLimits.has_colimit L
+   }
+
 /-! #brief Helper for showing a functor has a co-limit.
 -/
 definition HasCoLimit.show {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
