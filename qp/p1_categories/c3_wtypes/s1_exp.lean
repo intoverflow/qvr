@@ -241,128 +241,128 @@ definition ExpFun (C : Cat.{ℓobj ℓhom})
 
 
 
-/- -----------------------------------------------------------------------
-The dependent product functor.
------------------------------------------------------------------------ -/
+-- /- -----------------------------------------------------------------------
+-- The dependent product functor.
+-- ----------------------------------------------------------------------- -/
 
-/-! #brief The fiber functor.
--/
-definition FiberFun {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
-    : Fun (OverCat C A) (OverCat C A)
-:= ExpFun (OverCat C A) { obj := B, hom := f }
+-- /-! #brief The fiber functor.
+-- -/
+-- definition FiberFun {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllExp : HasAllExp (OverCat C A)]
+--     [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+--     : Fun (OverCat C A) (OverCat C A)
+-- := ExpFun (OverCat C A) { obj := B, hom := f }
 
-/-! #brief The dependent product functor.
--/
-definition DepProdFun {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
-    : Fun (OverCat C B) (OverCat C A)
-:= FiberFun f □□ DepSumFun f
+-- /-! #brief The dependent product functor.
+-- -/
+-- definition DepProdFun {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllExp : HasAllExp (OverCat C A)]
+--     [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+--     : Fun (OverCat C B) (OverCat C A)
+-- := FiberFun f □□ DepSumFun f
 
-/-! #brief Preservation of co-limits by DepProdFun.
--/
-instance DepProdFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllExp : HasAllExp (OverCat C A)]
-    [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
-    [f_HasPullbacksAlong : HasPullbacksAlong C f]
-    {X : Cat.{ℓobjx ℓhomx}}
-    (L : Fun X (OverCat C B))
-    [f_PresCoLimitsFrom : PresCoLimitsFrom (FiberFun f) X]
-    : PresCoLimit L (DepProdFun f)
-:= @PresCoLimit.comp _ _ _ _
-     L (DepSumFun f)
-     (Adj.left.PresCoLimit (DepSum_BaseChange.Adj f) L)
-     (FiberFun f)
-     (PresCoLimitsFrom.pres_colimit (FiberFun f) _)
+-- /-! #brief Preservation of co-limits by DepProdFun.
+-- -/
+-- instance DepProdFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllExp : HasAllExp (OverCat C A)]
+--     [C_HasAllFinProducts : HasAllFinProducts (OverCat C A)]
+--     [f_HasPullbacksAlong : HasPullbacksAlong C f]
+--     {X : Cat.{ℓobjx ℓhomx}}
+--     (L : Fun X (OverCat C B))
+--     [f_PresCoLimitsFrom : PresCoLimitsFrom (FiberFun f) X]
+--     : PresCoLimit L (DepProdFun f)
+-- := @PresCoLimit.comp _ _ _ _
+--      L (DepSumFun f)
+--      (Adj.left.PresCoLimit (DepSum_BaseChange.Adj f) L)
+--      (FiberFun f)
+--      (PresCoLimitsFrom.pres_colimit (FiberFun f) _)
 
 
 
-/-! #brief Counit of the adjunction between base change and dependent product.
--/
-definition BaseChange_DepProd.Adj.counit.com {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllLocalExp : HasAllLocalExp C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    : ∀ (Q : OverObj C B)
-      , OverHom C B
-          ((BaseChangeFun f □□ DepProdFun f)^.obj Q)
-          Q
-| (OverObj.mk Q h)
-:= { hom := (expon.eval (OverCat C A) (OverObj.mk Q (f ∘∘ h)) (OverObj.mk B f))^.hom
-              ∘∘ sorry
+-- /-! #brief Counit of the adjunction between base change and dependent product.
+-- -/
+-- definition BaseChange_DepProd.Adj.counit.com {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllLocalExp : HasAllLocalExp C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     : ∀ (Q : OverObj C B)
+--       , OverHom C B
+--           ((BaseChangeFun f □□ DepProdFun f)^.obj Q)
+--           Q
+-- | (OverObj.mk Q h)
+-- := { hom := (expon.eval (OverCat C A) (OverObj.mk Q (f ∘∘ h)) (OverObj.mk B f))^.hom
+--               ∘∘ sorry
+-- -- begin
+-- --   dsimp [Fun.comp, BaseChangeFun, HasAllExp.DepProdFun, ExpFun, BaseChangeFun.obj, OverObj.dom],
+-- -- end
+--    , triangle := sorry
+--    }
+
+-- /-! #brief Counit of the adjunction between base change and dependent product.
+-- -/
+-- definition BaseChange_DepProd.Adj.counit {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllLocalExp : HasAllLocalExp C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     : NatTrans (BaseChangeFun f □□ DepProdFun f)
+--                (Fun.id (OverCat C B))
+-- := { com := BaseChange_DepProd.Adj.counit.com f
+--    , natural
+--       := λ X Y h
+--          , sorry
+--    }
+
+
+-- /-! #brief Unit of the adjunction between base change and dependent product.
+-- -/
+-- definition BaseChange_DepProd.Adj.unit.com {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllLocalExp : HasAllLocalExp C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     (Q : OverObj C A)
+--     : OverHom C A
+--         Q
+--         ((DepProdFun f □□ BaseChangeFun f)^.obj Q)
+-- := { hom :=
+-- (expon.univ (OverCat C A)
 -- begin
---   dsimp [Fun.comp, BaseChangeFun, HasAllExp.DepProdFun, ExpFun, BaseChangeFun.obj, OverObj.dom],
+--   dsimp [Fun.comp, DepSumFun, BaseChangeFun, DepProdFun, ExpFun, BaseChangeFun.obj, OverObj.dom],
+--   exact sorry
 -- end
-   , triangle := sorry
-   }
+-- )^.hom
+--    , triangle := sorry
+--    }
 
-/-! #brief Counit of the adjunction between base change and dependent product.
--/
-definition BaseChange_DepProd.Adj.counit {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllLocalExp : HasAllLocalExp C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    : NatTrans (BaseChangeFun f □□ DepProdFun f)
-               (Fun.id (OverCat C B))
-:= { com := BaseChange_DepProd.Adj.counit.com f
-   , natural
-      := λ X Y h
-         , sorry
-   }
-
-
-/-! #brief Unit of the adjunction between base change and dependent product.
--/
-definition BaseChange_DepProd.Adj.unit.com {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllLocalExp : HasAllLocalExp C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    (Q : OverObj C A)
-    : OverHom C A
-        Q
-        ((DepProdFun f □□ BaseChangeFun f)^.obj Q)
-:= { hom :=
-(expon.univ (OverCat C A)
-begin
-  dsimp [Fun.comp, DepSumFun, BaseChangeFun, DepProdFun, ExpFun, BaseChangeFun.obj, OverObj.dom],
-  exact sorry
-end
-)^.hom
-   , triangle := sorry
-   }
-
-/-! #brief Unit of the adjunction between base change and dependent product.
--/
-definition BaseChange_DepProd.Adj.unit {C : Cat.{ℓobj ℓhom}}
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllLocalExp : HasAllLocalExp C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    : NatTrans (Fun.id (OverCat C A))
-               (DepProdFun f □□ BaseChangeFun f)
-:= { com := BaseChange_DepProd.Adj.unit.com f
-   , natural
-      := λ X Y h
-         , sorry
-   }
+-- /-! #brief Unit of the adjunction between base change and dependent product.
+-- -/
+-- definition BaseChange_DepProd.Adj.unit {C : Cat.{ℓobj ℓhom}}
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllLocalExp : HasAllLocalExp C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     : NatTrans (Fun.id (OverCat C A))
+--                (DepProdFun f □□ BaseChangeFun f)
+-- := { com := BaseChange_DepProd.Adj.unit.com f
+--    , natural
+--       := λ X Y h
+--          , sorry
+--    }
 
 
-/-! #brief Base change is adjoint to dependent product.
--/
-definition BaseChange_DepProd.Adj (C : Cat.{ℓobj ℓhom})
-    {B A : C^.obj} (f : C^.hom B A)
-    [C_HasAllLocalExp : HasAllLocalExp C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    : Adj (BaseChangeFun f) (DepProdFun f)
-:= { counit := BaseChange_DepProd.Adj.counit f
-   , unit := BaseChange_DepProd.Adj.unit f
-   , id_left := sorry
-   , id_right := sorry
-   }
+-- /-! #brief Base change is adjoint to dependent product.
+-- -/
+-- definition BaseChange_DepProd.Adj (C : Cat.{ℓobj ℓhom})
+--     {B A : C^.obj} (f : C^.hom B A)
+--     [C_HasAllLocalExp : HasAllLocalExp C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     : Adj (BaseChangeFun f) (DepProdFun f)
+-- := { counit := BaseChange_DepProd.Adj.counit f
+--    , unit := BaseChange_DepProd.Adj.unit f
+--    , id_left := sorry
+--    , id_right := sorry
+--    }
 
 
 -- /-! #brief Locally cartesian closed categories have dependent product.

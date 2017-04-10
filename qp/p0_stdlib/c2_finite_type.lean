@@ -103,6 +103,65 @@ instance Prop.decidable_FinSort
     : Type ℓ
 := FinSort A
 
+definition FinType.card (A : Type ℓ)
+    [A_FinType : FinType A]
+:= @FinSort.card A A_FinType
+
+definition FinType.to_n {A : Type ℓ}
+    [A_FinType : FinType A]
+    : A → fin (FinType.card A)
+:= @FinSort.to_n A A_FinType
+
+definition FinType.of_n {A : Type ℓ}
+    [A_FinType : FinType A]
+    : fin (FinType.card A) → A
+:= @FinSort.of_n A A_FinType
+
+definition FinType.of_n_to {A : Type ℓ}
+    [A_FinType : FinType A]
+    : function.left_inverse
+        (@FinType.of_n A A_FinType)
+        (@FinType.to_n A A_FinType)
+:= @FinSort.of_n_to A A_FinType
+
+definition FinType.to_n_of {A : Type ℓ}
+    [A_FinType : FinType A]
+    : function.left_inverse
+        (@FinType.to_n A A_FinType)
+        (@FinType.of_n A A_FinType)
+:= @FinSort.to_n_of A A_FinType
+
+definition FinType.enum (A : Type ℓ)
+    [A_FinType : FinType A]
+    : list A
+:= fin.enum (@FinType.of_n A A_FinType)
+
+/-! #brief A proposition for when a type is empty.
+-/
+definition IsEmptyType (A : Type ℓ)
+    : Prop
+:= A → false
+
+/-! #brief A handy eliminator for empty types.
+-/
+definition {ℓ₂} IsEmptyType.empty_elim {A : Type ℓ}
+    (A_IsEmpty : IsEmptyType A)
+    {B : Sort ℓ₂}
+    (a : A)
+    : B
+:= false.rec B (A_IsEmpty a)
+
+/-! #brief Finite types have decidable IsTypeEmpty.
+-/
+instance FinType.decidable.IsEmptyType (A : Type ℓ)
+    [A_FinType : FinType A]
+    : decidable (IsEmptyType A)
+:= if ωcard : 0 = FinType.card A
+    then decidable.is_true
+          (λ a, fin.zero_elim (cast (by rw ωcard) (FinType.to_n a)))
+    else decidable.is_false
+          (λ ω, ω (FinType.of_n (fin.intro_zero ωcard)))
+
 /-! #brief Finite types have decidable equality.
 -/
 instance FinType.decidable_eq (A : Type ℓ)

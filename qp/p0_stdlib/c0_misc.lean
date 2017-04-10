@@ -44,6 +44,37 @@ definition {ℓ} prod.diag {X : Type ℓ} (x : X)
     : prod X X
 := (x, x)
 
+/-! #brief Max of two natural numbers.
+-/
+definition nat.max (a b : ℕ) : ℕ
+:= if a ≤ b then b else a
+
+theorem nat.le_max_left (a b : ℕ)
+    : a ≤ nat.max a b
+:= if ω : a ≤ b
+    then begin
+           unfold nat.max,
+           rw if_pos ω,
+           exact ω
+         end
+    else begin
+           unfold nat.max,
+           rw if_neg ω
+         end
+
+theorem nat.le_max_right (a b : ℕ)
+    : b ≤ nat.max a b
+:= if ω : a ≤ b
+    then begin
+           unfold nat.max,
+           rw if_pos ω
+         end
+    else begin
+           unfold nat.max,
+           rw if_neg ω,
+           exact le_of_not_le ω
+         end
+
 /-! #brief Handy absurd lemma.
 -/
 theorem nat.not_lt_add_left

@@ -21,7 +21,7 @@ Polynomial functors.
 /-! #brief A dependent polynomial functor.
 -/
 definition DepPolyFun {C : Cat.{ℓobj ℓhom}}
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     {a b c₁ c₂ : C^.obj}
     (f : C^.hom a b)
@@ -33,7 +33,7 @@ definition DepPolyFun {C : Cat.{ℓobj ℓhom}}
 /-! #brief Preservation of co-limits by DepPolyFun.
 -/
 definition DepPolyFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     {a b c₁ c₂ : C^.obj}
     {f : C^.hom a b}
@@ -41,27 +41,27 @@ definition DepPolyFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
     {g : C^.hom b c₂}
     {X : Cat.{ℓobjx ℓhomx}}
     (L : Fun X (OverCat C c₁))
-    [f_PresCoLimitsFrom : PresCoLimitsFrom (FiberFun f) X]
+    [f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun f) X]
     : PresCoLimit L (DepPolyFun f h g)
 := @PresCoLimit.comp _ _ _ _
      L
      (BaseChangeFun h)
-     (Adj.left.PresCoLimit (BaseChange_DepProd.Adj C h) L)
+     (Adj.left.PresCoLimit (BaseChange_DepProd.Adj h) L)
      (DepSumFun g □□ DepProdFun f)
      (@PresCoLimit.comp _ _ _ _
        (Fun.comp (BaseChangeFun h) L)
-       (DepProdFun f) (DepProdFun.PresCoLimit f _)
+       (DepProdFun f) (PresCoLimitsFrom.PresCoLimit (DepProdFun f) _)
        (DepSumFun g) (Adj.left.PresCoLimit (DepSum_BaseChange.Adj g) _))
 
 /-! #brief Adámek's construction for dependent W-types.
 -/
 definition DepPolyFun.Adamek {C : Cat.{ℓobj ℓhom}}
     [C_HasInit : HasInit C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     {a b c : C^.obj} (f : C^.hom a b)
     [Cc_HasAllCoLimitsFrom : HasAllCoLimitsFrom (OverCat C c) NatCat]
-    [f_PresCoLimitsFrom : PresCoLimitsFrom (FiberFun f) NatCat]
+    [f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun f) NatCat]
     (h : C^.hom a c)
     (g : C^.hom b c)
     : HasInitAlg (DepPolyFun f h g)
@@ -80,7 +80,7 @@ definition DepPolyFun.Adamek {C : Cat.{ℓobj ℓhom}}
 -/
 definition PolyEndoFun {C : Cat.{ℓobj ℓhom}}
     [C_HasFinal : HasFinal C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     {x y : C^.obj}
     (f : C^.hom x y)
@@ -93,13 +93,13 @@ definition PolyEndoFun {C : Cat.{ℓobj ℓhom}}
 -/
 definition PolyEndoFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
     [C_HasFinal : HasFinal C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     {x y : C^.obj}
     {f : C^.hom x y}
     {X : Cat.{ℓobjx ℓhomx}}
     (L : Fun X C)
-    [f_PresCoLimitsFrom : PresCoLimitsFrom (FiberFun f) X]
+    [f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun f) X]
     : PresCoLimit L (PolyEndoFun f)
 := @PresCoLimit.comp _ _ _ _
      L
@@ -116,11 +116,11 @@ definition PolyEndoFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
 definition PolyEndoFun.Adamek {C : Cat.{ℓobj ℓhom}}
     [C_HasInit : HasInit C]
     [C_HasFinal : HasFinal C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     [C_HasAllCoLimitsFrom : HasAllCoLimitsFrom C NatCat]
     {x y : C^.obj} (f : C^.hom x y)
-    [f_PresCoLimitsFrom : PresCoLimitsFrom (FiberFun f) NatCat]
+    [f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun f) NatCat]
     : HasInitAlg (PolyEndoFun f)
 := @Adamek C
     C_HasInit
@@ -142,40 +142,31 @@ W-types.
 /-! #brief A W-type.
 -/
 @[class] definition HasWType (C : Cat.{ℓobj ℓhom})
-    {b a : C^.obj} (disp : C^.hom b a)
-:= ∀ [C_HasFinal : HasFinal C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-   , HasInitAlg (@PolyEndoFun C
-                   C_HasFinal C_HasAllLocalExp C_HasAllPullbacks
-                   b a disp)
+    {b a : C^.obj} (disp : C^.hom b a)
+:= HasInitAlg (PolyEndoFun disp)
 
 /-! #brief Adámek's construction for W-types.
 -/
 definition HasWType.Adamek (C : Cat.{ℓobj ℓhom})
     [C_HasInit : HasInit C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     [C_HasAllCoLimitsFrom : HasAllCoLimitsFrom C NatCat]
     {b a : C^.obj} (disp : C^.hom b a)
-    (f_PresCoLimitsFrom
-      : HasAllLocalExp C
-        → HasAllPullbacks C
-        → PresCoLimitsFrom (FiberFun disp) NatCat)
+    (f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun disp) NatCat)
     : HasWType C disp
-:= λ C_HasFinal C_HasAllLocalExp C_HasAllPullbacks
-   , @PolyEndoFun.Adamek C
-       C_HasInit C_HasFinal
-       C_HasAllLocalExp C_HasAllPullbacks C_HasAllCoLimitsFrom
-       b a disp
-       (f_PresCoLimitsFrom C_HasAllLocalExp C_HasAllPullbacks)
+:= PolyEndoFun.Adamek disp
 
 /-! #brief The carrier of a W-type.
 -/
 definition wtype.carr {C : Cat.{ℓobj ℓhom}}
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasFinal : HasFinal C]
-    [C_HasAllLocalExp : HasAllLocalExp C]
+    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     {b a : C^.obj} (disp : C^.hom b a)
     [disp_HasWType : HasWType C disp]

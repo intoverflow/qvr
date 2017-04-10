@@ -642,4 +642,145 @@ example (C : Cat) (x y z : ⟦C⟧)
  := finproduct.iso (@HasFinProduct.flatten C [] [x, y] [z] xy_HasFinProduct xy_z_HasFinProduct)
                    (@HasFinProduct.flatten C [x] [y,z] [] yz_HasFinProduct x_yz_HasFinProduct)
 
+
+
+/- -----------------------------------------------------------------------
+Co-products.
+----------------------------------------------------------------------- -/
+
+/-! #brief A cone over a co-product.
+-/
+definition CoProductCone (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    : Type (max ℓ ℓobj ℓhom)
+:= ProductCone (OpCat C) factor
+
+/-! #brief Helper for making a product cone.
+-/
+definition CoProductCone.mk {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    {factor : A → C^.obj}
+    (c : C^.obj)
+    (incl : ∀ (a : A), C^.hom (factor a) c)
+    : CoProductCone C factor
+:= ProductCone.mk c incl
+
+/-! #brief A co-product in a category.
+-/
+@[class] definition HasCoProduct (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+:= HasProduct (OpCat C) factor
+
+instance HasCoProduct.HasProduct {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    (factor : A → C^.obj)
+    [factor_HasCoProduct : HasCoProduct C factor]
+    : HasProduct (OpCat C) factor
+:= factor_HasCoProduct
+
+/-! #brief A category with all co-products.
+-/
+class HasAllCoProducts (C : Cat.{ℓobj ℓhom})
+:= (has_coproduct : ∀ {A : Type ℓ} (factor : A → C^.obj)
+                    , HasCoProduct C factor)
+
+instance HasAllCoProducts.HasCoProduct (C : Cat.{ℓobj ℓhom})
+    [C_HasAllCoProducts : HasAllCoProducts.{ℓ} C]
+    {A : Type ℓ} (factor : A → C^.obj)
+    : HasCoProduct C factor
+:= HasAllCoProducts.has_coproduct factor
+
+/-! #brief Helper for showing a category has a co-product.
+-/
+definition HasCoProduct.show (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    (p : C^.obj)
+    (incl : ∀ (a : A), C^.hom (factor a) p)
+    (univ
+      : ∀ (c : C^.obj) (hom : ∀ (a : A), C^.hom (factor a) c)
+        , C^.hom p c)
+    (ωuniv
+      : ∀ (c : C^.obj) (hom : ∀ (a : A), C^.hom (factor a) c)
+           (a : A)
+        , hom a = C^.circ (univ c hom) (incl a))
+    (ωuniq
+      : ∀ (c : C^.obj) (hom : ∀ (a : A), C^.hom (factor a) c)
+           (h : C^.hom p c) (ωh : ∀ {a : A}, hom a = C^.circ h (incl a))
+        , h = univ c hom)
+    : HasCoProduct C factor
+:= HasProduct.show (OpCat C) factor p incl univ ωuniv ωuniq
+
+/-! #brief Co-products are cones.
+-/
+definition coproduct.cone (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    [factor_HasCoProduct : HasCoProduct C factor]
+    : CoProductCone C factor
+:= product.cone (OpCat C) factor
+
+/-! #brief The co-product of a collection of objects.
+-/
+definition coproduct (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    [factor_HasCoProduct : HasCoProduct C factor]
+    : C^.obj
+:= (coproduct.cone C factor)^.obj
+
+/-! #brief Inclusion into a co-product.
+-/
+definition coproduct.ι (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    [factor_HasCoProduct : HasCoProduct C factor]
+    (a : A)
+    : C^.hom (factor a) (coproduct C factor)
+:= product.π (OpCat C) factor a
+
+/-! #brief Every cone is mediated through the co-product.
+-/
+definition coproduct.univ (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    [factor_HasCoProduct : HasCoProduct C factor]
+    (c : CoProductCone C factor)
+    : C^.hom (coproduct C factor) c^.obj
+:= product.univ (OpCat C) factor c
+
+/-! #brief Every cone is mediated through the co-product.
+-/
+definition coproduct.univ.mediates (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    {factor_HasCoProduct : HasCoProduct C factor}
+    (c : CoProductCone C factor)
+    (a : A)
+    : c^.hom a = C^.circ (coproduct.univ C factor c) (@coproduct.ι C A factor factor_HasCoProduct a)
+:= product.univ.mediates (OpCat C) factor c a
+
+/-! #brief The mediating map from the co-product to the cone unique.
+-/
+definition coproduct.univ.uniq (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
+    (factor : A → C^.obj)
+    {factor_HasCoProduct : HasCoProduct C factor}
+    (c : CoProductCone C factor)
+    (m : C^.hom (coproduct C factor) c^.obj)
+    (ω : ∀ (a : A), c^.hom a = m ∘∘ (@coproduct.ι C A factor factor_HasCoProduct a))
+    : m = coproduct.univ C factor c
+:= product.univ.uniq (OpCat C) factor c m ω
+
+/-! #brief The unique iso between two coproducts of the same factors.
+-/
+definition coproduct.iso {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    {factor : A → C^.obj}
+    (factor_HasCoProduct₁ factor_HasCoProduct₂ : HasCoProduct C factor)
+    : C^.hom (@coproduct C A factor factor_HasCoProduct₁)
+             (@coproduct C A factor factor_HasCoProduct₂)
+:= product.iso factor_HasCoProduct₂ factor_HasCoProduct₁
+
+/-! #brief Co-products are unique up-to unique isomorphism.
+-/
+definition coproduct.uniq {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    {factor : A → C^.obj}
+    (factor_HasCoProduct₁ factor_HasCoProduct₂ : HasCoProduct C factor)
+    : Iso (coproduct.iso factor_HasCoProduct₁ factor_HasCoProduct₂)
+          (coproduct.iso factor_HasCoProduct₂ factor_HasCoProduct₁)
+:= { id₁ := (product.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₂
+   , id₂ := (product.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₁
+   }
+
 end qp

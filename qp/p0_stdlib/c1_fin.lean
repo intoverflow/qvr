@@ -15,6 +15,18 @@ definition fin_of
                       ... ≤ nat.succ (N + n) : nat.succ_le_succ (nat.le_add_left n N)
    }
 
+/-! #brief An esoteric but sometimes handy constructor.
+-/
+definition fin.intro_zero {N : ℕ} (ωN : ¬ 0 = N)
+    : fin N
+:= { val := 0
+   , is_lt := begin
+                cases N with N,
+                { exact false.elim (ωN rfl) },
+                { exact (fin_of 0)^.is_lt}
+              end
+   }
+
 /-! #brief Adding a constant to a fin.
 -/
 definition fin.add {N : ℕ} (n : fin N) (m : ℕ)
@@ -48,6 +60,14 @@ definition fin.zero_uniq
       , n = fin.zero
 | (fin.mk 0 ω) := rfl
 | (fin.mk (nat.succ n) ω) := begin cases ω, cases a end
+
+/-! #brief Enumerate a finite function.
+-/
+definition {ℓ} fin.enum {A : Type ℓ}
+    : ∀ {N : ℕ} (f : fin N → A)
+      , list A
+| 0 f := []
+| (nat.succ N) f:= f (fin_of 0) :: @fin.enum N (λ n, f { val := nat.succ n^.val, is_lt := nat.succ_le_succ n^.is_lt })
 
 /-! #brief Action of casting on a fin.
 -/

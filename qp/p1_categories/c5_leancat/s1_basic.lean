@@ -101,58 +101,93 @@ Limits and colimits in over/under categories.
 ----------------------------------------------------------------------- -/
 
 
+/-! #brief Structure hom for colimits in OverCat LeanCat.
+-/
+definition LeanCat.Over.HasCoLimit.colim_hom
+    (B : LeanCat.{max ℓ ℓobj}^.obj)
+    {X : Cat.{ℓobj ℓhom}}
+    (L : Fun X (OverCat LeanCat B))
+    : LeanCat^.hom (colimit (OverFun.out LeanCat B □□ L)) B
+:= let f : (Σ (x : X^.obj), (L^.obj x)^.obj) → B
+        := λ x, (L^.obj x^.fst)^.hom x^.snd
+in quot.lift f
+    begin
+      intros a b,
+      cases a with xa a,
+      cases b with xb b,
+      intro ω, cases ω with h ωb,
+      dsimp at h,
+      dsimp at ωb, subst ωb,
+      apply congr_fun (L^.hom h)^.triangle a
+    end
+
 /-! #brief OverCat LeanCat has all co-limits.
 -/
+instance LeanCat.Over.HasCoLimit
+    (B : LeanCat.{max ℓ ℓobj}^.obj)
+    {X : Cat.{ℓobj ℓhom}} (L : Fun X (OverCat LeanCat B))
+    : HasCoLimit L
+:= HasCoLimit.show
+    { obj := colimit (OverFun.out LeanCat B □□ L)
+    , hom := LeanCat.Over.HasCoLimit.colim_hom B L
+    }
+    (λ x, { hom := λ Lx, quot.mk _ { fst := x, snd := Lx }
+          , triangle := sorry
+          })
+    (λ x₁ x₂ f, begin
+                  apply OverHom.eq,
+                  apply funext, intro Lx,
+                  apply quot.sound,
+                  apply exists.intro f,
+                  trivial
+                end)
+    sorry
+    sorry
+    sorry
+
 instance LeanCat.Over.HasAllCoLimits
     (B : LeanCat.{max ℓ ℓobj}^.obj)
     : HasAllCoLimits.{ℓobj ℓhom}
         (OverCat LeanCat.{max ℓ ℓobj} B)
-:= { has_colimit
-      := λ X L
-         , HasCoLimit.show
-            { obj := colimit (OverFun.out LeanCat B □□ L)
-            , hom := sorry
-            }
-            (λ x, { hom := λ Lx, quot.mk _ { fst := x, snd := Lx }
-                  , triangle := sorry
-                  })
-            (λ x₁ x₂ f, begin
-                         apply OverHom.eq,
-                         apply funext, intro Lx,
-                         apply quot.sound,
-                         apply exists.intro f,
-                         trivial
-                       end)
-            sorry
-            sorry
-            sorry
-   }
+:= { has_colimit := @LeanCat.Over.HasCoLimit B
+   }      
 
+/-! #brief Handy simplifier.
+-/
+theorem LeanCat.Over.HasCoLimit.obj
+    (B : LeanCat.{max ℓ ℓobj}^.obj)
+    {X : Cat.{ℓobj ℓhom}} (L : Fun X (OverCat LeanCat B))
+    : (colimit L)^.obj = colimit (OverFun.out LeanCat B □□ L)
+:= rfl
 
 
 /- -----------------------------------------------------------------------
 Products.
 ----------------------------------------------------------------------- -/
 
+/-! #brief LeanCat has all products.
+-/
+instance LeanCat.HasProduct
+    {A : Type ℓ'} (factor : A → LeanCat.{max ℓ ℓ'}^.obj)
+    : HasProduct LeanCat.{max ℓ ℓ'} factor
+:= HasProduct.show LeanCat factor
+    (∀ (a : A), factor a)
+    (λ a fa, fa a)
+    (λ T f t a, f a t)
+    (λ T f a, rfl)
+    (λ T f h ωh
+      , begin
+          apply funext, intro t,
+          apply funext, intro a,
+          rw ωh,
+          trivial
+        end)
 
 /-! #brief LeanCat has all products.
 -/
 instance LeanCat.HasAllProducts
     : HasAllProducts.{ℓ'} LeanCat.{max ℓ ℓ'}
-:= { has_product
-      := λ A factor
-         , HasProduct.show LeanCat factor
-            (∀ (a : A), factor a)
-            (λ a fa, fa a)
-            (λ T f t a, f a t)
-            (λ T f a, rfl)
-            (λ T f h ωh
-             , begin
-                 apply funext, intro t,
-                 apply funext, intro a,
-                 rw ωh,
-                 trivial
-               end)
+:= { has_product := @LeanCat.HasProduct
    }
 
 /-! #brief Finite product type in LeanCat.
@@ -163,6 +198,18 @@ definition ListProd
 | [] := punit
 | [T] := T
 | (T :: TT) := T × ListProd TT
+
+/-! #brief A fancy way of mapping through a ListProd.
+-/
+definition {ℓb ℓx ℓy} ListProd.map
+    {Ba : Type ℓb} {Tx : Ba → Type ℓx} {Ty : Ba → Type ℓy}
+    (f : ∀ (b : Ba), Tx b → Ty b)
+    : ∀ (BB : list Ba)
+      , ListProd (list.map Tx BB)
+      → ListProd (list.map Ty BB)
+| [] _ := punit.star
+| [Ba] x := f Ba x
+| (Ba :: Ba₀ :: BB) (prod.mk x xx) := (f Ba x, @ListProd.map (Ba₀ :: BB) xx)
 
 /-! #brief Projection from finite product type in LeanCat.
 -/
@@ -255,6 +302,37 @@ instance LeanCat.HasFinProduct (factor : list LeanCat.{ℓ}^.obj)
 instance LeanCat.HasAllFinProducts
     : HasAllFinProducts LeanCat.{ℓ}
 := { has_product := LeanCat.HasFinProduct
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Co-products.
+----------------------------------------------------------------------- -/
+
+/-! #brief LeanCat has all co-products.
+-/
+instance LeanCat.HasCoProduct
+    {A : Type ℓ'} (factor : A → LeanCat.{max ℓ ℓ'}^.obj)
+    : HasCoProduct LeanCat.{max ℓ ℓ'} factor
+:= HasCoProduct.show LeanCat factor
+    (Σ (a : A), factor a)
+    (sigma.mk)
+    (λ T f af, f af^.fst af^.snd)
+    (λ T f a, rfl)
+    (λ T f h ωh
+      , begin
+          apply funext, intro af,
+          cases af with a f,
+          rw ωh,
+          trivial
+        end)
+
+/-! #brief LeanCat has all co-products.
+-/
+instance LeanCat.HasAllCoProducts
+    : HasAllCoProducts.{ℓ'} LeanCat.{max ℓ ℓ'}
+:= { has_coproduct := @LeanCat.HasCoProduct
    }
 
 
