@@ -386,6 +386,14 @@ definition HomsIn.cons {C : Cat.{ℓobj ℓhom}}
 infixr `↗→` : 50 := HomsIn.cons
 notation f `↗→↗` := HomsIn.cons f HomsIn.nil
 
+/-! #brief Repeat a hom N times.
+-/
+definition HomsIn.repeat {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj}
+    (f : C^.hom x y) (N : ℕ)
+    : HomsIn (list.repeat x N) y
+:= dlist.repeat f N
+
 /-! #brief Converting a list of OverObj's into a HomsIn.
 -/
 definition HomsIn.of_list_OverObj {C : Cat.{ℓobj ℓhom}} {X : C^.obj}

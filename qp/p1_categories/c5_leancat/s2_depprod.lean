@@ -321,6 +321,18 @@ instance LeanCat.HasDepProd
    , adj := @LeanCat.BaseChange_DepProd.Adj
    }
 
+/-! #brief Handy wrapper for PolyEndoFun.
+-/
+definition LeanCat.PolyEndoFun
+    {B A : LeanCat.{ℓ}^.obj}
+    (disp : LeanCat.{ℓ}^.hom B A)
+    : Fun LeanCat.{ℓ} LeanCat.{ℓ}
+:= @PolyEndoFun LeanCat.{ℓ}
+      LeanCat.HasFinal
+      LeanCat.HasDepProd
+      LeanCat.HasAllPullbacks
+      B A disp
+
 
 
 /- -----------------------------------------------------------------------

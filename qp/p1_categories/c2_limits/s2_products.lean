@@ -783,4 +783,173 @@ definition coproduct.uniq {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
    , id₂ := (product.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₁
    }
 
+
+
+/- -----------------------------------------------------------------------
+Finite co-products.
+----------------------------------------------------------------------- -/
+
+/-! #brief A cone over a finite co-product.
+-/
+definition FinCoProductCone (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    : Type (max ℓobj ℓhom)
+:= CoProductCone C (list.get factor)
+
+/-! #brief Every finite co-product cone comes with inclusions.
+-/
+definition FinCoProductCone.Proj {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (c : FinCoProductCone C factor)
+    : HomsIn factor c^.obj
+:= dlist.enum (Cone.hom c)
+
+/-! #brief Helper for making a finite co-product cone.
+-/
+definition FinCoProductCone.mk {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (c : C^.obj)
+    (incl : HomsIn factor c)
+    : FinCoProductCone C factor
+:= CoProductCone.mk c (HomsIn.get incl)
+
+/-! #brief A finite co-product in a category.
+-/
+@[class] definition HasFinCoProduct (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+:= HasCoProduct C (list.get factor)
+
+instance HasFinCoProduct.HasCoProduct (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasCoProduct : HasFinCoProduct C factor]
+    : HasCoProduct C (list.get factor)
+:= factor_HasCoProduct
+
+/-! #brief A category with all finite co-products.
+-/
+class HasAllFinCoProducts (C : Cat.{ℓobj ℓhom})
+:= (has_coproduct : ∀ (factor : list C^.obj), HasFinCoProduct C factor)
+
+instance HasAllFinCoProducts.HasFinCoProduct (C : Cat.{ℓobj ℓhom})
+    [C_HasAllFinCoProducts : HasAllFinCoProducts C]
+    (factor : list C^.obj)
+    : HasFinCoProduct C factor
+:= HasAllFinCoProducts.has_coproduct factor
+
+/-! #brief Helper for showing a category has a finite co-product.
+-/
+definition HasFinCoProduct.show {C : Cat.{ℓobj ℓhom}}
+    (factor : list C^.obj)
+    (p : C^.obj)
+    (incl : HomsIn factor p)
+    (univ : ∀ (c : C^.obj) (hom : HomsIn factor c)
+            , C^.hom p c)
+    (ωuniv : ∀ (c : C^.obj) (hom : HomsIn factor c)
+             , hom = HomsIn.comp (univ c hom) incl)
+    (ωuniq : ∀ (c : C^.obj) (hom : HomsIn factor c) (h : C^.hom p c)
+               (ωcomm : hom = HomsIn.comp h incl)
+             , h = univ c hom)
+    : HasFinCoProduct C factor
+:= @HasFinProduct.show (OpCat C) factor p incl univ ωuniv ωuniq
+
+/-! #brief Finite co-products are cones.
+-/
+definition fincoproduct.cone (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinCoProduct : HasFinCoProduct C factor]
+    : FinCoProductCone C factor
+:= coproduct.cone C (list.get factor)
+
+/-! #brief The co-product of a finite collection of objects.
+-/
+definition fincoproduct (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinCoProduct : HasFinCoProduct C factor]
+    : C^.obj
+:= (fincoproduct.cone C factor)^.obj
+
+/-! #brief An esoteric but useful equality helper.
+-/
+theorem fincoproduct.eq {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllFinCoProducts : HasAllFinCoProducts C]
+    : ∀ (factor₁ factor₂ : list C^.obj)
+        (ωfactor : factor₁ = factor₂)
+      , @fincoproduct C factor₁ (HasAllFinCoProducts.HasFinCoProduct C factor₁)
+          = @fincoproduct C factor₂ (HasAllFinCoProducts.HasFinCoProduct C factor₂)
+| factor .(factor) (eq.refl .(factor)) := rfl
+
+/-! #brief Inclusion into a finite co-product.
+-/
+definition fincoproduct.ι (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinCoProduct : HasFinCoProduct C factor]
+    (n : fin (list.length factor))
+    : C^.hom (list.get factor n) (fincoproduct C factor)
+:= coproduct.ι C (list.get factor) n
+
+/-! #brief Every cone is mediated through the co-product.
+-/
+definition fincoproduct.univ (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinCoProduct : HasFinCoProduct C factor]
+    {c : C^.obj} (hom : HomsIn factor c)
+    : C^.hom (fincoproduct C factor) c
+:= coproduct.univ C (list.get factor) (FinCoProductCone.mk c hom)
+
+/-! #brief Every cone is mediated through the co-product.
+-/
+definition fincoproduct.univ.mediates (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinCoProduct : HasFinCoProduct C factor]
+    {c : C^.obj} (hom : HomsIn factor c)
+    (n : fin (list.length factor))
+    : HomsIn.get hom n = C^.circ (fincoproduct.univ C factor hom) (fincoproduct.ι C factor n)
+:= coproduct.univ.mediates C (list.get factor) (FinCoProductCone.mk c hom) n
+
+/-! #brief The mediating map from the cone to the product is unique.
+-/
+definition fincoproduct.univ.uniq (C : Cat.{ℓobj ℓhom})
+    (factor : list C^.obj)
+    [factor_HasFinCoProduct : HasFinCoProduct C factor]
+    {c : C^.obj} (hom : HomsIn factor c)
+    (m : C^.hom (fincoproduct C factor) c)
+    (ω : hom = HomsIn.comp m (fincoproduct.cone C factor)^.Proj)
+    : m = fincoproduct.univ C factor hom
+:= @finproduct.univ.uniq (OpCat C) factor factor_HasFinCoProduct c hom m ω
+
+/-! #brief The unique iso between two co-products of the same factors.
+-/
+definition fincoproduct.iso {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (factor_HasFinCoProduct₁ factor_HasFinCoProduct₂ : HasFinCoProduct C factor)
+    : C^.hom (@fincoproduct C factor factor_HasFinCoProduct₁)
+             (@fincoproduct C factor factor_HasFinCoProduct₂)
+:= coproduct.iso factor_HasFinCoProduct₁ factor_HasFinCoProduct₂
+
+/-! #brief Finite products are unique up-to unique isomorphism.
+-/
+definition fincoproduct.uniq {C : Cat.{ℓobj ℓhom}}
+    {factor : list C^.obj}
+    (factor_HasFinCoProduct₁ factor_HasFinCoProduct₂ : HasFinCoProduct C factor)
+    : Iso (fincoproduct.iso factor_HasFinCoProduct₁ factor_HasFinCoProduct₂)
+          (fincoproduct.iso factor_HasFinCoProduct₂ factor_HasFinCoProduct₁)
+:= coproduct.uniq factor_HasFinCoProduct₁ factor_HasFinCoProduct₂
+
+
+
+/- -----------------------------------------------------------------------
+Finite co-products of homs.
+----------------------------------------------------------------------- -/
+
+/-! #brief The product of a list of homs.
+-/
+definition fincoproduct.hom {C : Cat.{ℓobj ℓhom}}
+    {ccs : list (prod C^.obj C^.obj)}
+    (fns : HomsList C ccs)
+    [ccs_domFinCoProduct : HasFinCoProduct C (list.map prod.fst ccs)]
+    [ccs_codomFinCoProduct : HasFinCoProduct C (list.map prod.snd ccs)]
+    : C^.hom (fincoproduct C (list.map prod.fst ccs))
+             (fincoproduct C (list.map prod.snd ccs))
+:= fincoproduct.univ _ _ (homs_comp_in (fincoproduct.cone C (list.map prod.snd ccs))^.Proj fns)
+
 end qp

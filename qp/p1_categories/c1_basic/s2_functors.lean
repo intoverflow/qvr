@@ -406,6 +406,10 @@ The Lean universe-level functors.
 inductive Lean.LevelMax (A : Type.{ℓ₁}) : Type (max ℓ₁ ℓ₂)
 | lift : A → Lean.LevelMax
 
+definition Lean.LevelMax.unlift {A : Type.{ℓ₁}}
+    : Lean.LevelMax.{ℓ₁ ℓ₂} A → A
+| (Lean.LevelMax.lift a) := a
+
 -- /-! #brief Lean.LevelMax.lift is injective.
 -- -/
 -- theorem Lean.LevelMax.lift.inj {A : Type.{ℓ₁}}

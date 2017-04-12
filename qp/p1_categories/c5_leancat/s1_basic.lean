@@ -376,6 +376,15 @@ instance LeanCat.HasAllPullbacks
          , LeanCat.HasPullback maps
    }
 
+/-! #brief A handy wrapper.
+-/
+definition LeanCat.BaseChangeFun
+    {X Y : LeanCat.{ℓ}^.obj}
+    (f : LeanCat.{ℓ}^.hom X Y)
+    : Fun (OverCat LeanCat Y) (OverCat LeanCat X)
+:= @BaseChangeFun LeanCat X Y f
+     (HasAllPullbacks.HasPullbacksAlong LeanCat f)
+
 
 
 /- -----------------------------------------------------------------------
@@ -589,5 +598,48 @@ noncomputable instance LeanCat.HasSubobjClass
 --            end
 --    }
 
+
+
+/- -----------------------------------------------------------------------
+Natural numbers object.
+----------------------------------------------------------------------- -/
+
+/-! #brief LeanCat has an NNO.
+-/
+instance LeanCat.HasNNO
+    : @HasNNO LeanCat.{ℓ} LeanCat.HasFinal
+:= { nn := Lean.LevelMax ℕ
+   , zero := λ u, Lean.LevelMax.lift 0
+   , succ := Lean.LevelMax.map nat.succ
+   , univ := λ A z s n, nat.rec_on (Lean.LevelMax.unlift n)
+                         (z punit.star)
+                         (λ n' a, s a)
+   , comm_zero
+      := λ A z s
+         , begin
+             apply funext, intro u, cases u,
+             trivial
+           end
+   , comm_succ
+      := λ A z s
+         , begin
+             apply funext, intro n, cases n with n,
+             induction n with n rec,
+             { trivial },
+             { apply congr_arg s,
+               apply rec
+             }
+           end
+   , uniq
+      := λ A z s u' ωzero ωsucc
+         , begin
+             apply funext, intro n, cases n with n,
+             induction n with n rec,
+             { rw ωzero, trivial },
+             { refine eq.trans (eq.symm (congr_fun ωsucc (Lean.LevelMax.lift n))) _,
+               apply congr_arg s rec
+             }
+           end
+   }
 
 end qp
