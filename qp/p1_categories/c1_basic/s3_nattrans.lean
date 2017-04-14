@@ -75,6 +75,31 @@ definition NatTrans.id {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓho
    , natural := λ x y f, by rw [D^.circ_id_left, D^.circ_id_right]
    }
 
+/-! #brief The casting natural transformation.
+-/
+definition NatTrans.cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ : Fun C D}
+        (ωF : F₁ = F₂)
+      , NatTrans F₁ F₂
+| F .(F) (eq.refl .(F)) := NatTrans.id F
+
+/-! #brief The casting transformation is the identity.
+-/
+theorem NatTrans.simp_cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ : Fun C D}
+        {ωF : F₁ = F₂}
+      , NatTrans.cast ωF == NatTrans.id F₁
+| F .(F) (eq.refl .(F)) := heq.refl _
+
+/-! #brief The casting transformation has identity components.
+-/
+theorem NatTrans.cast.com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ : Fun C D}
+        {ωF : F₁ = F₂}
+        {c : C^.obj}
+      , (NatTrans.cast ωF)^.com c = cast_hom (by rw ωF)
+| F .(F) (eq.refl .(F)) c := sorry
+
 /-! #brief Composition of natural transformations.
 -/
 definition NatTrans.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
@@ -472,5 +497,35 @@ theorem Adj.left_adj_right_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
            ... = f ∘∘ (adj^.counit^.com (L^.obj c) ∘∘ L^.hom (adj^.unit^.com c))        : by rw D^.circ_assoc
            ... = f ∘∘ ⟨⟨L^.obj c⟩⟩                                                      : congr_arg (λ q, f ∘∘ q) adj^.id_left
            ... = f                                                                      : D^.circ_id_right
+
+
+
+/- -----------------------------------------------------------------------
+Bijections of categories give adjunctions.
+----------------------------------------------------------------------- -/
+
+/-! #brief The adjunction induced by a bijection.
+-/
+definition Cat.Bij.Adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D} {G : Fun D C}
+    (FG_Bij : Cat.Bij F G)
+    : Adj F G
+:= { counit := NatTrans.cast FG_Bij^.id₂
+   , unit := NatTrans.cast (eq.symm FG_Bij^.id₁)
+   , id_left
+      := λ c, begin
+                repeat { rw NatTrans.cast.com },
+                refine eq.trans (Cat.circ.congr_right Fun.cast_hom) _,
+                refine eq.trans cast_hom.circ _,
+                apply cast_hom.simp
+              end
+   , id_right
+      := λ c, begin
+                repeat { rw NatTrans.cast.com },
+                refine eq.trans (Cat.circ.congr_left Fun.cast_hom) _,
+                refine eq.trans cast_hom.circ _,
+                apply cast_hom.simp
+              end
+   }
 
 end qp

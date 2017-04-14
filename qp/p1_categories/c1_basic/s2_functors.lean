@@ -97,6 +97,15 @@ theorem Fun.congr_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom
       , F^.hom f₁ = F^.hom f₂
 | x y f .(f) (eq.refl .(f)) := rfl
 
+/-! #brief Action of a functor on a cast_hom.
+-/
+theorem Fun.cast_hom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    : ∀ {x y : C^.obj}
+        {ω : x = y}
+      , F^.hom (cast_hom ω) = cast_hom begin rw ω end
+| x .(x) (eq.refl .(x)) := F^.hom_id
+
 
 
 /- -----------------------------------------------------------------------
@@ -1181,6 +1190,22 @@ structure Cone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
    (comm : ∀ {c₁ c₂ : C^.obj} (f : C^.hom c₁ c₂)
            , hom c₂ = F^.hom f ∘∘ hom c₁)
 
+/-! #brief Composition of a cone with a hom.
+-/
+definition Cone.circ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D} (cone : Cone F)
+    {d' : D^.obj} (h : D^.hom d' cone^.obj)
+    : Cone F
+:= { obj := d'
+   , hom := λ c, D^.circ (cone^.hom c) h
+   , comm := λ c₁ c₂ f
+             , begin
+                 rw D^.circ_assoc,
+                 apply Cat.circ.congr_left,
+                 apply cone^.comm
+               end
+   }
+
 /-! #brief A hom in a cone category.
 -/
 structure ConeHom {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
@@ -1302,6 +1327,14 @@ definition CoCone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}
     (F : Fun C D)
     : Type (max ℓobj₁ ℓobj₂ ℓhom₂)
 := (CoConeCat F)^.obj
+
+/-! #brief Composition of a co-cone with a hom.
+-/
+definition CoCone.circ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D} (ccone : CoCone F)
+    {d' : D^.obj} (h : D^.hom ccone^.obj d')
+    : CoCone F
+:= Cone.circ ccone h
 
 /-! #brief Construct an object in a co-cone category.
 -/

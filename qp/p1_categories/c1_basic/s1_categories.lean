@@ -939,6 +939,14 @@ definition cast_hom {C : Cat.{ℓobj ℓhom}}
       , C^.hom c₁ c₂
 | c .(c) (eq.refl .(c)) := C^.id c
 
+/-! #brief Casting homs are just identities.
+-/
+theorem cast_hom.simp {C : Cat.{ℓobj ℓhom}}
+    : ∀ {c : C^.obj}
+        (ω : c = c)
+      , cast_hom ω = C^.id c
+| c (eq.refl .(c)) := rfl
+
 /-! #brief composition of casting homs.
 -/
 theorem cast_hom.circ {C : Cat.{ℓobj ℓhom}}
@@ -1016,6 +1024,7 @@ instance cast_hom.Epic {C : Cat.{ℓobj ℓhom}}
         (ω : c₁ = c₂)
       , Epic (cast_hom ω)
 | c .(c) (eq.refl .(c)) := Cat.id.Epic c
+
 
 
 /- -----------------------------------------------------------------------

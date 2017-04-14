@@ -30,6 +30,52 @@ definition DepPolyFun {C : Cat.{ℓobj ℓhom}}
     : Fun (OverCat C c₁) (OverCat C c₂)
 := DepSumFun g □□ DepProdFun f □□ BaseChangeFun h
 
+/-! #brief A hom into a DepPolyFun object.
+-/
+definition DepPolyFun.into {C : Cat.{ℓobj ℓhom}}
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {a b c₁ c₂ : C^.obj}
+    {f : C^.hom a b}
+    {h : C^.hom a c₁}
+    {g : C^.hom b c₂}
+    (X : OverObj C c₂)
+    (Y : OverObj C c₁)
+    (Xb : C^.hom X^.obj b)
+    (ωXb : X^.hom = g ∘∘ Xb)
+    (z : C^.hom (pullback C (f↗→Xb↗→↗)) Y^.obj)
+    (ω : h ∘∘ pullback.π C (f↗→Xb↗→↗) (@fin_of 1 0)
+          = Y^.hom ∘∘ z)
+    : (OverCat C c₂)^.hom X ((DepPolyFun f h g)^.obj Y)
+:= let ccone
+        := PullbackCone.mk (h↗→(Y^.hom)↗→↗)
+            (pullback C (f↗→Xb↗→↗))
+            (h ∘∘ pullback.π C (f↗→Xb↗→↗) (@fin_of 1 0))
+            (pullback.π C (f↗→Xb↗→↗) (@fin_of 1 0) ↗← z ↗←↗)
+            begin apply HomsList.eq rfl, apply HomsList.eq ω, trivial end
+in DepSumFun.into _ _ _ Xb ωXb
+    ((BaseChange_DepProd.Adj f)^.right_adj
+      ((DepSum_BaseChange.Adj h)^.right_adj
+        { hom := z
+        , triangle := ω
+        }))
+
+/-! #brief A hom out of a DepPolyFun object.
+-/
+definition DepPolyFun.out {C : Cat.{ℓobj ℓhom}}
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {a b c₁ c₂ : C^.obj}
+    {f : C^.hom a b}
+    {h : C^.hom a c₁}
+    {g : C^.hom b c₂}
+    (X : OverObj C c₁)
+    (Y : OverObj C c₂)
+    (z : OverHom C b ((DepProdFun f)^.obj ((BaseChangeFun h)^.obj X))
+                     ((BaseChangeFun g)^.obj Y))
+    : (OverCat C c₂)^.hom ((DepPolyFun f h g)^.obj X) Y
+:= (DepSum_BaseChange.Adj g)^.left_adj z
+
 /-! #brief Preservation of co-limits by DepPolyFun.
 -/
 definition DepPolyFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
@@ -88,6 +134,61 @@ definition PolyEndoFun {C : Cat.{ℓobj ℓhom}}
 := OverFinal.from C
     □□ DepPolyFun f (final_hom x) (final_hom y)
     □□ OverFinal.to C
+
+/-! #brief A hom into a polyendofun object.
+-/
+definition PolyEndoFun.into {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {B A : C^.obj} (disp : C^.hom B A)
+    {X Y : C^.obj}
+    (Xy : C^.hom X A)
+    (fXyY : C^.hom (pullback C (disp↗→Xy↗→↗)) Y)
+    : C^.hom X ((PolyEndoFun disp)^.obj Y)
+:= @Adj.right_adj _ _ _ _ (OverFinal.Bij C)^.Adj
+      X
+      ((DepPolyFun disp (final_hom B) (final_hom A))^.obj ((OverFinal.to C)^.obj Y))
+    (DepPolyFun.into _ _
+       Xy (final_hom.uniq' C)
+       fXyY (final_hom.uniq' C))
+
+/-! #brief A hom out of a polyendofun object.
+-/
+definition PolyEndoFun.out {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {B A : C^.obj} (disp : C^.hom B A)
+    {X Y : C^.obj}
+    (ha : C^.hom ((@DepProdFun C C_HasDepProd _ _ disp (HasAllPullbacks.HasPullbacksAlong C _))^.obj
+                    ((@BaseChangeFun C _ _ (final_hom B) (HasAllPullbacks.HasPullbacksAlong C _))^.obj ((OverFinal.to C)^.obj X)))^.obj
+                 A)
+    (hy : C^.hom ((@DepProdFun C C_HasDepProd _ _ disp (HasAllPullbacks.HasPullbacksAlong C _))^.obj
+                    ((@BaseChangeFun C _ _ (final_hom B) (HasAllPullbacks.HasPullbacksAlong C _))^.obj ((OverFinal.to C)^.obj X)))^.obj
+                 Y)
+    : C^.hom ((PolyEndoFun disp)^.obj X) Y
+:= let pcone : PullbackCone C (final_hom A↗→(((OverFinal.to C)^.obj Y)^.hom)↗→↗)
+            := PullbackCone.mk (final_hom A↗→(((OverFinal.to C)^.obj Y)^.hom)↗→↗)
+                ((@DepProdFun C C_HasDepProd _ _ disp (HasAllPullbacks.HasPullbacksAlong C _))^.obj
+                    ((@BaseChangeFun C _ _ (final_hom B) (HasAllPullbacks.HasPullbacksAlong C _))^.obj ((OverFinal.to C)^.obj X)))^.obj
+                (final_hom _)
+                (ha ↗← hy ↗←↗)
+                begin
+                  apply HomsList.eq, { apply final_hom.uniq' },
+                  apply HomsList.eq, { apply final_hom.uniq' },
+                  trivial
+                end
+in @Adj.left_adj _ _ _ _ (Cat.Bij.flip (OverFinal.Bij C))^.Adj
+      ((DepPolyFun disp (final_hom B) (final_hom A))^.obj ((OverFinal.to C)^.obj X))
+      Y
+      (DepPolyFun.out _ _
+        { hom := @pullback.univ C _ _ (final_hom A↗→(((OverFinal.to C)^.obj Y)^.hom)↗→↗)
+                   (HasAllPullbacks.HasPullback C _)
+                   pcone
+        , triangle := sorry
+        })
+
 
 /-! #brief Preservation of co-limits by PolyEndoFun.
 -/
@@ -216,6 +317,30 @@ definition wtype.hom {C : Cat.{ℓobj ℓhom}}
     {b a : C^.obj} (disp : C^.hom b a)
     [disp_HasWType : HasWType C disp]
     : C^.hom ((PolyEndoFun disp)^.obj (wtype.carr disp)) (wtype.carr disp)
-:= @initalg.hom _ _ disp_HasWType
+:= @initalg.hom C (PolyEndoFun disp) disp_HasWType
+
+/-! #brief The inverse of the structure hom of a W-type.
+-/
+definition wtype.elim {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllFinProducts : HasAllFinProducts C]
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {b a : C^.obj} (disp : C^.hom b a)
+    [disp_HasWType : HasWType C disp]
+    : C^.hom (wtype.carr disp) ((PolyEndoFun disp)^.obj (wtype.carr disp))
+:= @initalg.unhom C (PolyEndoFun disp) disp_HasWType
+
+/-! #brief hom and elim are isos.
+-/
+definition wtype.iso {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllFinProducts : HasAllFinProducts C]
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {b a : C^.obj} (disp : C^.hom b a)
+    [disp_HasWType : HasWType C disp]
+    : Iso (wtype.hom disp) (wtype.elim disp)
+:= @initalg.iso C (PolyEndoFun disp) disp_HasWType
 
 end qp

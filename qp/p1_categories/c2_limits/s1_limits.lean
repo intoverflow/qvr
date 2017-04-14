@@ -183,6 +183,24 @@ theorem limit.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
                      (congr_arg ConeHom.mediate (HasFinal_uniq F_HasLimit₁ F_HasLimit₂)^.id₂)
    }
 
+/-! #brief limit.univ absorbs compositions.
+-/
+theorem limit.circ_univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun X C}
+    {F_HasLimit : HasLimit F}
+    {cone : Cone F}
+    {c' : C^.obj} {f : C^.hom c' cone^.obj}
+    : @limit.univ X C F F_HasLimit cone ∘∘ f
+       = @limit.univ X C F F_HasLimit (cone^.circ f)
+:= begin
+     refine limit.univ.uniq (cone^.circ f) _ _,
+     intro x,
+     dsimp [Cone.circ],
+     rw C^.circ_assoc,
+     apply Cat.circ.congr_left,
+     apply limit.univ.mediates
+   end
+
 
 
 /- -----------------------------------------------------------------------
@@ -527,6 +545,25 @@ theorem colimit.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
     : Iso (limit.iso F_HasCoLimit₁ F_HasCoLimit₂)
           (limit.iso F_HasCoLimit₂ F_HasCoLimit₁)
 := limit.uniq F_HasCoLimit₁ F_HasCoLimit₂
+
+/-! #brief limit.univ absorbs compositions.
+-/
+theorem colimit.circ_univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {F : Fun X C}
+    {F_HasCoLimit : HasCoLimit F}
+    {ccone : CoCone F}
+    {c' : C^.obj} {f : C^.hom ccone^.obj c'}
+    : f ∘∘ @colimit.univ X C F F_HasCoLimit ccone
+       = @colimit.univ X C F F_HasCoLimit (ccone^.circ f)
+:= begin
+     refine colimit.univ.uniq (ccone^.circ f) _ _,
+     intro x,
+     apply eq.symm,
+     apply eq.trans (eq.symm C^.circ_assoc),
+     apply Cat.circ.congr_right,
+     apply eq.symm,
+     apply colimit.univ.mediates
+   end
 
 
 

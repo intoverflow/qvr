@@ -783,6 +783,17 @@ definition coproduct.uniq {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
    , id₂ := (product.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₁
    }
 
+/-! #brief Factor-projection out of a certain kind of coproduct.
+-/
+definition coproduct.factor_out {C : Cat.{ℓobj (ℓhom + 1)}}
+    [C_HasFinal : HasFinal C]
+    {A : C^.obj}
+    (factor : C^.hom (final C) A → C^.obj)
+    [factor_HasCoProduct : HasCoProduct C factor]
+    : C^.hom (coproduct C factor) A
+:= coproduct.univ C factor
+    (CoProductCone.mk A (λ a, C^.circ a (final_hom (factor a))))
+
 
 
 /- -----------------------------------------------------------------------

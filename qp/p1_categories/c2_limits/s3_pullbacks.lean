@@ -220,6 +220,17 @@ definition pullback.π (C : Cat.{ℓobj ℓhom})
     : C^.hom (pullback C maps) (list.get factor n)
 := limit.out (PullbackDrgm C maps) (some n)
 
+/-! #brief The commutative square property of pullbacks.
+-/
+definition pullback.π_comm (C : Cat.{ℓobj ℓhom})
+    {factor : list C^.obj} {t : C^.obj}
+    (maps : HomsIn factor t)
+    [maps_HasPullback : HasPullback C maps]
+    (n₁ n₂ : fin (list.length factor))
+    : HomsIn.get maps n₁ ∘∘ pullback.π C maps n₁
+       = HomsIn.get maps n₂ ∘∘ pullback.π C maps n₂
+:= sorry
+
 /-! #brief Projection out of a pullback to the base.
 -/
 definition pullback.πbase (C : Cat.{ℓobj ℓhom})
@@ -456,6 +467,85 @@ definition pullback.hom (C : Cat.{ℓobj ℓhom})
 
 
 /- -----------------------------------------------------------------------
+Fibers.
+----------------------------------------------------------------------- -/
+
+/-! #brief Fiber of a map over a global element.
+-/
+definition Fiber {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {x y : C^.obj} (f : C^.hom x y)
+    (y₀ : C^.hom (final C) y)
+    : C^.obj
+:= pullback C (f ↗→ y₀ ↗→↗)
+
+/-! #brief Projection out of a fiber.
+-/
+definition Fiber.π {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {x y : C^.obj} (f : C^.hom x y)
+    (y₀ : C^.hom (final C) y)
+    : C^.hom (Fiber f y₀) x
+:= pullback.π C (f ↗→ y₀ ↗→↗) (@fin_of 1 0)
+
+/-! #brief A hom into a fiber.
+-/
+definition Fiber.into {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {x y : C^.obj} (f : C^.hom x y)
+    (y₀ : C^.hom (final C) y)
+    {z : C^.obj}
+    (h : C^.hom z x)
+    (ωh : f ∘∘ h = y₀ ∘∘ final_hom z)
+    : C^.hom z (Fiber f y₀)
+:= pullback.univ C (f ↗→ y₀ ↗→↗)
+    (PullbackCone.mk (f ↗→ y₀ ↗→↗) z
+      (C^.circ f h)
+      (h ↗← final_hom z ↗←↗)
+      begin
+        apply HomsList.eq, { trivial },
+        apply HomsList.eq, { exact ωh },
+        trivial
+      end)
+
+/-! #brief A cone over a fiber.
+-/
+definition Fiber.cone {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {x₁ x₂ y : C^.obj} {f₁ : C^.hom x₁ y} {f₂ : C^.hom x₂ y}
+    {y₀ : C^.hom (final C) y}
+    (h : C^.hom x₁ x₂)
+    (ωh : y₀ ∘∘ final_hom (Fiber f₁ y₀)
+           = f₂ ∘∘ h ∘∘ pullback.π C (f₁ ↗→ y₀ ↗→↗) (@fin_of 1 0))
+:= PullbackCone.mk (f₂ ↗→ y₀ ↗→↗) (Fiber f₁ y₀)
+      (y₀ ∘∘ final_hom (Fiber f₁ y₀))
+      (h ∘∘ pullback.π C (f₁ ↗→ y₀ ↗→↗) (@fin_of 1 0) ↗← final_hom (Fiber f₁ y₀) ↗←↗)
+      begin
+        apply HomsList.eq, { exact eq.trans ωh (eq.symm C^.circ_assoc) },
+        apply HomsList.eq, { trivial },
+        trivial
+      end
+
+/-! #brief A hom between fibers.
+-/
+definition Fiber.hom {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    {x₁ x₂ y : C^.obj} {f₁ : C^.hom x₁ y} {f₂ : C^.hom x₂ y}
+    {y₀ : C^.hom (final C) y}
+    (h : C^.hom x₁ x₂)
+    (ωh : y₀ ∘∘ final_hom (Fiber f₁ y₀)
+           = f₂ ∘∘ h ∘∘ pullback.π C (f₁ ↗→ y₀ ↗→↗) (@fin_of 1 0))
+    : C^.hom (Fiber f₁ y₀) (Fiber f₂ y₀)
+:= pullback.univ C (f₂ ↗→ y₀ ↗→↗) (Fiber.cone h ωh)
+
+
+
+/- -----------------------------------------------------------------------
 Base change.
 ----------------------------------------------------------------------- -/
 
@@ -520,6 +610,26 @@ definition DepSumFun {C : Cat.{ℓobj ℓhom}}
               }
    , hom_id := λ X, rfl
    , hom_circ := λ X Y Z G F, rfl
+   }
+
+/-! #brief A hom into a dependent sum object.
+-/
+definition DepSumFun.into {C : Cat.{ℓobj ℓhom}}
+    {x y : C^.obj} (f : C^.hom x y)
+    (X : OverObj C y)
+    (Y : OverObj C x)
+    (Xx : C^.hom X^.obj x)
+    (ωXx : X^.hom = f ∘∘ Xx)
+    (h : (OverCat C x)^.hom
+           { obj := X^.obj
+           , hom := Xx
+           }
+           Y)
+    : (OverCat C y)^.hom X ((DepSumFun f)^.obj Y)
+:= { hom := h^.hom
+   , triangle := by calc X^.hom = f ∘∘ Xx                 : ωXx
+                         ...    = f ∘∘ (Y^.hom ∘∘ h^.hom) : Cat.circ.congr_right h^.triangle
+                         ...    = f ∘∘ Y^.hom ∘∘ h^.hom   : C^.circ_assoc
    }
 
 /-! #brief Dependent sum is adjoint to base change.

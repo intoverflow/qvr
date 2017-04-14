@@ -7,6 +7,7 @@ import ..c2_limits
 import ..c3_wtypes
 
 import .s1_basic
+import ..c3_wtypes.depprod
 
 namespace qp
 
@@ -188,25 +189,23 @@ definition LeanCat.DepProdFun {B A : LeanCat.{ℓ}^.obj}
 definition LeanCat.BaseChange_DepProd.Adj.counit_com
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
     (X : OverObj LeanCat.{ℓ} x)
     : OverHom LeanCat.{ℓ} x
         (BaseChangeFun.obj f (LeanCat.DepProdFun.obj f X))
         X
-:= sorry
--- := { hom := let pb₀ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 1 0)
---          in let pb₁ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 0 1)
---             in λ Z, ((pb₁ Z)^.snd { val := pb₀ Z, property := sorry })^.val
---    , triangle := sorry
---    }
+:= { hom := λ Z
+            , let pb₀ := pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 1 0) Z
+           in let pb₁ := (pullback.π LeanCat.{ℓ} (f ↗→ (LeanCat.DepProdFun.obj f X)^.hom ↗→↗) (@fin_of 0 1) Z)^.snd
+              in (pb₁ { val := pb₀, property := sorry })^.val
+   , triangle := sorry
+   }
 
 /-! #brief Counit of the BaseChangeFun/LeanCat.DepProdFun adjunction.
 -/
 definition LeanCat.BaseChange_DepProd.Adj.counit
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
-    : NatTrans (@BaseChangeFun LeanCat.{ℓ} x y f f_HasPullbacksAlong □□ LeanCat.DepProdFun f)
+    : NatTrans (@BaseChangeFun LeanCat.{ℓ} x y f (HasAllPullbacks.HasPullbacksAlong LeanCat _) □□ LeanCat.DepProdFun f)
                (Fun.id (OverCat LeanCat.{ℓ} x))
 := { com := LeanCat.BaseChange_DepProd.Adj.counit_com f
    , natural := sorry
@@ -217,55 +216,50 @@ definition LeanCat.BaseChange_DepProd.Adj.counit
 definition LeanCat.BaseChange_DepProd.Adj.unit_com.cone
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
     (Y : OverObj LeanCat.{ℓ} y)
     (Yy : OverObj.dom Y)
     (Xx : {b // f b = Y^.hom Yy})
     : PullbackCone LeanCat.{ℓ} (f ↗→ Y^.hom ↗→↗)
-:= sorry
--- := @PullbackCone.mk LeanCat.{ℓ} _ _ _
---     (f ↗→ Y^.hom ↗→↗) {b // f b = Y^.hom Yy}
---     (λ Xx, f Xx^.val) (subtype.val ↗← (λ Xx, Yy) ↗←↗)
---     begin
---       apply dlist.eq,
---       { trivial },
---       apply dlist.eq,
---       { apply funext, intro Xx, cases Xx with Xx ωXx,
---         exact sorry
---       }
---       , trivial
---     end
+:= @PullbackCone.mk LeanCat.{ℓ} _ _
+    (f ↗→ Y^.hom ↗→↗) {b // f b = Y^.hom Yy}
+    (λ Xx, f Xx^.val) (subtype.val ↗← (λ Xx, Yy) ↗←↗)
+    begin
+      apply dlist.eq,
+      { trivial },
+      apply dlist.eq,
+      { apply funext, intro Xx, cases Xx with Xx ωXx,
+        exact sorry
+      }
+      , trivial
+    end
 
 /-! #brief Component of the unit of the BaseChangeFun/LeanCat.DepProdFun adjunction.
 -/
 definition LeanCat.BaseChange_DepProd.Adj.unit_com
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
     (Y : OverObj LeanCat.{ℓ} y)
     : OverHom LeanCat.{ℓ} y
         Y
         (LeanCat.DepProdFun.obj f (BaseChangeFun.obj f Y))
-:= sorry
--- := { hom := λ Yy, { fst := Y^.hom Yy
---                   , snd := λ Xx
---                            , { val := pullback.univ LeanCat.{ℓ}
---                                        (f ↗→ Y^.hom ↗→↗)
---                                        (LeanCat.BaseChange_DepProd.Adj.unit_com.cone f Y Yy Xx) Xx
---                              , property := sorry
---                              }
---                   }
---    , triangle := sorry
---    }
+:= { hom := λ Yy, { fst := Y^.hom Yy
+                  , snd := λ Xx
+                           , { val := pullback.univ LeanCat.{ℓ}
+                                       (f ↗→ Y^.hom ↗→↗)
+                                       (LeanCat.BaseChange_DepProd.Adj.unit_com.cone f Y Yy Xx) Xx
+                             , property := sorry
+                             }
+                  }
+   , triangle := sorry
+   }
 
 /-! #brief Unit of the BaseChangeFun/LeanCat.DepProdFun adjunction.
 -/
 definition LeanCat.BaseChange_DepProd.Adj.unit
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
     : NatTrans (Fun.id (OverCat LeanCat.{ℓ} y))
-               (LeanCat.DepProdFun f □□ @BaseChangeFun LeanCat.{ℓ} x y f f_HasPullbacksAlong)
+               (LeanCat.DepProdFun f □□ @BaseChangeFun LeanCat.{ℓ} x y f (HasAllPullbacks.HasPullbacksAlong _ _))
 := { com := LeanCat.BaseChange_DepProd.Adj.unit_com f
    , natural := sorry
    }
@@ -276,7 +270,6 @@ definition LeanCat.BaseChange_DepProd.Adj.unit
 theorem LeanCat.BaseChange_DepProd.Adj.id_left
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
     (Y : OverObj LeanCat.{ℓ} y)
     : OverHom.comp LeanCat x _ _ _
         (LeanCat.BaseChange_DepProd.Adj.counit_com f (BaseChangeFun.obj f Y))
@@ -289,7 +282,6 @@ theorem LeanCat.BaseChange_DepProd.Adj.id_left
 theorem LeanCat.BaseChange_DepProd.Adj.id_right
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
     (X : OverObj LeanCat.{ℓ} x)
     : OverHom.comp LeanCat y _ _ _
         (LeanCat.DepProdFun.hom f (LeanCat.BaseChange_DepProd.Adj.counit_com f X))
@@ -303,8 +295,7 @@ theorem LeanCat.BaseChange_DepProd.Adj.id_right
 definition LeanCat.BaseChange_DepProd.Adj
     {x y : LeanCat.{ℓ}^.obj}
     (f : LeanCat.{ℓ}^.hom x y)
-    [f_HasPullbacksAlong : HasPullbacksAlong LeanCat.{ℓ} f]
-    : Adj (@BaseChangeFun LeanCat.{ℓ} x y f f_HasPullbacksAlong)
+    : Adj (LeanCat.BaseChangeFun f)
           (LeanCat.DepProdFun f)
 := { counit := LeanCat.BaseChange_DepProd.Adj.counit f
    , unit := LeanCat.BaseChange_DepProd.Adj.unit f
@@ -318,7 +309,7 @@ definition LeanCat.BaseChange_DepProd.Adj
 instance LeanCat.HasDepProd
     : HasDepProd LeanCat.{ℓ}
 := { depprod := λ x y f f_HasPullbacksAlong, @LeanCat.DepProdFun x y f
-   , adj := @LeanCat.BaseChange_DepProd.Adj
+   , adj := sorry -- λ x y f f_HasPullbacksAlong, @LeanCat.BaseChange_DepProd.Adj x y f
    }
 
 /-! #brief Handy wrapper for PolyEndoFun.
