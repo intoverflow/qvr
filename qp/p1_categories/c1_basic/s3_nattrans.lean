@@ -17,7 +17,7 @@ structure NatTrans
     (F G : Fun C D)
     : Type (max ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂)
 := (com : ∀ (x : C^.obj), D^.hom (F^.obj x) (G^.obj x))
-   (natural : ∀ {x y : C^.obj} {f : C^.hom x y}
+   (natural : ∀ {x y : C^.obj} (f : C^.hom x y)
               , D^.circ (com y) (F^.hom f)
                  = D^.circ (G^.hom f) (com x))
 
@@ -75,31 +75,6 @@ definition NatTrans.id {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓho
    , natural := λ x y f, by rw [D^.circ_id_left, D^.circ_id_right]
    }
 
-/-! #brief The casting natural transformation.
--/
-definition NatTrans.cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    : ∀ {F₁ F₂ : Fun C D}
-        (ωF : F₁ = F₂)
-      , NatTrans F₁ F₂
-| F .(F) (eq.refl .(F)) := NatTrans.id F
-
-/-! #brief The casting transformation is the identity.
--/
-theorem NatTrans.simp_cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    : ∀ {F₁ F₂ : Fun C D}
-        {ωF : F₁ = F₂}
-      , NatTrans.cast ωF == NatTrans.id F₁
-| F .(F) (eq.refl .(F)) := heq.refl _
-
-/-! #brief The casting transformation has identity components.
--/
-theorem NatTrans.cast.com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    : ∀ {F₁ F₂ : Fun C D}
-        {ωF : F₁ = F₂}
-        {c : C^.obj}
-      , (NatTrans.cast ωF)^.com c = cast_hom (by rw ωF)
-| F .(F) (eq.refl .(F)) c := sorry
-
 /-! #brief Composition of natural transformations.
 -/
 definition NatTrans.comp {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
@@ -148,6 +123,49 @@ theorem NatTrans.comp_id_right {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
     : NatTrans.comp η (NatTrans.id F₁) = η
 := NatTrans.eq (funext (λ c, D^.circ_id_right))
 
+/-! #brief The casting natural transformation.
+-/
+definition NatTrans.cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ : Fun C D}
+        (ωF : F₁ = F₂)
+      , NatTrans F₁ F₂
+| F .(F) (eq.refl .(F)) := NatTrans.id F
+
+/-! #brief The casting transformation is the identity.
+-/
+theorem NatTrans.simp_cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ : Fun C D}
+        {ωF : F₁ = F₂}
+      , NatTrans.cast ωF == NatTrans.id F₁
+| F .(F) (eq.refl .(F)) := heq.refl _
+
+/-! #brief The casting transformation has identity components.
+-/
+theorem NatTrans.cast.com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ : Fun C D}
+        {ωF : F₁ = F₂}
+        {c : C^.obj}
+      , (NatTrans.cast ωF)^.com c = cast_hom (by rw ωF)
+| F .(F) (eq.refl .(F)) c := rfl
+
+/-! #brief Composition of casting natural transformations.
+-/
+theorem NatTrans.comp_cast {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    : ∀ {F₁ F₂ F₃ : Fun C D}
+        {ωF₁₂ : F₁ = F₂}
+        {ωF₂₃ : F₂ = F₃}
+      , NatTrans.comp (NatTrans.cast ωF₂₃) (NatTrans.cast ωF₁₂)
+         = NatTrans.cast (eq.trans ωF₁₂ ωF₂₃)
+| F .(F) .(F) (eq.refl .(F)) (eq.refl .(F))
+:= NatTrans.eq (funext (λ c, D^.circ_id_left))
+
+/-! #brief Casting natural transformations are just identities.
+-/
+theorem NatTrans.cast_rfl {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F : Fun C D}
+    : NatTrans.cast (eq.refl F) = NatTrans.id F
+:= rfl
+
 
 
 /- -----------------------------------------------------------------------
@@ -162,6 +180,7 @@ definition ConstTrans (C : Cat.{ℓobj₁ ℓhom₁}) {D : Cat.{ℓobj₂ ℓhom
 := { com := λ c, h
    , natural := λ c₁ c₂ f, eq.trans D^.circ_id_right (eq.symm D^.circ_id_left)
    }
+
 
 
 /- -----------------------------------------------------------------------
@@ -212,6 +231,47 @@ definition FunCat.HasInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ �
                 , eq.trans D^.circ_id_right (eq.symm (init_hom.uniq D))
           })
     (λ F η, NatTrans.eq (funext (λ c, init_hom.uniq D)))
+
+/- -----------------------------------------------------------------------
+Swapping the arguments of functors into functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Swap the arguments of a functor.
+-/
+definition Fun.swap.obj {A : Cat.{ℓobj₁ ℓhom₁}} {B : Cat.{ℓobj₂ ℓhom₂}} {C : Cat.{ℓobj₃ ℓhom₃}}
+    (F : Fun A (FunCat B C))
+    (b : B^.obj)
+    : Fun A C
+:= { obj := λ a, (F^.obj a)^.obj b
+   , hom := λ a₁ a₂ f, (F^.hom f)^.com b
+   , hom_id := λ x, begin
+                      rw F^.hom_id,
+                      trivial
+                    end
+   , hom_circ := λ x y z g f, begin rw F^.hom_circ, trivial end
+   }
+
+/-! #brief Swap the arguments of a natural transformation.
+-/
+definition Fun.swap.hom {A : Cat.{ℓobj₁ ℓhom₁}} {B : Cat.{ℓobj₂ ℓhom₂}} {C : Cat.{ℓobj₃ ℓhom₃}}
+    (F : Fun A (FunCat B C))
+    (b₁ b₂ : B^.obj) (f : B^.hom b₁ b₂)
+    : NatTrans (Fun.swap.obj F b₁) (Fun.swap.obj F b₂)
+:= { com := λ a, (F^.obj a)^.hom f
+   , natural := λ x y g, eq.symm ((F^.hom g)^.natural f)
+   }
+
+
+/-! #brief Swap the arguments.
+-/
+definition Fun.swap {A : Cat.{ℓobj₁ ℓhom₁}} {B : Cat.{ℓobj₂ ℓhom₂}} {C : Cat.{ℓobj₃ ℓhom₃}}
+    (F : Fun A (FunCat B C))
+    : Fun B (FunCat A C)
+:= { obj := Fun.swap.obj F
+   , hom := Fun.swap.hom F
+   , hom_id := λ b, NatTrans.eq (funext (λ a, (F^.obj a)^.hom_id))
+   , hom_circ := λ b₁ b₂ b₃ g f, NatTrans.eq (funext (λ a, (F^.obj a)^.hom_circ))
+   }
 
 
 
@@ -267,6 +327,40 @@ theorem NatTrans.Iso_on_com {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ 
     : NatIso η₁₂ η₂₁
 := { id₁ := NatTrans.eq (funext (λ c, (ω c)^.id₁))
    , id₂ := NatTrans.eq (funext (λ c, (ω c)^.id₂))
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Opposite transformations.
+----------------------------------------------------------------------- -/
+
+/-! #brief An opposite transformation.
+-/
+definition OpTrans {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    (η : NatTrans F₁ F₂)
+    : NatTrans (OpFun F₂) (OpFun F₁)
+:= { com := λ x, η^.com x
+   , natural := λ x y f, eq.symm (η^.natural f)
+   }
+
+/-! #brief Opposites of natural isos are again natural isos.
+-/
+definition OpNatIso {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ F₂ : Fun C D}
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    : NatIso (OpTrans η₁₂) (OpTrans η₂₁)
+:= { id₁ := begin
+              apply NatTrans.eq, apply funext, intro c,
+              apply NatTrans.congr_com η_iso^.id₂
+            end
+   , id₂ := begin
+              apply NatTrans.eq, apply funext, intro c,
+              apply NatTrans.congr_com η_iso^.id₁
+            end
    }
 
 
@@ -370,7 +464,7 @@ definition NatTrans.whisk_right {B : Cat.{ℓobj₁ ℓhom₁}} {C : Cat.{ℓobj
     (F : Fun B C)
     : NatTrans (Fun.comp G₁ F) (Fun.comp G₂ F)
 := { com := λ b, η^.com (F^.obj b)
-   , natural := λ b₁ b₂ f, η^.natural
+   , natural := λ b₁ b₂ f, η^.natural _
    }
 
 -- Right whisker composition.
@@ -469,7 +563,7 @@ definition Adj.left_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓh
 /-! #brief right_adj and left_adj are inverses of one another.
 -/
 theorem Adj.right_adj_left_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    {L : Fun C D} {R : Fun D C} {adj : Adj L R}
+    {L : Fun C D} {R : Fun D C} (adj : Adj L R)
     {c : C^.obj} {d : D^.obj} {f : C^.hom c (R^.obj d)}
     : adj^.right_adj (adj^.left_adj f) = f
 := by calc adj^.right_adj (adj^.left_adj f)
@@ -477,7 +571,7 @@ theorem Adj.right_adj_left_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
            ... = R^.hom (adj^.counit^.com d) ∘∘ R^.hom (L^.hom f) ∘∘ adj^.unit^.com c   : by rw R^.hom_circ
            ... = R^.hom (adj^.counit^.com d) ∘∘ (R^.hom (L^.hom f) ∘∘ adj^.unit^.com c) : by rw C^.circ_assoc
            ... = R^.hom (adj^.counit^.com d) ∘∘ ((R □□ L)^.hom f ∘∘ adj^.unit^.com c)   : rfl
-           ... = R^.hom (adj^.counit^.com d) ∘∘ (adj^.unit^.com (R^.obj d) ∘∘ f)        : congr_arg (λ q, R^.hom (adj^.counit^.com d) ∘∘ q) (eq.symm adj^.unit^.natural)
+           ... = R^.hom (adj^.counit^.com d) ∘∘ (adj^.unit^.com (R^.obj d) ∘∘ f)        : congr_arg (λ q, R^.hom (adj^.counit^.com d) ∘∘ q) (eq.symm (adj^.unit^.natural _))
            ... = R^.hom (adj^.counit^.com d) ∘∘ adj^.unit^.com (R^.obj d) ∘∘ f          : C^.circ_assoc
            ... = ⟨⟨R^.obj d⟩⟩ ∘∘ f                                                      : congr_arg (λ q, q ∘∘ f) adj^.id_right
            ... = f                                                                      : C^.circ_id_left
@@ -485,7 +579,7 @@ theorem Adj.right_adj_left_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
 /-! #brief left_adj and right_adj are inverses of one another.
 -/
 theorem Adj.left_adj_right_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
-    {L : Fun C D} {R : Fun D C} {adj : Adj L R}
+    {L : Fun C D} {R : Fun D C} (adj : Adj L R)
     {c : C^.obj} {d : D^.obj} {f : D^.hom (L^.obj c) d}
     : adj^.left_adj (adj^.right_adj f) = f
 := by calc adj^.left_adj (adj^.right_adj f)
@@ -493,10 +587,36 @@ theorem Adj.left_adj_right_adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj�
            ... = adj^.counit^.com d ∘∘ (L^.hom (R^.hom f) ∘∘ L^.hom (adj^.unit^.com c)) : congr_arg (λ q, adj^.counit^.com d ∘∘ q) L^.hom_circ
            ... = adj^.counit^.com d ∘∘ ((L □□ R)^.hom f ∘∘ L^.hom (adj^.unit^.com c))   : rfl
            ... = adj^.counit^.com d ∘∘ (L □□ R)^.hom f ∘∘ L^.hom (adj^.unit^.com c)     : by rw D^.circ_assoc
-           ... = f ∘∘ adj^.counit^.com (L^.obj c) ∘∘ L^.hom (adj^.unit^.com c)          : congr_arg (λ q, q ∘∘ L^.hom (adj^.unit^.com c)) adj^.counit^.natural
+           ... = f ∘∘ adj^.counit^.com (L^.obj c) ∘∘ L^.hom (adj^.unit^.com c)          : congr_arg (λ q, q ∘∘ L^.hom (adj^.unit^.com c)) (adj^.counit^.natural _)
            ... = f ∘∘ (adj^.counit^.com (L^.obj c) ∘∘ L^.hom (adj^.unit^.com c))        : by rw D^.circ_assoc
            ... = f ∘∘ ⟨⟨L^.obj c⟩⟩                                                      : congr_arg (λ q, f ∘∘ q) adj^.id_left
            ... = f                                                                      : D^.circ_id_right
+
+/-! #brief left_adj is injective.
+-/
+theorem Adj.left_adj.inj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C} (adj : Adj L R)
+    {c : C^.obj} {d : D^.obj} {f₁ f₂ : C^.hom c (R^.obj d)}
+    (ω : Adj.left_adj adj f₁ = Adj.left_adj adj f₂)
+    : f₁ = f₂
+:= begin
+     apply eq.trans (eq.symm adj^.right_adj_left_adj),
+     rw ω,
+     apply adj^.right_adj_left_adj
+   end
+
+/-! #brief right_adj is injective.
+-/
+theorem Adj.right_adj.inj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {L : Fun C D} {R : Fun D C} (adj : Adj L R)
+    {c : C^.obj} {d : D^.obj} {f₁ f₂ : D^.hom (L^.obj c) d}
+    (ω : Adj.right_adj adj f₁ = Adj.right_adj adj f₂)
+    : f₁ = f₂
+:= begin
+     apply eq.trans (eq.symm adj^.left_adj_right_adj),
+     rw ω,
+     apply adj^.left_adj_right_adj
+   end
 
 
 
@@ -527,5 +647,55 @@ definition Cat.Bij.Adj {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓho
                 apply cast_hom.simp
               end
    }
+
+/-! #brief Bijections preserve final objects.
+-/
+definition Cat.Bij.PresFinal₂ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ : Fun C D} {F₂ : Fun D C}
+    (bij : Cat.Bij F₁ F₂)
+    : PresFinal F₂
+:= { hom := λ D_HasFinal c, bij^.Adj^.right_adj (@final_hom D D_HasFinal (F₁^.obj c))
+   , pres := λ D_HasFinal
+             , { hom_uniq := λ c h
+                             , begin
+                                 apply bij^.Adj^.left_adj.inj,
+                                 rw bij^.Adj^.left_adj_right_adj,
+                                 apply final_hom.uniq
+                               end
+               }
+   }
+
+/-! #brief Bijections preserve final objects.
+-/
+definition Cat.Bij.PresFinal₁ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ : Fun C D} {F₂ : Fun D C}
+    (bij : Cat.Bij F₁ F₂)
+    : PresFinal F₁
+:= bij^.flip^.PresFinal₂
+
+/-! #brief Bijections preserve initial objects.
+-/
+definition Cat.Bij.PresInit₁ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ : Fun C D} {F₂ : Fun D C}
+    (bij : Cat.Bij F₁ F₂)
+    : PresInit F₁
+:= { hom := λ C_HasInit c, bij^.Adj^.left_adj (@init_hom _ C_HasInit (F₂^.obj c))
+   , pres := λ C_HasInit
+             , { hom_uniq := λ c h
+                             , begin
+                                 apply bij^.Adj^.right_adj.inj,
+                                 rw bij^.Adj^.right_adj_left_adj,
+                                 apply init_hom.uniq
+                               end
+               }
+   }
+
+/-! #brief Bijections preserve initial objects.
+-/
+definition Cat.Bij.PresInit₂ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {F₁ : Fun C D} {F₂ : Fun D C}
+    (bij : Cat.Bij F₁ F₂)
+    : PresInit F₂
+:= bij^.flip^.PresInit₁
 
 end qp

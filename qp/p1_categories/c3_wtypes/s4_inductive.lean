@@ -208,18 +208,17 @@ definition indType.iso' (C : Cat.{ℓobj ℓhom})
 
 /-! #brief Arguments for the n-th constructor.
 -/
-definition indType.args (C : Cat.{ℓobj ℓhom})
+definition indType.arg (C : Cat.{ℓobj ℓhom})
     [C_HasFinal : HasFinal C]
     [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasAllFinCoProducts : HasAllFinCoProducts C]
-    (σ : IndSig C)
-    [σ_HasIndType : HasIndType C σ]
-    (n : fin (list.length σ))
+    (σσ : IndSig C)
+    [σ_HasIndType : HasIndType C σσ]
+    (σ : ConSig C)
     : C^.obj
-:= let conσ := list.get σ n
-   in finproduct C [conσ^.args, finproduct C (list.repeat (indType C σ) conσ^.fst)]
+:= finproduct C [σ^.args, finproduct C (list.repeat (indType C σσ) σ^.fst)]
 
 /-! #brief Decomposition of an inductive type in terms of its constructors.
 -/
@@ -232,41 +231,41 @@ definition indType.decomp (C : Cat.{ℓobj ℓhom})
     (σ : IndSig C)
     [σ_HasIndType : HasIndType C σ]
     : C^.obj
-:= fincoproduct C (fin.enum (indType.args C σ))
+:= fincoproduct C (list.map (indType.arg C σ) σ)
 
-/-! #brief Algebra structure on the decomposition of an inductive type.
--/
-definition indType.alg (C : Cat.{ℓobj ℓhom})
-    [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    [C_HasAllFinProducts : HasAllFinProducts C]
-    [C_HasAllFinCoProducts : HasAllFinCoProducts C]
-    (σ : IndSig C)
-    [σ_HasIndType : HasIndType C σ]
-    : EndoAlg (PolyEndoFun σ^.induce)
-:= { carr := indType.decomp C σ
-   , hom := sorry
-   }
+-- /-! #brief Algebra structure on the decomposition of an inductive type.
+-- -/
+-- definition indType.alg (C : Cat.{ℓobj ℓhom})
+--     [C_HasFinal : HasFinal C]
+--     [C_HasDepProd : HasDepProd C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     [C_HasAllFinProducts : HasAllFinProducts C]
+--     [C_HasAllFinCoProducts : HasAllFinCoProducts C]
+--     (σ : IndSig C)
+--     [σ_HasIndType : HasIndType C σ]
+--     : EndoAlg (PolyEndoFun σ^.induce)
+-- := { carr := indType.decomp C σ
+--    , hom := sorry
+--    }
 
-/-! #brief Hom from the n-th constructor arguments to the induced codomain.
--/
-definition indType.args.over (C : Cat.{ℓobj ℓhom})
-    [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    [C_HasAllFinProducts : HasAllFinProducts C]
-    [C_HasAllFinCoProducts : HasAllFinCoProducts C]
-    (σ : IndSig C)
-    [σ_HasIndType : HasIndType C σ]
-    : ∀ (n : fin (list.length σ))
-      , C^.hom (indType.args C σ n)
-               (fincoproduct C (list.map ConSig.codom σ))
-| (fin.mk n ωn)
-:= fincoproduct.ι C (list.map ConSig.codom σ)
-    { val := n, is_lt := cast begin rw list.length_map end ωn }
-    ∘∘ cast_hom begin rw -list.get_map, { trivial }, { rw list.length_map } end
-    ∘∘ finproduct.π C _ (@fin_of 1 0)
+-- /-! #brief Hom from the n-th constructor arguments to the induced codomain.
+-- -/
+-- definition indType.args.over (C : Cat.{ℓobj ℓhom})
+--     [C_HasFinal : HasFinal C]
+--     [C_HasDepProd : HasDepProd C]
+--     [C_HasAllPullbacks : HasAllPullbacks C]
+--     [C_HasAllFinProducts : HasAllFinProducts C]
+--     [C_HasAllFinCoProducts : HasAllFinCoProducts C]
+--     (σ : IndSig C)
+--     [σ_HasIndType : HasIndType C σ]
+--     : ∀ (n : fin (list.length σ))
+--       , C^.hom (indType.args C σ n)
+--                (fincoproduct C (list.map ConSig.codom σ))
+-- | (fin.mk n ωn)
+-- := fincoproduct.ι C (list.map ConSig.codom σ)
+--     { val := n, is_lt := cast begin rw list.length_map end ωn }
+--     ∘∘ cast_hom begin rw -list.get_map, { trivial }, { rw list.length_map } end
+--     ∘∘ finproduct.π C _ (@fin_of 1 0)
 
 -- /-! #brief Generic constructor for an inductive type.
 -- -/

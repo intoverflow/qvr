@@ -248,7 +248,7 @@ definition pullback.univ (C : Cat.{ℓobj ℓhom})
     [maps_HasPullback : HasPullback C maps]
     (c : PullbackCone C maps)
     : C^.hom c^.obj (pullback C maps)
-:= limit.univ c
+:= limit.univ _ c
 
 /-! #brief Every cone is mediated through the pullback.
 -/

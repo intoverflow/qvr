@@ -2,8 +2,28 @@
 Facts about (fin n).
 ----------------------------------------------------------------------- -/
 
+import .c0_misc
+
 namespace qp
 namespace stdaux
+
+/-! #brief Helper for showing two fin's are heq.
+-/
+theorem fin.heq
+    : ∀ {N₁ N₂ : ℕ}
+        (ωN : N₁ = N₂)
+        {n₁ : fin N₁} {n₂ : fin N₂}
+        (ωn : n₁^.val = n₂^.val)
+      , n₁ == n₂
+| N .(N) (eq.refl .(N)) (fin.mk n ω₁) (fin.mk .(n) ω₂) (eq.refl .(n)) := heq.refl _
+
+/-! #brief The value held within a casted fin.
+-/
+theorem fin.cast_val
+    : ∀ {N₁ N₂ : ℕ} (ωN : N₁ = N₂)
+        (n : fin N₁)
+      , (cast (congr_arg fin ωN) n)^.val = n^.val
+| N .(N) (eq.refl .(N)) n := rfl
 
 /-! #brief Alternate constructor for fin.
 -/
@@ -69,6 +89,14 @@ definition {ℓ} fin.enum {A : Type ℓ}
 | 0 f := []
 | (nat.succ N) f:= f (fin_of 0) :: @fin.enum N (λ n, f { val := nat.succ n^.val, is_lt := nat.succ_le_succ n^.is_lt })
 
+/-! #brief Length of an enum.
+-/
+theorem {ℓ} list.length_enum {A : Type ℓ}
+    : ∀ {N : ℕ} (f : fin N → A)
+      , list.length (fin.enum f) = N
+| 0 f := rfl
+| (nat.succ N) f := congr_arg nat.succ (@list.length_enum N _)
+
 /-! #brief Action of casting on a fin.
 -/
 theorem fin.cast
@@ -86,6 +114,44 @@ definition {ℓ} list.get {A : Type ℓ}
 | [] n := fin.zero_elim n
 | (a :: aa) (fin.mk 0 ω) := a
 | (a :: aa) (fin.mk (nat.succ n) ω) := list.get aa { val := n, is_lt := nat.lt_of_succ_lt_succ ω }
+
+/-! #brief Action of list.get on fin.enum.
+-/
+theorem {ℓ} list.get_enum {A : Type ℓ}
+    : ∀ {N : ℕ} {f : fin N → A}
+        {n : fin (list.length (fin.enum f))}
+      , list.get (fin.enum f) n = f (cast (congr_arg fin (list.length_enum f)) n)
+| 0 f n := fin.zero_elim n
+| (nat.succ N) f (fin.mk 0 ω)
+:= begin
+     apply congr_arg f,
+     apply eq_of_heq,
+     refine heq.trans _ (heq.symm (cast_heq _ _)),
+     apply fin.heq (eq.symm (list.length_enum f)),
+     trivial
+   end
+| (nat.succ N) f (fin.mk (nat.succ n) ω)
+:= begin
+     apply eq.trans (@list.get_enum N _ _),
+     apply congr_arg f,
+     apply eq_of_heq,
+     refine heq.trans _ (heq.symm (cast_heq _ _)),
+     apply fin.heq (eq.symm (list.length_enum f)),
+     apply congr_arg nat.succ,
+     apply fin.cast_val
+   end
+
+/-! #brief Action of list.get on fin.enum.
+-/
+theorem {ℓ} list.get_enum' {A : Type ℓ}
+    {N : ℕ} {f : fin N → A}
+    : list.get (fin.enum f) == f
+:= begin
+     refine hfunext (congr_arg fin (list.length_enum f)) _,
+     intro n,
+     apply list.get_enum
+   end
+
 
 @[simp] theorem {ℓ} list.get.simp {A : Type ℓ}
     (a : A) (aa : list A)
@@ -174,6 +240,14 @@ theorem {ℓ₁ ℓ₂} list.get_map {A : Type ℓ₁} {B : Type ℓ₂}
      apply nat.succ.inj,
      exact ω
    end
+
+/-! #brief Action of list.get on list.repeat.
+-/
+theorem {ℓ} list.get_repeat {A : Type ℓ}
+    {a : A}
+    : ∀ {N : ℕ} {n : fin (list.length (list.repeat a N))}
+      , a = list.get (list.repeat a N) n
+:= sorry
 
 end stdaux
 end qp

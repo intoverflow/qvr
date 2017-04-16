@@ -96,7 +96,7 @@ theorem nat.not_lt_add_right
 | (nat.succ m) ω := nat.not_lt_add_right m (nat.lt_of_succ_lt_succ ω)
 
 
-/-! #brief The axiom of choice, for unique existance.
+/-! #brief The axiom of choice, for unique existence.
 -/
 noncomputable definition {ℓ} unique_choice {A : Type ℓ} {P : A → Prop}
     : (∃! (a : A), P a) → A
@@ -119,6 +119,33 @@ theorem {ℓ} unique_choice.simp {A : Type ℓ} {P : A → Prop}
      apply unique_choice.has_prop
    end
 
+/-! #brief Mere existence.
+-/
+definition {ℓ} MerelyExists (A : Type ℓ) : Prop
+:= ∃ (a : A), true
+
+/-! #brief Introducing something which merely exists.
+-/
+definition {ℓ} MerelyExists.intro {A : Type ℓ}
+    (a : A)
+    : MerelyExists A
+:= exists.intro a true.intro
+
+/-! #brief Elimintation of mere existence.
+-/
+definition {ℓ} MerelyExists.elim {A : Type ℓ}
+    : ∀ (ex : MerelyExists A)
+        (P : Prop)
+        (ω : A → P)
+      , P
+| (exists.intro a ωa) P ω := ω a
+
+/-! #brief The axiom of choice allows us to unbox something which merely exists.
+-/
+noncomputable definition {ℓ} MerelyExists.choice {A : Type ℓ}
+    (ex : MerelyExists A)
+    : A
+:= classical.some ex
 
 end stdaux
 end qp

@@ -15,10 +15,10 @@ universe variables ℓobjx ℓhomx ℓobj ℓhom
 
 
 /- -----------------------------------------------------------------------
-Polynomial functors.
+Dependent polynomial functors.
 ----------------------------------------------------------------------- -/
 
-/-! #brief A dependent polynomial functor.
+/-! #brief An induced dependent polynomial functor.
 -/
 definition DepPolyFun {C : Cat.{ℓobj ℓhom}}
     [C_HasDepProd : HasDepProd C]
@@ -30,51 +30,21 @@ definition DepPolyFun {C : Cat.{ℓobj ℓhom}}
     : Fun (OverCat C c₁) (OverCat C c₂)
 := DepSumFun g □□ DepProdFun f □□ BaseChangeFun h
 
-/-! #brief A hom into a DepPolyFun object.
+/-! #brief A dependent polynomial functor.
 -/
-definition DepPolyFun.into {C : Cat.{ℓobj ℓhom}}
+structure IsDepPolyFun {C : Cat.{ℓobj ℓhom}}
     [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {a b c₁ c₂ : C^.obj}
-    {f : C^.hom a b}
-    {h : C^.hom a c₁}
-    {g : C^.hom b c₂}
-    (X : OverObj C c₂)
-    (Y : OverObj C c₁)
-    (Xb : C^.hom X^.obj b)
-    (ωXb : X^.hom = g ∘∘ Xb)
-    (z : C^.hom (pullback C (f↗→Xb↗→↗)) Y^.obj)
-    (ω : h ∘∘ pullback.π C (f↗→Xb↗→↗) (@fin_of 1 0)
-          = Y^.hom ∘∘ z)
-    : (OverCat C c₂)^.hom X ((DepPolyFun f h g)^.obj Y)
-:= let ccone
-        := PullbackCone.mk (h↗→(Y^.hom)↗→↗)
-            (pullback C (f↗→Xb↗→↗))
-            (h ∘∘ pullback.π C (f↗→Xb↗→↗) (@fin_of 1 0))
-            (pullback.π C (f↗→Xb↗→↗) (@fin_of 1 0) ↗← z ↗←↗)
-            begin apply HomsList.eq rfl, apply HomsList.eq ω, trivial end
-in DepSumFun.into _ _ _ Xb ωXb
-    ((BaseChange_DepProd.Adj f)^.right_adj
-      ((DepSum_BaseChange.Adj h)^.right_adj
-        { hom := z
-        , triangle := ω
-        }))
-
-/-! #brief A hom out of a DepPolyFun object.
--/
-definition DepPolyFun.out {C : Cat.{ℓobj ℓhom}}
-    [C_HasDepProd : HasDepProd C]
-    [C_HasAllPullbacks : HasAllPullbacks C]
-    {a b c₁ c₂ : C^.obj}
-    {f : C^.hom a b}
-    {h : C^.hom a c₁}
-    {g : C^.hom b c₂}
-    (X : OverObj C c₁)
-    (Y : OverObj C c₂)
-    (z : OverHom C b ((DepProdFun f)^.obj ((BaseChangeFun h)^.obj X))
-                     ((BaseChangeFun g)^.obj Y))
-    : (OverCat C c₂)^.hom ((DepPolyFun f h g)^.obj X) Y
-:= (DepSum_BaseChange.Adj g)^.left_adj z
+    {c₁ c₂ : C^.obj}
+    (P : Fun (OverCat C c₁) (OverCat C c₂))
+:= (dom : C^.obj)
+   (codom : C^.obj)
+   (hom : C^.hom dom codom)
+   (dom_out : C^.hom dom c₁)
+   (codom_out : C^.hom codom c₂)
+   (to_poly : NatTrans P (DepPolyFun hom dom_out codom_out))
+   (of_poly : NatTrans (DepPolyFun hom dom_out codom_out) P)
+   (equiv : NatIso to_poly of_poly)
 
 /-! #brief Preservation of co-limits by DepPolyFun.
 -/
@@ -122,7 +92,13 @@ definition DepPolyFun.Adamek {C : Cat.{ℓobj ℓhom}}
        { pres_colimit := λ L, DepPolyFun.PresCoLimit L }
        (@AdamekFun (OverCat C c) (OverCat.HasInit C c) (DepPolyFun f h g)))
 
-/-! #brief A polynomial endofunctor.
+
+
+/- -----------------------------------------------------------------------
+Polynomial endo-functors.
+----------------------------------------------------------------------- -/
+
+/-! #brief An induced polynomial endo-functor.
 -/
 definition PolyEndoFun {C : Cat.{ℓobj ℓhom}}
     [C_HasFinal : HasFinal C]
@@ -135,60 +111,69 @@ definition PolyEndoFun {C : Cat.{ℓobj ℓhom}}
     □□ DepPolyFun f (final_hom x) (final_hom y)
     □□ OverFinal.to C
 
-/-! #brief A hom into a polyendofun object.
--/
-definition PolyEndoFun.into {C : Cat.{ℓobj ℓhom}}
+theorem PolyEndoFun.isDepPolyFun {C : Cat.{ℓobj ℓhom}}
     [C_HasFinal : HasFinal C]
     [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {B A : C^.obj} (disp : C^.hom B A)
-    {X Y : C^.obj}
-    (Xy : C^.hom X A)
-    (fXyY : C^.hom (pullback C (disp↗→Xy↗→↗)) Y)
-    : C^.hom X ((PolyEndoFun disp)^.obj Y)
-:= @Adj.right_adj _ _ _ _ (OverFinal.Bij C)^.Adj
-      X
-      ((DepPolyFun disp (final_hom B) (final_hom A))^.obj ((OverFinal.to C)^.obj Y))
-    (DepPolyFun.into _ _
-       Xy (final_hom.uniq' C)
-       fXyY (final_hom.uniq' C))
+    {x y : C^.obj}
+    (f : C^.hom x y)
+    : OverFinal.to C □□ PolyEndoFun f □□ OverFinal.from C
+        = DepPolyFun f (final_hom x) (final_hom y)
+:= let bij₂ := (OverFinal.Bij C)^.id₂
+in begin
+     dsimp [PolyEndoFun],
+     repeat { rw Fun.comp_assoc },
+     rw bij₂,
+     repeat { rw -Fun.comp_assoc },
+     rw bij₂,
+     rw [Fun.comp_id_left, Fun.comp_id_right]
+   end
 
-/-! #brief A hom out of a polyendofun object.
+/-! #brief A polynomial endo-functor.
 -/
-definition PolyEndoFun.out {C : Cat.{ℓobj ℓhom}}
+structure IsPolyEndoFun {C : Cat.{ℓobj ℓhom}}
     [C_HasFinal : HasFinal C]
     [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {B A : C^.obj} (disp : C^.hom B A)
-    {X Y : C^.obj}
-    (ha : C^.hom ((@DepProdFun C C_HasDepProd _ _ disp (HasAllPullbacks.HasPullbacksAlong C _))^.obj
-                    ((@BaseChangeFun C _ _ (final_hom B) (HasAllPullbacks.HasPullbacksAlong C _))^.obj ((OverFinal.to C)^.obj X)))^.obj
-                 A)
-    (hy : C^.hom ((@DepProdFun C C_HasDepProd _ _ disp (HasAllPullbacks.HasPullbacksAlong C _))^.obj
-                    ((@BaseChangeFun C _ _ (final_hom B) (HasAllPullbacks.HasPullbacksAlong C _))^.obj ((OverFinal.to C)^.obj X)))^.obj
-                 Y)
-    : C^.hom ((PolyEndoFun disp)^.obj X) Y
-:= let pcone : PullbackCone C (final_hom A↗→(((OverFinal.to C)^.obj Y)^.hom)↗→↗)
-            := PullbackCone.mk (final_hom A↗→(((OverFinal.to C)^.obj Y)^.hom)↗→↗)
-                ((@DepProdFun C C_HasDepProd _ _ disp (HasAllPullbacks.HasPullbacksAlong C _))^.obj
-                    ((@BaseChangeFun C _ _ (final_hom B) (HasAllPullbacks.HasPullbacksAlong C _))^.obj ((OverFinal.to C)^.obj X)))^.obj
-                (final_hom _)
-                (ha ↗← hy ↗←↗)
-                begin
-                  apply HomsList.eq, { apply final_hom.uniq' },
-                  apply HomsList.eq, { apply final_hom.uniq' },
-                  trivial
-                end
-in @Adj.left_adj _ _ _ _ (Cat.Bij.flip (OverFinal.Bij C))^.Adj
-      ((DepPolyFun disp (final_hom B) (final_hom A))^.obj ((OverFinal.to C)^.obj X))
-      Y
-      (DepPolyFun.out _ _
-        { hom := @pullback.univ C _ _ (final_hom A↗→(((OverFinal.to C)^.obj Y)^.hom)↗→↗)
-                   (HasAllPullbacks.HasPullback C _)
-                   pcone
-        , triangle := sorry
-        })
+    (P : Fun C C)
+:= (dom : C^.obj)
+   (codom : C^.obj)
+   (hom : C^.hom dom codom)
+   (to_poly : NatTrans P (PolyEndoFun hom))
+   (of_poly : NatTrans (PolyEndoFun hom) P)
+   (equiv : NatIso to_poly of_poly)
 
+/-! #brief Every polynomial endo-functor is a dependent polynomial functor.
+-/
+definition IsPolyEndoFun.IsDepPolyFun {C : Cat.{ℓobj ℓhom}}
+    [C_HasFinal : HasFinal C]
+    [C_HasDepProd : HasDepProd C]
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    (P : Fun C C)
+    (P_IsPolyEndoFun : IsPolyEndoFun P)
+    : IsDepPolyFun (OverFinal.to C □□ P □□ OverFinal.from C)
+:= { dom := P_IsPolyEndoFun^.dom
+   , codom := P_IsPolyEndoFun^.codom
+   , hom := P_IsPolyEndoFun^.hom
+   , dom_out := final_hom P_IsPolyEndoFun^.dom
+   , codom_out := final_hom P_IsPolyEndoFun^.codom
+   , to_poly
+      := let trans := NatTrans.whisk_right
+                       (NatTrans.whisk_left (OverFinal.to C) P_IsPolyEndoFun^.to_poly)
+                       (OverFinal.from C)
+         in NatTrans.comp (NatTrans.cast (PolyEndoFun.isDepPolyFun _)) trans
+   , of_poly
+       := let trans := NatTrans.whisk_right
+                        (NatTrans.whisk_left (OverFinal.to C) P_IsPolyEndoFun^.of_poly)
+                        (OverFinal.from C)
+          in NatTrans.comp trans (NatTrans.cast (eq.symm (PolyEndoFun.isDepPolyFun _)))
+   , equiv
+      := { id₁ := let foo := P_IsPolyEndoFun^.equiv^.id₁
+                  in sorry
+         , id₂ := let foo := P_IsPolyEndoFun^.equiv^.id₂
+                  in sorry
+         }
+   }
 
 /-! #brief Preservation of co-limits by PolyEndoFun.
 -/
@@ -205,12 +190,13 @@ definition PolyEndoFun.PresCoLimit {C : Cat.{ℓobj ℓhom}}
 := @PresCoLimit.comp _ _ _ _
      L
      (OverFinal.to C)
-     (sorry /- because OverFinal.to is a bijection -/)
+     (Adj.left.PresCoLimit (OverFinal.Bij C)^.Adj L)
      (OverFinal.from C □□ DepPolyFun f (final_hom x) (final_hom y))
      (@PresCoLimit.comp _ _ _ _
        (OverFinal.to C □□ L)
        (DepPolyFun f (final_hom x) (final_hom y)) (DepPolyFun.PresCoLimit _)
-       (OverFinal.from C) (sorry /- because OverFinal.from is a bijection -/))
+       (OverFinal.from C)
+       (Adj.left.PresCoLimit (OverFinal.Bij C)^.flip^.Adj _))
 
 /-! #brief Adámek's construction for W-types.
 -/

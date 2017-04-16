@@ -91,7 +91,7 @@ theorem LaterHom.natural
 | 0 0 ωn := rfl
 | 0 (nat.succ n₁) ωn := by cases ωn
 | (nat.succ n₂) 0 ωn := rfl
-| (nat.succ n₂) (nat.succ n₁) ωn := η^.natural
+| (nat.succ n₂) (nat.succ n₁) ωn := η^.natural _
 
 
 /-! #brief Action of the later endofunctor on homs.
@@ -137,7 +137,7 @@ definition SoonerFun
                  , hom_circ := λ n₃ n₂ n₁ ωn₁₂ ωn₂₃, F^.hom_circ
                  }
    , hom := λ F₁ F₂ η, { com := λ n, η^.com (nat.succ n)
-                      , natural := λ n₂ n₁ ωn, η^.natural
+                      , natural := λ n₂ n₁ ωn, η^.natural _
                       }
    , hom_id
       := λ F

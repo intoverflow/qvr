@@ -30,6 +30,30 @@ definition ProductDrgm (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
                    end
    }
 
+/-! #brief The product diagram turns heterogeneous equality into natural isomorphisms.
+-/
+definition ProductDrgm.heq (C : Cat.{ℓobj ℓhom})
+    : ∀ {A₁ A₂ : Type ℓ} (ωA : A₁ = A₂)
+        {factor₁ : A₁ → C^.obj} {factor₂ : A₂ → C^.obj}
+        (ωfactor : factor₁ == factor₂)
+      , ProductDrgm C factor₁ == ProductDrgm C factor₂
+| A .(A) (eq.refl .(A)) factor .(factor) (heq.refl .(factor)) := heq.refl _
+
+/-! #brief A handy identity.
+-/
+theorem ProductDrgm.on_Fun {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+    (F : Fun (ObjCat A) C)
+    : ProductDrgm C F^.obj = F
+:= Fun.eq (λ x, rfl)
+    (λ ω x y f
+     , begin
+         dsimp [ObjCat, PreorderCat] at f,
+         subst f,
+         apply heq_of_eq,
+         apply eq.symm,
+         apply F^.hom_id
+       end)
+
 /-! #brief A cone over a product.
 -/
 definition ProductCone (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
@@ -72,6 +96,14 @@ instance HasAllProducts.HasProduct (C : Cat.{ℓobj ℓhom})
     {A : Type ℓ} (factor : A → C^.obj)
     : HasProduct C factor
 := HasAllProducts.has_product factor
+
+instance HasAllProducts.HasAllLimitsFrom.ObjCat (C : Cat.{ℓobj ℓhom})
+    [C_HasAllProducts : HasAllProducts.{ℓ} C]
+    (A : Type ℓ)
+    : HasAllLimitsFrom C (ObjCat A)
+:= { has_limit := λ L, let l := HasAllProducts.HasProduct C L^.obj
+                       in cast (congr_arg HasLimit (ProductDrgm.on_Fun L)) l
+   }
 
 /-! #brief Helper for showing a category has a product.
 -/
@@ -128,7 +160,7 @@ definition product.univ (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     [factor_HasProduct : HasProduct C factor]
     (c : ProductCone C factor)
     : C^.hom c^.obj (product C factor)
-:= limit.univ c
+:= limit.univ _ c
 
 /-! #brief Every cone is mediated through the product.
 -/
@@ -168,6 +200,28 @@ definition product.uniq {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     : Iso (product.iso factor_HasProduct₁ factor_HasProduct₂)
           (product.iso factor_HasProduct₂ factor_HasProduct₁)
 := limit.uniq factor_HasProduct₁ factor_HasProduct₂
+
+
+
+/- -----------------------------------------------------------------------
+Products in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasProduct {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllProducts : HasAllProducts.{ℓ} D]
+    {A : Type ℓ} (factor : A → Fun C D)
+    : HasProduct (FunCat C D) factor
+:= FunCat.HasLimit (ProductDrgm _ factor)
+
+/-! #brief Products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllProducts {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllProducts : HasAllProducts.{ℓ} D]
+    : HasAllProducts.{ℓ} (FunCat C D)
+:= { has_product := λ A factor, FunCat.HasProduct factor
+   }
 
 
 
@@ -221,6 +275,22 @@ instance HasAllFinProducts.HasFinProduct (C : Cat.{ℓobj ℓhom})
     (factor : list C^.obj)
     : HasFinProduct C factor
 := HasAllFinProducts.has_product factor
+
+instance HasAllFinProducts.HasAllLimitsFrom.ObjCat (C : Cat.{ℓobj ℓhom})
+    [C_HasAllFinProducts : HasAllFinProducts C]
+    (N : ℕ)
+    : HasAllLimitsFrom C (ObjCat (fin N))
+:= { has_limit
+      := λ L, let l := HasAllFinProducts.HasFinProduct C (fin.enum L^.obj)
+           in let ω₁ : ObjCat (fin (list.length (fin.enum (L^.obj)))) = ObjCat (fin N)
+                    := by rw list.length_enum
+           in let ω₂ : ProductDrgm C (list.get (fin.enum L^.obj)) == L
+                   := by calc ProductDrgm C (list.get (fin.enum L^.obj))
+                                  == ProductDrgm C L^.obj : ProductDrgm.heq _ (congr_arg fin (list.length_enum _))
+                                                             list.get_enum'
+                              ... = L                     : ProductDrgm.on_Fun L
+              in cast (HasLimit.heq (by rw list.length_enum) rfl ω₂) l
+   }
 
 /-! #brief Helper for showing a category has a finite product.
 -/
@@ -328,6 +398,28 @@ definition finproduct.uniq {C : Cat.{ℓobj ℓhom}}
     : Iso (finproduct.iso factor_HasFinProduct₁ factor_HasFinProduct₂)
           (finproduct.iso factor_HasFinProduct₂ factor_HasFinProduct₁)
 := product.uniq factor_HasFinProduct₁ factor_HasFinProduct₂
+
+
+
+/- -----------------------------------------------------------------------
+Finite products in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Finite products in functor categories can be computed pointwise.
+-/
+definition FunCat.HasFinProduct {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllFinProducts : HasAllFinProducts D]
+    (factor : list (Fun C D))
+    : HasFinProduct (FunCat C D) factor
+:= FunCat.HasLimit (ProductDrgm _ (list.get factor))
+
+/-! #brief Finite products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllFinProducts {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllFinProducts : HasAllFinProducts D]
+    : HasAllFinProducts (FunCat C D)
+:= { has_product := λ factor, FunCat.HasFinProduct factor
+   }
 
 
 
@@ -797,6 +889,29 @@ definition coproduct.factor_out {C : Cat.{ℓobj (ℓhom + 1)}}
 
 
 /- -----------------------------------------------------------------------
+Co-products in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Co-products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasCoProduct {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllCoProducts : HasAllCoProducts.{ℓ} D]
+    {A : Type ℓ} (factor : A → Fun C D)
+    : HasCoProduct (FunCat C D) factor
+:= sorry
+-- := @FunCat.HasCoLimit C D _ begin end (ProductDrgm (FunCat C D) factor)
+
+/-! #brief Co-products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllCoProducts {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllCoProducts : HasAllCoProducts.{ℓ} D]
+    : HasAllCoProducts.{ℓ} (FunCat C D)
+:= { has_coproduct := λ A factor, FunCat.HasCoProduct factor
+   }
+
+
+
+/- -----------------------------------------------------------------------
 Finite co-products.
 ----------------------------------------------------------------------- -/
 
@@ -945,6 +1060,28 @@ definition fincoproduct.uniq {C : Cat.{ℓobj ℓhom}}
     : Iso (fincoproduct.iso factor_HasFinCoProduct₁ factor_HasFinCoProduct₂)
           (fincoproduct.iso factor_HasFinCoProduct₂ factor_HasFinCoProduct₁)
 := coproduct.uniq factor_HasFinCoProduct₁ factor_HasFinCoProduct₂
+
+
+
+/- -----------------------------------------------------------------------
+Finite co-products in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Finite co-products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasFinCoProduct {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllFinCoProducts : HasAllFinCoProducts D]
+    (factor : list (Fun C D))
+    : HasFinCoProduct (FunCat C D) factor
+:= sorry
+
+/-! #brief Co-products in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllCoFinProducts {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllFinCoProducts : HasAllFinCoProducts D]
+    : HasAllFinCoProducts (FunCat C D)
+:= { has_coproduct := λ factor, FunCat.HasFinCoProduct factor
+   }
 
 
 

@@ -28,17 +28,17 @@ instance HasLimit.ConeCat_HasFinal {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj�
     : HasFinal (ConeCat L)
 := L_HasLimit
 
-/-! #brief A category with all limits.
+/-! #brief Casting a HasLimit along heterogeneous equality.
 -/
-class HasAllLimits (C : Cat.{ℓobj₁ ℓhom₁})
-:= (has_limit : ∀ {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
-                , HasLimit L)
-
-instance HasAllLimits.HasLimit {C : Cat.{ℓobj₁ ℓhom₁}}
-    [C_HasAllLimits : HasAllLimits.{ℓobjx ℓhomx ℓobj₁ ℓhom₁} C]
-    {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
-    : HasLimit L
-:= HasAllLimits.has_limit L
+definition HasLimit.heq
+    : ∀ {X₁ X₂ : Cat.{ℓobjx ℓhomx}}
+        (ωX : X₁ = X₂)
+        {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}}
+        (ωC : C₁ = C₂)
+        {L₁ : Fun X₁ C₁} {L₂ : Fun X₂ C₂}
+        (ωL : L₁ == L₂)
+      , HasLimit L₁ = HasLimit L₂
+| X .(X) (eq.refl .(X)) C .(C) (eq.refl .(C)) L .(L) (heq.refl .(L)) := rfl
 
 /-! #brief A category with all limits out of another category.
 -/
@@ -50,6 +50,25 @@ instance HasAllLimitsFrom.HasLimit (C : Cat.{ℓobj₁ ℓhom₁}) {X : Cat.{ℓ
     [C_HasAllLimitsFrom_X : HasAllLimitsFrom C X]
     : HasLimit L
 := HasAllLimitsFrom.has_limit L
+
+/-! #brief A category with all limits.
+-/
+class HasAllLimits (C : Cat.{ℓobj₁ ℓhom₁})
+:= (has_limit : ∀ {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
+                , HasLimit L)
+
+instance HasAllLimits.HasAllLimitsFrom (C : Cat.{ℓobj₁ ℓhom₁})
+    [C_HasAllLimits : HasAllLimits.{ℓobjx ℓhomx ℓobj₁ ℓhom₁} C]
+    (X : Cat.{ℓobjx ℓhomx})
+    : HasAllLimitsFrom C X
+:= { has_limit := λ L, HasAllLimits.has_limit L
+   }
+
+instance HasAllLimits.HasLimit {C : Cat.{ℓobj₁ ℓhom₁}}
+    [C_HasAllLimits : HasAllLimits.{ℓobjx ℓhomx ℓobj₁ ℓhom₁} C]
+    {X : Cat.{ℓobjx ℓhomx}} (L : Fun X C)
+    : HasLimit L
+:= HasAllLimits.has_limit L
 
 /-! #brief Helper for showing a functor has a limit.
 -/
@@ -129,7 +148,7 @@ theorem limit.out.comm {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁
 /-! #brief Every cone is mediated through the limit.
 -/
 definition limit.univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
-    {F : Fun X C}
+    (F : Fun X C)
     [F_HasLimit : HasLimit F]
     (c : Cone F)
     : C^.hom c^.obj (limit F)
@@ -142,7 +161,7 @@ theorem limit.univ.mediates {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓh
     {F_HasLimit : HasLimit F}
     (c : Cone F)
     (x : X^.obj)
-    : c^.hom x = C^.circ (limit.out F x) (limit.univ c)
+    : c^.hom x = C^.circ (limit.out F x) (limit.univ F c)
 := (@final_hom (ConeCat F) _ c)^.factor x
 
 /-! #brief The mediating map from a cone to the limit is unique.
@@ -153,7 +172,7 @@ theorem limit.univ.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
     (c : Cone F)
     (m : C^.hom c^.obj (limit F))
     (ω : ∀ (x : X^.obj), c^.hom x = limit.out F x ∘∘ m)
-    : m = limit.univ c
+    : m = limit.univ F c
 := let m' : ConeHom F c (limit.cone F)
          := { mediate := m
             , factor := ω
@@ -186,10 +205,10 @@ theorem limit.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
 /-! #brief limit.univ absorbs compositions.
 -/
 theorem limit.circ_univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
-    {F : Fun X C}
+    (F : Fun X C)
     {F_HasLimit : HasLimit F}
-    {cone : Cone F}
-    {c' : C^.obj} {f : C^.hom c' cone^.obj}
+    (cone : Cone F)
+    {c' : C^.obj} (f : C^.hom c' cone^.obj)
     : @limit.univ X C F F_HasLimit cone ∘∘ f
        = @limit.univ X C F F_HasLimit (cone^.circ f)
 := begin
@@ -311,7 +330,7 @@ definition preslimit.univ {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ ℓhom
     (L : Fun X B) [L_HasLimit : HasLimit L]
     (F : Fun B C) [F_PresLimit : PresLimit L F]
     (c : Cone L)
-    : limit.univ ((LeftConeFun F L)^.obj c) = by exact F^.hom (limit.univ c)
+    : limit.univ _ ((LeftConeFun F L)^.obj c) = by exact F^.hom (limit.univ _ c)
 := begin
      apply eq.symm,
      apply limit.univ.uniq ((LeftConeFun F L)^.obj c),
@@ -341,7 +360,7 @@ instance InitFun.HasLimit_HasFinal {C : Cat.{ℓobj ℓhom}}
                      }
    in HasFinal.show
        (limit (InitFun.{ℓobjx ℓhomx} C))
-       (λ c, limit.univ (mkcone c))
+       (λ c, limit.univ _ (mkcone c))
        (λ c h, limit.univ.uniq (mkcone c) h (λ e, by cases e))
 
 /-! #brief If the category has a final, then the initial functor has a limit.
@@ -379,6 +398,250 @@ instance PresLimit.InitFun_PresFinal {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{�
                                   end
                   }
       }
+
+
+
+/- -----------------------------------------------------------------------
+The limit functor.
+----------------------------------------------------------------------- -/
+
+/-! #brief The cone used by the limit functor.
+-/
+definition LimitFun.cone {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllLimitsFrom_X : HasAllLimitsFrom C X]
+    (L₁ L₂ : Fun X C) (η : NatTrans L₁ L₂)
+    : Cone L₂
+:= { obj := limit L₁
+   , hom := λ x, η^.com x ∘∘ limit.out L₁ x
+   , comm := λ x₁ x₂ f
+             , begin
+                 rw C^.circ_assoc,
+                 rw -(η^.natural f),
+                 rw -C^.circ_assoc,
+                 apply Cat.circ.congr_right,
+                 apply limit.out.comm
+               end
+   }
+
+/-! #brief The limit functor.
+-/
+definition LimitFun {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllLimitsFrom_X : HasAllLimitsFrom C X]
+    : Fun (FunCat X C) C
+:= { obj := λ L, limit L
+   , hom := λ L₁ L₂ η, limit.univ L₂ (LimitFun.cone L₁ L₂ η)
+   , hom_id := λ L, begin
+                      apply eq.symm,
+                      apply limit.univ.uniq (LimitFun.cone L L (NatTrans.id L)),
+                      intro x,
+                      exact eq.trans C^.circ_id_left (eq.symm C^.circ_id_right)
+                    end
+   , hom_circ
+      := λ L₁ L₂ L₃ η₂₃ η₁₂
+         , begin
+             apply eq.symm,
+             apply limit.univ.uniq (LimitFun.cone L₁ L₃ (NatTrans.comp η₂₃ η₁₂)),
+             intro x,
+             refine eq.trans _ (eq.symm (Cat.circ.congr_right (limit.circ_univ L₃ (LimitFun.cone L₂ L₃ η₂₃) (limit.univ L₂ (LimitFun.cone L₁ L₂ η₁₂))))),
+             refine eq.trans _ (limit.univ.mediates (Cone.circ (LimitFun.cone L₂ L₃ η₂₃) (limit.univ L₂ (LimitFun.cone L₁ L₂ η₁₂))) x),
+             apply eq.trans (eq.symm C^.circ_assoc),
+             refine eq.symm (eq.trans (eq.symm C^.circ_assoc) (eq.symm _)),
+             apply Cat.circ.congr_right,
+             exact limit.univ.mediates (LimitFun.cone L₁ L₂ η₁₂) x
+           end
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Limits in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Projection for pointwise limits.
+-/
+definition FunCat.HasLimit.out {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllLimitsFrom_X : HasAllLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    (x : X^.obj)
+    : NatTrans (LimitFun □□ Fun.swap F) (F^.obj x)
+:= { com := λ c, limit.out (Fun.swap.obj F c) x
+   , natural := λ c₁ c₂ f
+                , eq.symm (limit.univ.mediates
+                            (LimitFun.cone
+                              (Fun.swap.obj F c₁) (Fun.swap.obj F c₂)
+                              (Fun.swap.hom F c₁ c₂ f))
+                            x)
+   }
+
+/-! #brief Cone used for pointwise universal maps.
+-/
+definition FunCat.HasLimit.univ.cone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllLimitsFrom_X : HasAllLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    (L : Fun C D)
+    (η : ∀ (x : X^.obj), NatTrans L (F^.obj x))
+    (ωη : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
+          , η x₂ = NatTrans.comp (F^.hom f) (η x₁))
+    (c : C^.obj)
+    : Cone (Fun.swap.obj F c)
+:= { obj := L^.obj c
+   , hom := λ x, (η x)^.com c
+   , comm := λ c₁ c₂ f
+             , begin
+                 rw ωη f,
+                 trivial
+               end
+   }
+
+/-! #brief Universal map for pointwise limits.
+-/
+definition FunCat.HasLimit.univ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllLimitsFrom_X : HasAllLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    (L : Fun C D)
+    (η : ∀ (x : X^.obj), NatTrans L (F^.obj x))
+    (ωη : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
+          , η x₂ = NatTrans.comp (F^.hom f) (η x₁))
+    : NatTrans L (LimitFun □□ Fun.swap F)
+:= { com := λ c, limit.univ (Fun.swap.obj F c) (FunCat.HasLimit.univ.cone F L η @ωη c)
+   , natural := λ c₁ c₂ f
+                , begin
+                    dsimp [LimitFun],
+                    apply eq.trans (limit.circ_univ (Fun.swap.obj F c₂) (FunCat.HasLimit.univ.cone F L η @ωη c₂) (L^.hom f)),
+                    apply eq.symm,
+                    apply eq.trans (limit.circ_univ ((Fun.swap F)^.obj c₂)
+                                    (LimitFun.cone ((Fun.swap F)^.obj c₁) ((Fun.swap F)^.obj c₂) ((Fun.swap F)^.hom f))
+                                    (limit.univ (Fun.swap.obj F c₁) (FunCat.HasLimit.univ.cone F L η @ωη c₁))),
+                    apply limit.univ.uniq (Cone.circ (FunCat.HasLimit.univ.cone F L η @ωη c₂) (L^.hom f)),
+                    intro x,
+                    apply eq.trans ((η x)^.natural f),
+                    refine eq.trans _ (limit.univ.mediates (Cone.circ (LimitFun.cone ((Fun.swap F)^.obj c₁) ((Fun.swap F)^.obj c₂) ((Fun.swap F)^.hom f)) (limit.univ (Fun.swap.obj F c₁) (FunCat.HasLimit.univ.cone F L η @ωη c₁))) x),
+                    refine eq.symm (eq.trans (eq.symm D^.circ_assoc) (eq.symm _)),
+                    apply Cat.circ.congr_right,
+                    apply limit.univ.mediates (FunCat.HasLimit.univ.cone F L η @ωη c₁) x
+                  end
+   }
+
+/-! #brief Limits in FunCat can be computed pointwise.
+-/
+instance FunCat.HasLimit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllLimitsFrom_X : HasAllLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    : HasLimit F
+:= HasLimit.show
+     (LimitFun □□ F^.swap)
+     (FunCat.HasLimit.out F)
+     (λ x₁ x₂ f
+      , begin
+          apply NatTrans.eq, apply funext, intro c,
+          apply limit.out.comm
+        end)
+     (FunCat.HasLimit.univ F)
+     (λ L hom ωhom x
+      , begin
+          apply NatTrans.eq, apply funext, intro c,
+          apply limit.univ.mediates (FunCat.HasLimit.univ.cone F L hom @ωhom c)
+        end)
+     (λ L hom ωhom h ωh
+      , begin
+          apply NatTrans.eq, apply funext, intro c,
+          apply limit.univ.uniq (FunCat.HasLimit.univ.cone F L hom @ωhom c),
+          intro x,
+          apply NatTrans.congr_com (ωh x)
+        end)
+
+/-! #brief Limits in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllLimits {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllLimits : HasAllLimits.{ℓobjx ℓhomx} D]
+    : HasAllLimits.{ℓobjx ℓhomx} (FunCat C D)
+:= { has_limit := λ X L, @FunCat.HasLimit C D X (HasAllLimits.HasAllLimitsFrom D X) L
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Limits and natural isomorphisms.
+----------------------------------------------------------------------- -/
+
+/-! #brief Natural isomorphism cast limits (cone used for universal).
+-/
+definition NatIso.HasLimit.cone {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {L₁ L₂ : Fun X C}
+    {η₁₂ : NatTrans L₁ L₂}
+    {η₂₁ : NatTrans L₂ L₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    [L₁_HasLimit : HasLimit L₁]
+    (c : C^.obj)
+    (hom : Π (x : ⟦X⟧), ⟦C : c →→ L₂^.obj x⟧)
+    (ωhom : ∀ {x₁ x₂ : ⟦X⟧} (f : ⟦X : x₁ →→ x₂⟧), hom x₂ = L₂^.hom f ∘∘ hom x₁)
+    : Cone L₁
+:= { obj := c
+   , hom := λ x, η₂₁^.com x ∘∘ hom x
+   , comm := λ x₁ x₂ f
+             , begin
+                 rw C^.circ_assoc,
+                 rw -(η₂₁^.natural f),
+                 rw -C^.circ_assoc,
+                 apply Cat.circ.congr_right,
+                 apply ωhom
+               end
+   }
+
+/-! #brief Natural isomorphism cast limits.
+-/
+definition NatIso.HasLimit₂ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {L₁ L₂ : Fun X C}
+    {η₁₂ : NatTrans L₁ L₂}
+    {η₂₁ : NatTrans L₂ L₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    [L₁_HasLimit : HasLimit L₁]
+    : HasLimit L₂
+:= HasLimit.show (limit L₁)
+    (λ x, η₁₂^.com x ∘∘ limit.out L₁ x)
+    (λ x₁ x₂ f
+     , begin
+         rw C^.circ_assoc,
+         rw -(η₁₂^.natural f),
+         rw -C^.circ_assoc,
+         apply Cat.circ.congr_right,
+         apply limit.out.comm
+       end)
+    (λ c hom ωhom, limit.univ L₁ (NatIso.HasLimit.cone η_iso c hom @ωhom))
+    (λ c hom ωhom x
+     , begin
+         rw -C^.circ_assoc,
+         apply eq.symm,
+         apply eq.trans (eq.symm (Cat.circ.congr_right (limit.univ.mediates (NatIso.HasLimit.cone η_iso c hom @ωhom) x))),
+         apply eq.trans C^.circ_assoc,
+         apply eq.trans (Cat.circ.congr_left (NatTrans.congr_com η_iso^.id₂)),
+         apply C^.circ_id_left
+       end)
+    (λ c hom ωhom h ωh
+     , begin
+         apply limit.univ.uniq (NatIso.HasLimit.cone η_iso c hom @ωhom),
+         intro x,
+         apply eq.trans (Cat.circ.congr_right (ωh x)),
+         repeat { rw C^.circ_assoc },
+         apply Cat.circ.congr_left,
+         apply eq.trans (Cat.circ.congr_left (NatTrans.congr_com η_iso^.id₁)),
+         apply C^.circ_id_left
+       end)
+
+/-! #brief Natural isomorphism cast limits.
+-/
+definition NatIso.HasLimit₁ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {L₁ L₂ : Fun X C}
+    {η₁₂ : NatTrans L₁ L₂}
+    {η₂₁ : NatTrans L₂ L₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    [L₂_HasLimit : HasLimit L₂]
+    : HasLimit L₁
+:= NatIso.HasLimit₂ η_iso^.flip
 
 
 
@@ -502,11 +765,11 @@ theorem colimit.in.comm {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom�
 /-! #brief Every co-cone is mediated through the co-limit.
 -/
 definition colimit.univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
-    {F : Fun X C}
+    (F : Fun X C)
     {F_HasCoLimit : HasCoLimit F}
     (c : CoCone F)
     : C^.hom (colimit F) c^.obj
-:= limit.univ c
+:= limit.univ _ c
 
 /-! #brief Every co-cone is mediated through the co-limit.
 -/
@@ -515,7 +778,7 @@ theorem colimit.univ.mediates {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ �
     {F_HasCoLimit : HasCoLimit F}
     (c : CoCone F)
     (x : X^.obj)
-    : c^.hom x = C^.circ (limit.univ c) (colimit.in F x)
+    : c^.hom x = C^.circ (colimit.univ F c) (colimit.in F x)
 := limit.univ.mediates c x
 
 /-! #brief The mediating map to a co-cone from the co-limit is unique.
@@ -526,7 +789,7 @@ theorem colimit.univ.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom
     (c : CoCone F)
     (m : C^.hom (colimit F) c^.obj)
     (ω : ∀ (x : X^.obj), c^.hom x = m ∘∘ colimit.in F x)
-    : m = colimit.univ c
+    : m = colimit.univ F c
 := limit.univ.uniq c m ω
 
 /-! #brief The unique iso between two co-limits of the same functor.
@@ -549,10 +812,10 @@ theorem colimit.uniq {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
 /-! #brief limit.univ absorbs compositions.
 -/
 theorem colimit.circ_univ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
-    {F : Fun X C}
+    (F : Fun X C)
     {F_HasCoLimit : HasCoLimit F}
-    {ccone : CoCone F}
-    {c' : C^.obj} {f : C^.hom ccone^.obj c'}
+    (ccone : CoCone F)
+    {c' : C^.obj} (f : C^.hom ccone^.obj c')
     : f ∘∘ @colimit.univ X C F F_HasCoLimit ccone
        = @colimit.univ X C F F_HasCoLimit (ccone^.circ f)
 := begin
@@ -678,7 +941,7 @@ definition prescolimit.mediate {X : Cat.{ℓobjx ℓhomx}} {B : Cat.{ℓobj₁ �
     (L : Fun X B) [L_HasCoLimit : HasCoLimit L]
     (F : Fun B C) [F_PresCoLimit : PresCoLimit L F]
     (c : CoCone L)
-    : colimit.univ ((LeftCoConeFun F L)^.obj c) = by exact F^.hom (colimit.univ c)
+    : colimit.univ _ ((LeftCoConeFun F L)^.obj c) = by exact F^.hom (colimit.univ _ c)
 := preslimit.univ (OpFun L) (OpFun F) c
 
 
@@ -699,7 +962,7 @@ instance InitFun.HasCoLimit_HasInit {C : Cat.{ℓobj ℓhom}}
                      }
    in HasInit.show
        (colimit (InitFun.{ℓobjx ℓhomx} C))
-       (λ c, colimit.univ (mkcone c))
+       (λ c, colimit.univ _ (mkcone c))
        (λ c h, limit.univ.uniq (mkcone c) h (λ e, by cases e))
 
 /-! #brief If the category has an initial, then the initial functor has a co-limit.
@@ -741,7 +1004,195 @@ instance PresCoLimit.InitFun_PresInit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{
 
 
 /- -----------------------------------------------------------------------
-Limits and adjoints.
+The co-limit functor.
+----------------------------------------------------------------------- -/
+
+/-! #brief The co-cone used by the co-limit functor.
+-/
+definition CoLimitFun.cocone {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom C X]
+    (L₁ L₂ : Fun X C) (η : NatTrans L₁ L₂)
+    : CoCone L₁
+:= CoCone.mk (colimit L₂)
+    (λ x, colimit.in L₂ x ∘∘ η^.com x)
+    (λ x₁ x₂ f
+     , begin
+         rw -C^.circ_assoc,
+         rw (η^.natural f),
+         rw C^.circ_assoc,
+         apply Cat.circ.congr_left,
+         apply colimit.in.comm
+       end)
+
+/-! #brief The co-limit functor.
+-/
+definition CoLimitFun {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj ℓhom}}
+    [C_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom C X]
+    : Fun (FunCat X C) C
+:= { obj := λ L, colimit L
+   , hom := λ L₁ L₂ η, colimit.univ L₁ (CoLimitFun.cocone L₁ L₂ η)
+   , hom_id := λ L, begin
+                      apply eq.symm,
+                      apply colimit.univ.uniq (CoLimitFun.cocone L L (NatTrans.id L)),
+                      intro x,
+                      exact eq.trans C^.circ_id_right (eq.symm C^.circ_id_left)
+                    end
+   , hom_circ
+      := λ L₁ L₂ L₃ η₂₃ η₁₂
+         , begin
+             apply eq.symm,
+             apply colimit.univ.uniq (CoLimitFun.cocone L₁ L₃ (NatTrans.comp η₂₃ η₁₂)),
+             intro x,
+             refine eq.trans _ (eq.symm (Cat.circ.congr_left (colimit.circ_univ L₁ (CoLimitFun.cocone L₁ L₂ η₁₂) (colimit.univ L₂ (CoLimitFun.cocone L₂ L₃ η₂₃))))),
+             refine eq.trans _ (colimit.univ.mediates (Cone.circ (CoLimitFun.cocone L₁ L₂ η₁₂) (colimit.univ L₂ (CoLimitFun.cocone L₂ L₃ η₂₃))) x),
+             apply eq.trans C^.circ_assoc,
+             refine eq.symm (eq.trans C^.circ_assoc (eq.symm _)),
+             apply Cat.circ.congr_left,
+             exact colimit.univ.mediates (CoLimitFun.cocone L₂ L₃ η₂₃) x
+           end
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Co-limits in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Inclusion for pointwise co-limits.
+-/
+definition FunCat.HasCoLimit.in {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    (x : X^.obj)
+    : NatTrans (F^.obj x) (CoLimitFun □□ Fun.swap F)
+:= { com := λ c, colimit.in (Fun.swap.obj F c) x
+   , natural := λ c₁ c₂ f
+                , colimit.univ.mediates
+                    (CoLimitFun.cocone
+                      (Fun.swap.obj F c₁) (Fun.swap.obj F c₂)
+                      (Fun.swap.hom F c₁ c₂ f))
+                    x
+   }
+
+/-! #brief Co-cone used for pointwise universal maps.
+-/
+definition FunCat.HasCoLimit.univ.cocone {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    (L : Fun C D)
+    (η : ∀ (x : X^.obj), NatTrans (F^.obj x) L)
+    (ωη : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
+          , η x₁ = NatTrans.comp (η x₂) (F^.hom f))
+    (c : C^.obj)
+    : CoCone (Fun.swap.obj F c)
+:= CoCone.mk (L^.obj c)
+     (λ x, (η x)^.com c)
+     (λ c₁ c₂ f
+             , begin
+                 rw ωη f,
+                 trivial
+               end)
+
+/-! #brief Universal map for pointwise limits.
+-/
+definition FunCat.HasCoLimit.univ {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    (L : Fun C D)
+    (η : ∀ (x : X^.obj), NatTrans (F^.obj x) L)
+    (ωη : ∀ {x₁ x₂ : X^.obj} (f : X^.hom x₁ x₂)
+          , η x₁ = NatTrans.comp (η x₂) (F^.hom f))
+    : NatTrans (CoLimitFun □□ Fun.swap F) L
+:= { com := λ c, colimit.univ (Fun.swap.obj F c) (FunCat.HasCoLimit.univ.cocone F L η @ωη c)
+   , natural := λ c₁ c₂ f
+                , begin
+                    dsimp [CoLimitFun],
+                    apply eq.trans (colimit.circ_univ ((Fun.swap F)^.obj c₁) (CoLimitFun.cocone ((Fun.swap F)^.obj c₁) ((Fun.swap F)^.obj c₂) ((Fun.swap F)^.hom f)) (colimit.univ (Fun.swap.obj F c₂) (FunCat.HasCoLimit.univ.cocone F L η @ωη c₂))),
+                    apply eq.symm,
+                    apply eq.trans (colimit.circ_univ (Fun.swap.obj F c₁) (FunCat.HasCoLimit.univ.cocone F L η @ωη c₁) (L^.hom f)),
+                    apply eq.symm,
+                    apply colimit.univ.uniq (CoCone.circ (FunCat.HasCoLimit.univ.cocone F L η @ωη c₁) (L^.hom f)),
+                    intro x,
+                    apply eq.trans (eq.symm ((η x)^.natural f)),
+                    refine eq.trans _ (colimit.univ.mediates (CoCone.circ (CoLimitFun.cocone ((Fun.swap F)^.obj c₁) ((Fun.swap F)^.obj c₂) ((Fun.swap F)^.hom f)) (colimit.univ (Fun.swap.obj F c₂) (FunCat.HasCoLimit.univ.cocone F L η @ωη c₂))) x),
+                    refine eq.symm (eq.trans D^.circ_assoc (eq.symm _)),
+                    apply Cat.circ.congr_left,
+                    apply colimit.univ.mediates (FunCat.HasCoLimit.univ.cocone F L η @ωη c₂) x
+                  end
+   }
+
+/-! #brief Co-limits in FunCat can be computed pointwise.
+-/
+instance FunCat.HasCoLimit {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    {X : Cat.{ℓobjx ℓhomx}}
+    [D_HasAllCoLimitsFrom_X : HasAllCoLimitsFrom D X]
+    (F : Fun X (FunCat C D))
+    : HasCoLimit F
+:= HasCoLimit.show
+     (CoLimitFun □□ F^.swap)
+     (FunCat.HasCoLimit.in F)
+     (λ x₁ x₂ f
+      , begin
+          apply NatTrans.eq, apply funext, intro c,
+          apply colimit.in.comm (Fun.swap.obj F c)
+        end)
+     (FunCat.HasCoLimit.univ F)
+     (λ L hom ωhom x
+      , begin
+          apply NatTrans.eq, apply funext, intro c,
+          apply colimit.univ.mediates (FunCat.HasCoLimit.univ.cocone F L hom @ωhom c)
+        end)
+     (λ L hom ωhom h ωh
+      , begin
+          apply NatTrans.eq, apply funext, intro c,
+          apply colimit.univ.uniq (FunCat.HasCoLimit.univ.cocone F L hom @ωhom c),
+          intro x,
+          apply NatTrans.congr_com (ωh x)
+        end)
+
+/-! #brief Co-limits in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllCoLimits {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllCoLimits : HasAllCoLimits.{ℓobjx ℓhomx} D]
+    : HasAllCoLimits.{ℓobjx ℓhomx} (FunCat C D)
+:= { has_colimit := λ X L, @FunCat.HasCoLimit C D X (HasAllCoLimits.HasAllCoLimitsFrom D X) L
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Co-limits and natural isomorphisms.
+----------------------------------------------------------------------- -/
+
+/-! #brief Natural isomorphism cast co-limits.
+-/
+definition NatIso.HasCoLimit₂ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {L₁ L₂ : Fun X C}
+    {η₁₂ : NatTrans L₁ L₂}
+    {η₂₁ : NatTrans L₂ L₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    [L₁_HasCoLimit : HasCoLimit L₁]
+    : HasCoLimit L₂
+:= NatIso.HasLimit₁ (OpNatIso η_iso)
+
+/-! #brief Natural isomorphism cast co-limits.
+-/
+definition NatIso.HasCoLimit₁ {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ ℓhom₁}}
+    {L₁ L₂ : Fun X C}
+    {η₁₂ : NatTrans L₁ L₂}
+    {η₂₁ : NatTrans L₂ L₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    [L₂_HasCoLimit : HasCoLimit L₂]
+    : HasCoLimit L₁
+:= NatIso.HasCoLimit₂ η_iso^.flip
+
+
+
+/- -----------------------------------------------------------------------
+Limits, colimits, and adjoints.
 ----------------------------------------------------------------------- -/
 
 /-! #brief Right adjoints preserve all limits.

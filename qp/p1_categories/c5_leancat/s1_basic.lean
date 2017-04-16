@@ -161,6 +161,7 @@ theorem LeanCat.Over.HasCoLimit.obj
 := rfl
 
 
+
 /- -----------------------------------------------------------------------
 Products.
 ----------------------------------------------------------------------- -/
@@ -333,6 +334,125 @@ instance LeanCat.HasCoProduct
 instance LeanCat.HasAllCoProducts
     : HasAllCoProducts.{ℓ'} LeanCat.{max ℓ ℓ'}
 := { has_coproduct := @LeanCat.HasCoProduct
+   }
+
+/-! #brief Finite sum type in LeanCat.
+-/
+definition ListSum
+    : ∀ (TT : list LeanCat.{ℓ}^.obj)
+      , LeanCat.{ℓ}^.obj
+| [] := pempty
+| [T] := T
+| (T :: TT) := sum T (ListSum TT)
+
+/-! #brief A fancy way of mapping through a ListSum.
+-/
+definition {ℓb ℓx ℓy} ListSum.map
+    {Ba : Type ℓb} {Tx : Ba → Type ℓx} {Ty : Ba → Type ℓy}
+    : ∀ (BB : list Ba)
+        (f : ∀ (n : ℕ) (ωn : n < list.length BB)
+             , Tx (list.get BB {val := n, is_lt := ωn}) → Ty (list.get BB {val := n, is_lt := ωn}))
+      , ListSum (list.map Tx BB)
+      → ListSum (list.map Ty BB)
+| [] f e := by cases e
+| [Ba] f x := f 0 fin.zero^.is_lt x
+| (Ba :: Ba₀ :: BB) f (sum.inl x) := sum.inl (f 0 fin.zero^.is_lt x)
+| (Ba :: Ba₀ :: BB) f (sum.inr xx)
+:= sum.inr (ListSum.map (Ba₀ :: BB)
+             (λ n ωn, f (nat.succ n) (nat.succ_le_succ ωn))
+            xx)
+
+/-! #brief Inclusion into finite sum type in LeanCat.
+-/
+definition ListSum.ι
+    : ∀ (TT : list LeanCat.{ℓ}^.obj)
+        (n : fin (list.length TT))
+        (x : list.get TT n)
+      , ListSum TT
+| [] n x := fin.zero_elim n
+| [T] (fin.mk 0 ω0) x := x
+| [T] (fin.mk (nat.succ n) ωn) x := false.rec _ begin cases ωn, cases a end
+| (T :: T₁ :: TT) (fin.mk 0 ω0) x := sum.inl x
+| (T :: T₁ :: TT) (fin.mk (nat.succ n) ωn) x
+:= sum.inr (ListSum.ι (T₁ :: TT) { val := n, is_lt := nat.lt_of_succ_lt_succ ωn } x)
+
+/-! #brief Enumerating a map out of a finite sum.
+-/
+definition ListSum.univ
+    : ∀ (TT : list LeanCat.{ℓ}^.obj)
+        (S : LeanCat.{ℓ}^.obj)
+        (f : ∀ (n : ℕ)
+               (ωn : n < list.length TT)
+             , list.get TT { val := n, is_lt := ωn } → S)
+      , ListSum TT → S
+| [] S f e := by cases e
+| [T] S f s := f 0 (fin_of 0)^.is_lt s
+| (T :: T₁ :: TT) S f (sum.inl s)
+:= f 0 (fin_of 0)^.is_lt s
+| (T :: T₁ :: TT) S f (sum.inr s)
+:= ListSum.univ (T₁ :: TT) S (λ n ωn s', f (nat.succ n) (nat.succ_lt_succ ωn) s') s
+
+/-! #brief Factoring property of the universal map.
+-/
+definition ListSum.univ.factor
+    : ∀ {TT : list LeanCat.{ℓ}^.obj}
+        {S : LeanCat.{ℓ}^.obj}
+        {f : ∀ (n : ℕ)
+               (ωn : n < list.length TT)
+             , list.get TT { val := n, is_lt := ωn } → S}
+        {n : ℕ} {ωn : n < list.length TT}
+        {s : list.get TT { val := n, is_lt := ωn }}
+      , f n ωn s = ListSum.univ TT S f
+                     (ListSum.ι TT { val := n, is_lt := ωn } s)
+| [] S f n ωn s := by cases ωn
+| [T] S f 0 ω0 s := rfl
+| [T] S f (nat.succ n) ωn s := false.rec _ begin cases ωn, cases a end
+| (T :: T₁ :: TT) S f 0 ω0 s := rfl
+| (T :: T₁ :: TT) S f (nat.succ n) ωn s
+:= begin
+     refine eq.trans _ (@ListSum.univ.factor (T₁ :: TT) S _ n _ s),
+     trivial
+   end
+
+/-! #brief LeanCat has all finite products.
+-/
+instance LeanCat.HasFinCoProduct (factor : list LeanCat.{ℓ}^.obj)
+    : HasFinCoProduct LeanCat factor
+:= HasCoProduct.show LeanCat (list.get factor)
+    (ListSum factor)
+    (ListSum.ι factor)
+    (λ T f, ListSum.univ factor T (λ n ωn, f { val := n, is_lt := ωn }))
+    (λ T f n
+      , begin
+          apply funext, intro t,
+          cases n with n ωn,
+          refine eq.trans _ (ListSum.univ.factor),
+          trivial
+        end)
+    (λ T f h ωh
+      , begin
+          assert ωf : f = λ n t, h (ListSum.ι factor n t),
+          { apply funext @ωh },
+          subst ωf,
+          apply funext, intro t,
+          induction factor with T factor rec,
+          { cases t },
+          cases factor with T₁ factor,
+          { trivial },
+          { cases t,
+            { trivial },
+            { refine eq.trans _ (rec (λ a, (h (sum.inr a))) _ _),
+              { trivial },
+              { intro n, trivial }
+            }
+          }
+        end)
+
+/-! #brief LeanCat has all finite products.
+-/
+instance LeanCat.HasAllFinCoProducts
+    : HasAllFinCoProducts LeanCat.{ℓ}
+:= { has_coproduct := LeanCat.HasFinCoProduct
    }
 
 

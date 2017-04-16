@@ -425,6 +425,101 @@ instance FinCat.Finite (N : ℕ)
 
 
 /- -----------------------------------------------------------------------
+Arrow categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief An object in an arrow category.
+-/
+structure Arr (C : Cat.{ℓobj ℓhom})
+    : Type (max ℓobj ℓhom)
+:= (dom : C^.obj)
+   (codom : C^.obj)
+   (hom : C^.hom dom codom)
+
+/-! #brief A hom in an arrow category.
+-/
+structure ArrHom (C : Cat.{ℓobj ℓhom})
+    (X Y : Arr C)
+    : Sort (max 1 ℓhom)
+:= (hom_dom : C^.hom X^.dom Y^.dom)
+   (hom_codom : C^.hom X^.codom Y^.codom)
+   (comm : hom_codom ∘∘ X^.hom = Y^.hom ∘∘ hom_dom)
+
+/-! #brief Equality helper for ArrHom.
+-/
+theorem ArrHom.eq {C : Cat.{ℓobj ℓhom}}
+    {X Y : Arr C}
+    : ∀ {f₁ f₂ : ArrHom C X Y}
+        (ωdom : f₁^.hom_dom = f₂^.hom_dom)
+        (ωcodom : f₁^.hom_codom = f₂^.hom_codom)
+      , f₁ = f₂
+| (ArrHom.mk dom codom ω₁) (ArrHom.mk .(dom) .(codom) ω₂)
+  (eq.refl .(dom)) (eq.refl .(codom))
+  := rfl
+
+/-! #brief The identity hom in an arrow category.
+-/
+definition ArrHom.id {C : Cat.{ℓobj ℓhom}}
+    (X : Arr C)
+    : ArrHom C X X
+:= { hom_dom := C^.id X^.dom
+   , hom_codom := C^.id X^.codom
+   , comm := by rw [C^.circ_id_left, C^.circ_id_right]
+   }
+
+/-! #brief Composition of homs in an arrow category.
+-/
+definition ArrHom.comp {C : Cat.{ℓobj ℓhom}}
+    {X Y Z : Arr C}
+    (g : ArrHom C Y Z) (f : ArrHom C X Y)
+    : ArrHom C X Z
+:= { hom_dom := g^.hom_dom ∘∘ f^.hom_dom
+   , hom_codom := g^.hom_codom ∘∘ f^.hom_codom
+   , comm := begin
+               repeat { rw -C^.circ_assoc }, rw f^.comm,
+               repeat { rw C^.circ_assoc }, rw g^.comm
+             end
+   }
+
+/-! #brief ArrHom.id is a left-identity for ArrHom.comp.
+-/
+theorem ArrHom.comp_id_left {C : Cat.{ℓobj ℓhom}}
+    {X Y : Arr C} {f : ArrHom C X Y}
+    : ArrHom.comp (ArrHom.id Y) f = f
+:= ArrHom.eq C^.circ_id_left C^.circ_id_left
+
+/-! #brief ArrHom.id is a right-identity for ArrHom.comp.
+-/
+theorem ArrHom.comp_id_right {C : Cat.{ℓobj ℓhom}}
+    {X Y : Arr C} {f : ArrHom C X Y}
+    : ArrHom.comp f (ArrHom.id X) = f
+:= ArrHom.eq C^.circ_id_right C^.circ_id_right
+
+/-! #brief ArrHom.comp is associative.
+-/
+theorem ArrHom.comp_assoc {C : Cat.{ℓobj ℓhom}}
+    {X Y Z W : Arr C}
+    {h : ArrHom C Z W} {g : ArrHom C Y Z} {f : ArrHom C X Y}
+    : ArrHom.comp h (ArrHom.comp g f) = ArrHom.comp (ArrHom.comp h g) f
+:= ArrHom.eq C^.circ_assoc C^.circ_assoc
+
+
+/-! #brief An arrow category.
+-/
+definition ArrCat (C : Cat.{ℓobj ℓhom})
+    : Cat.{(max ℓobj ℓhom) (max 1 ℓhom)}
+:= { obj := Arr C
+   , hom := ArrHom C
+   , id := ArrHom.id
+   , circ := @ArrHom.comp C
+   , circ_id_left := λ x y f, ArrHom.comp_id_left
+   , circ_id_right := λ x y f, ArrHom.comp_id_right
+   , circ_assoc := λ x y z w h g f, ArrHom.comp_assoc
+   }
+
+
+
+/- -----------------------------------------------------------------------
 Product categories.
 ----------------------------------------------------------------------- -/
 

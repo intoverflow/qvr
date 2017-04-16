@@ -66,6 +66,19 @@ theorem EndoAlgHom.eq {C : Cat.{ℓobj ℓhom}} {F : Fun C C}
 | (EndoAlgHom.mk hom comm₁) (EndoAlgHom.mk .(hom) comm₂) (eq.refl .(hom))
 := rfl
 
+/-! #brief A helper for proving two homomorphisms are heterogeneously equal.
+-/
+theorem EndoAlgHom.heq {C : Cat.{ℓobj ℓhom}} {F : Fun C C}
+    : ∀ {X₁ Y₁ X₂ Y₂ : EndoAlg F}
+        {F₁ : EndoAlgHom F X₁ Y₁} {F₂ : EndoAlgHom F X₂ Y₂}
+        (ωX : X₁ = X₂) (ωY : Y₁ = Y₂)
+        (ωF : F₁^.hom == F₂^.hom)
+      , F₁ == F₂
+| X Y .(X) .(Y) (EndoAlgHom.mk f ω₁) (EndoAlgHom.mk .(f) ω₂)
+(eq.refl .(X)) (eq.refl .(Y)) (heq.refl .(f))
+:= heq.refl _
+
+
 /-! #brief The identity homomorphism.
 -/
 definition EndoAlgHom.id {C : Cat.{ℓobj ℓhom}} (F : Fun C C)
@@ -104,10 +117,87 @@ definition EndoAlgCat {C : Cat.{ℓobj ℓhom}} (F : Fun C C)
    , circ_id_right := λ X Y f, EndoAlgHom.eq C^.circ_id_right
    }
 
+/-! #brief Natural transformations induce functors between algebra categories.
+-/
+definition NatTrans.EndoAlgFun {C : Cat.{ℓobj ℓhom}}
+    {F₁ F₂ : Fun C C}
+    (η : NatTrans F₁ F₂)
+    : Fun (EndoAlgCat F₂) (EndoAlgCat F₁)
+:= { obj := λ alg, { carr := alg^.carr
+                   , hom := alg^.hom ∘∘ η^.com alg^.carr
+                   }
+   , hom := λ alg₁ alg₂ f
+            , { hom := f^.hom
+              , comm := begin
+                          apply eq.trans (eq.symm C^.circ_assoc),
+                          rw η^.natural f^.hom,
+                          apply eq.trans C^.circ_assoc,
+                          apply eq.trans (Cat.circ.congr_left f^.comm),
+                          exact eq.symm C^.circ_assoc
+                        end
+              }
+   , hom_id := λ alg₁, rfl
+   , hom_circ := λ alg₁ alg₂ alg₃ g f, rfl
+   }
+
+/-! #brief Natural isomorphisms induce bijections of algebra categories.
+-/
+definition NatIso.EndoAlgBij.lem₁ {C : Cat.{ℓobj ℓhom}}
+    {F₁ F₂ : Fun C C}
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    : NatTrans.EndoAlgFun η₁₂ □□ NatTrans.EndoAlgFun η₂₁ = Fun.id (EndoAlgCat F₁)
+:= Fun.eq
+    (λ alg
+     , EndoAlg.eq rfl
+         (λ ω, heq_of_eq
+                 begin
+                   apply eq.trans (eq.symm C^.circ_assoc),
+                   refine eq.symm (eq.trans (eq.symm C^.circ_id_right) (eq.symm _)),
+                   apply Cat.circ.congr_right,
+                   exact (η_iso^.com alg^.carr)^.id₁
+                 end))
+    (λ ω alg₁ alg₂ f
+     , begin
+         apply EndoAlgHom.heq (ω alg₁) (ω alg₂),
+         apply heq.refl
+       end)
+
+/-! #brief Natural isomorphisms induce bijections of algebra categories.
+-/
+definition NatIso.EndoAlgBij {C : Cat.{ℓobj ℓhom}}
+    {F₁ F₂ : Fun C C}
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    : Cat.Bij η₂₁^.EndoAlgFun η₁₂^.EndoAlgFun
+:= { id₁ := NatIso.EndoAlgBij.lem₁ η_iso
+   , id₂ := NatIso.EndoAlgBij.lem₁ η_iso^.flip
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Initial algebras.
+----------------------------------------------------------------------- -/
+
 /-! #brief Initial objects in EndoAlgCat are special.
 -/
 @[class] definition HasInitAlg {C : Cat.{ℓobj ℓhom}} (F : Fun C C)
 := HasInit (EndoAlgCat F)
+
+/-! #brief Initial algebras are preserved by natural isomorphisms.
+-/
+definition NatIso.EndoAlgBij.HasInitAlg {C : Cat.{ℓobj ℓhom}}
+    {F₁ F₂ : Fun C C}
+    [F₂_HasInitAlg : HasInitAlg F₂]
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    : HasInitAlg F₁
+:= @PresInit.HasInit _ _ F₂_HasInitAlg
+      η₁₂^.EndoAlgFun η_iso^.EndoAlgBij^.PresInit₂
 
 /-! #brief An initial algebra.
 -/
@@ -334,11 +424,11 @@ definition Adamek {C : Cat.{ℓobj ℓhom}}
                           (λ n, colimit.in (AdamekFun F) (nat.succ n))
                           (λ n₁ n₂ ωn, sorry)
              in let f : C^.hom (colimit (F □□ AdamekFun F)) (colimit (AdamekFun F))
-                     := colimit.univ ccone
+                     := colimit.univ _ ccone
              in f ∘∘ cast_hom (prescolimit (AdamekFun F) F)
 
     }
-    (λ A, { hom := colimit.univ (Adamek.CoCone F A)
+    (λ A, { hom := colimit.univ _ (Adamek.CoCone F A)
           , comm := sorry
           })
     (λ A h
