@@ -745,7 +745,7 @@ Co-products.
 definition CoProductCone (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     (factor : A → C^.obj)
     : Type (max ℓ ℓobj ℓhom)
-:= ProductCone (OpCat C) factor
+:= CoCone (ProductDrgm C factor)
 
 /-! #brief Helper for making a product cone.
 -/
@@ -754,18 +754,20 @@ definition CoProductCone.mk {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (c : C^.obj)
     (incl : ∀ (a : A), C^.hom (factor a) c)
     : CoProductCone C factor
-:= ProductCone.mk c incl
+:= CoCone.mk c incl
+    (λ a₁ a₂ f, begin cases f, exact eq.symm C^.circ_id_right end)
+
 
 /-! #brief A co-product in a category.
 -/
 @[class] definition HasCoProduct (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     (factor : A → C^.obj)
-:= HasProduct (OpCat C) factor
+:= HasCoLimit (ProductDrgm C factor)
 
-instance HasCoProduct.HasProduct {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
+instance HasCoProduct.HasCoLimit {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (factor : A → C^.obj)
     [factor_HasCoProduct : HasCoProduct C factor]
-    : HasProduct (OpCat C) factor
+    : HasCoLimit (ProductDrgm C factor)
 := factor_HasCoProduct
 
 /-! #brief A category with all co-products.
@@ -779,6 +781,14 @@ instance HasAllCoProducts.HasCoProduct (C : Cat.{ℓobj ℓhom})
     {A : Type ℓ} (factor : A → C^.obj)
     : HasCoProduct C factor
 := HasAllCoProducts.has_coproduct factor
+
+instance HasAllCoProducts.HasAllCoLimitsFrom.ObjCat (C : Cat.{ℓobj ℓhom})
+    [C_HasAllCoProducts : HasAllCoProducts.{ℓ} C]
+    (A : Type ℓ)
+    : HasAllCoLimitsFrom C (ObjCat A)
+:= { has_colimit := λ L, let l := HasAllCoProducts.HasCoProduct C L^.obj
+                         in cast (congr_arg HasCoLimit (ProductDrgm.on_Fun L)) l
+   }
 
 /-! #brief Helper for showing a category has a co-product.
 -/
@@ -798,7 +808,11 @@ definition HasCoProduct.show (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
            (h : C^.hom p c) (ωh : ∀ {a : A}, hom a = C^.circ h (incl a))
         , h = univ c hom)
     : HasCoProduct C factor
-:= HasProduct.show (OpCat C) factor p incl univ ωuniv ωuniq
+:= HasCoLimit.show p incl
+    (λ a₁ a₂ f, begin cases f, exact eq.symm C^.circ_id_right end)
+    (λ c hom ωhom, univ c hom)
+    (λ c hom ωhom a, ωuniv c hom a)
+    (λ c hom ωhom h ωh, ωuniq c hom h ωh)
 
 /-! #brief Co-products are cones.
 -/
@@ -806,7 +820,7 @@ definition coproduct.cone (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     (factor : A → C^.obj)
     [factor_HasCoProduct : HasCoProduct C factor]
     : CoProductCone C factor
-:= product.cone (OpCat C) factor
+:= colimit.cocone (ProductDrgm C factor)
 
 /-! #brief The co-product of a collection of objects.
 -/
@@ -823,7 +837,7 @@ definition coproduct.ι (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     [factor_HasCoProduct : HasCoProduct C factor]
     (a : A)
     : C^.hom (factor a) (coproduct C factor)
-:= product.π (OpCat C) factor a
+:= colimit.in (ProductDrgm C factor) a
 
 /-! #brief Every cone is mediated through the co-product.
 -/
@@ -832,7 +846,7 @@ definition coproduct.univ (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     [factor_HasCoProduct : HasCoProduct C factor]
     (c : CoProductCone C factor)
     : C^.hom (coproduct C factor) c^.obj
-:= product.univ (OpCat C) factor c
+:= colimit.univ (ProductDrgm C factor) c
 
 /-! #brief Every cone is mediated through the co-product.
 -/
@@ -842,7 +856,7 @@ definition coproduct.univ.mediates (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     (c : CoProductCone C factor)
     (a : A)
     : c^.hom a = C^.circ (coproduct.univ C factor c) (@coproduct.ι C A factor factor_HasCoProduct a)
-:= product.univ.mediates (OpCat C) factor c a
+:= colimit.univ.mediates c a
 
 /-! #brief The mediating map from the co-product to the cone unique.
 -/
@@ -853,7 +867,7 @@ definition coproduct.univ.uniq (C : Cat.{ℓobj ℓhom}) {A : Type ℓ}
     (m : C^.hom (coproduct C factor) c^.obj)
     (ω : ∀ (a : A), c^.hom a = m ∘∘ (@coproduct.ι C A factor factor_HasCoProduct a))
     : m = coproduct.univ C factor c
-:= product.univ.uniq (OpCat C) factor c m ω
+:= colimit.univ.uniq c m ω
 
 /-! #brief The unique iso between two coproducts of the same factors.
 -/
@@ -862,7 +876,7 @@ definition coproduct.iso {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (factor_HasCoProduct₁ factor_HasCoProduct₂ : HasCoProduct C factor)
     : C^.hom (@coproduct C A factor factor_HasCoProduct₁)
              (@coproduct C A factor factor_HasCoProduct₂)
-:= product.iso factor_HasCoProduct₂ factor_HasCoProduct₁
+:= colimit.iso factor_HasCoProduct₁ factor_HasCoProduct₂
 
 /-! #brief Co-products are unique up-to unique isomorphism.
 -/
@@ -871,8 +885,8 @@ definition coproduct.uniq {C : Cat.{ℓobj ℓhom}} {A : Type ℓ}
     (factor_HasCoProduct₁ factor_HasCoProduct₂ : HasCoProduct C factor)
     : Iso (coproduct.iso factor_HasCoProduct₁ factor_HasCoProduct₂)
           (coproduct.iso factor_HasCoProduct₂ factor_HasCoProduct₁)
-:= { id₁ := (product.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₂
-   , id₂ := (product.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₁
+:= { id₁ := (colimit.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₂
+   , id₂ := (colimit.uniq factor_HasCoProduct₂ factor_HasCoProduct₁)^.id₁
    }
 
 /-! #brief Factor-projection out of a certain kind of coproduct.
@@ -898,8 +912,8 @@ instance FunCat.HasCoProduct {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂
     [D_HasAllCoProducts : HasAllCoProducts.{ℓ} D]
     {A : Type ℓ} (factor : A → Fun C D)
     : HasCoProduct (FunCat C D) factor
-:= sorry
--- := @FunCat.HasCoLimit C D _ begin end (ProductDrgm (FunCat C D) factor)
+:= @FunCat.HasCoLimit C D _ (HasAllCoProducts.HasAllCoLimitsFrom.ObjCat D A)
+      (ProductDrgm (FunCat C D) factor)
 
 /-! #brief Co-products in functor categories can be computed pointwise.
 -/
@@ -962,6 +976,22 @@ instance HasAllFinCoProducts.HasFinCoProduct (C : Cat.{ℓobj ℓhom})
     : HasFinCoProduct C factor
 := HasAllFinCoProducts.has_coproduct factor
 
+instance HasAllFinCoProducts.HasAllCoLimitsFrom.ObjCat (C : Cat.{ℓobj ℓhom})
+    [C_HasAllFinCoProducts : HasAllFinCoProducts C]
+    (N : ℕ)
+    : HasAllCoLimitsFrom C (ObjCat (fin N))
+:= { has_colimit
+      := λ L, let l := HasAllFinCoProducts.HasFinCoProduct C (fin.enum L^.obj)
+           in let ω₁ : ObjCat (fin (list.length (fin.enum (L^.obj)))) = ObjCat (fin N)
+                    := by rw list.length_enum
+           in let ω₂ : ProductDrgm C (list.get (fin.enum L^.obj)) == L
+                   := by calc ProductDrgm C (list.get (fin.enum L^.obj))
+                                  == ProductDrgm C L^.obj : ProductDrgm.heq _ (congr_arg fin (list.length_enum _))
+                                                             list.get_enum'
+                              ... = L                     : ProductDrgm.on_Fun L
+              in cast (HasCoLimit.heq (by rw list.length_enum) rfl ω₂) l
+   }
+
 /-! #brief Helper for showing a category has a finite co-product.
 -/
 definition HasFinCoProduct.show {C : Cat.{ℓobj ℓhom}}
@@ -976,7 +1006,11 @@ definition HasFinCoProduct.show {C : Cat.{ℓobj ℓhom}}
                (ωcomm : hom = HomsIn.comp h incl)
              , h = univ c hom)
     : HasFinCoProduct C factor
-:= @HasFinProduct.show (OpCat C) factor p incl univ ωuniv ωuniq
+:= HasCoProduct.show C _ p
+    (HomsIn.get incl)
+    (λ c homs, univ c (HomsIn.enum homs))
+    (λ c homs n, sorry)
+    (λ c homs h ωh, sorry)
 
 /-! #brief Finite co-products are cones.
 -/
@@ -1041,7 +1075,10 @@ definition fincoproduct.univ.uniq (C : Cat.{ℓobj ℓhom})
     (m : C^.hom (fincoproduct C factor) c)
     (ω : hom = HomsIn.comp m (fincoproduct.cone C factor)^.Proj)
     : m = fincoproduct.univ C factor hom
-:= @finproduct.univ.uniq (OpCat C) factor factor_HasFinCoProduct c hom m ω
+:= coproduct.univ.uniq C (list.get factor)
+    (CoProductCone.mk c (HomsIn.get hom))
+    m
+    (λ n, sorry)
 
 /-! #brief The unique iso between two co-products of the same factors.
 -/
@@ -1073,7 +1110,8 @@ instance FunCat.HasFinCoProduct {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj
     [D_HasAllFinCoProducts : HasAllFinCoProducts D]
     (factor : list (Fun C D))
     : HasFinCoProduct (FunCat C D) factor
-:= sorry
+:= @FunCat.HasCoLimit C D _ (HasAllFinCoProducts.HasAllCoLimitsFrom.ObjCat D _)
+      (ProductDrgm (FunCat C D) (list.get factor))
 
 /-! #brief Co-products in functor categories can be computed pointwise.
 -/

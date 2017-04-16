@@ -661,6 +661,18 @@ instance HasCoLimit.Op_HasLimit {X : Cat.{ℓobjx ℓhomx}} {C : Cat.{ℓobj₁ 
     : HasLimit (OpFun L)
 := L_HasCoLimit
 
+/-! #brief Casting a HasCoLimit along heterogeneous equality.
+-/
+definition HasCoLimit.heq
+    : ∀ {X₁ X₂ : Cat.{ℓobjx ℓhomx}}
+        (ωX : X₁ = X₂)
+        {C₁ C₂ : Cat.{ℓobj₁ ℓhom₁}}
+        (ωC : C₁ = C₂)
+        {L₁ : Fun X₁ C₁} {L₂ : Fun X₂ C₂}
+        (ωL : L₁ == L₂)
+      , HasCoLimit L₁ = HasCoLimit L₂
+| X .(X) (eq.refl .(X)) C .(C) (eq.refl .(C)) L .(L) (heq.refl .(L)) := rfl
+
 /-! #brief A category with all co-limits.
 -/
 class HasAllCoLimits (C : Cat.{ℓobj₁ ℓhom₁})
