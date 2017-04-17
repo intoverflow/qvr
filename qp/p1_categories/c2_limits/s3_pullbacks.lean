@@ -9,7 +9,7 @@ namespace qp
 
 open stdaux
 
-universe variables ℓobjx ℓhomx ℓobj ℓhom
+universe variables ℓobjx ℓhomx ℓobj ℓhom ℓobj₁ ℓhom₁ ℓobj₂ ℓhom₂
 
 
 
@@ -35,6 +35,26 @@ definition CoSpanCat (N : ℕ) : Cat.{0 1}
    , circ_id_right := λ x y f, begin cases f, { trivial }, { trivial } end
    }
 
+/-! #brief Functor which forgets the base hom.
+-/
+definition CoSpanCat.forget_base (N : ℕ)
+    : Fun (CoSpanCat N) (CoSpanCat (nat.succ N))
+:= { obj := λ n, option.cases_on n option.none (λ n', option.some (stdaux.fin.add n' 1))
+   , hom := λ x y f
+            , begin
+                cases f,
+                { apply CoSpanHom.id },
+                { apply CoSpanHom.hom }
+              end
+   , hom_id := λ x, rfl
+   , hom_circ := λ x y z g f
+                 , begin
+                     cases f,
+                     { trivial },
+                     { cases g, trivial }
+                   end
+   }
+
 /-! #brief A cospan diagram.
 -/
 definition PullbackDrgm (C : Cat.{ℓobj ℓhom})
@@ -51,6 +71,70 @@ definition PullbackDrgm (C : Cat.{ℓobj ℓhom})
                      { cases g, apply eq.symm C^.circ_id_left }
                    end
    }
+
+/-! #brief Every functor out of CoSpanCat is a PullbackDrgm.
+-/
+definition PullbackDrgm.mk_doms {C : Cat.{ℓobj ℓhom}}
+    : ∀ {N : ℕ}
+        (F : Fun (CoSpanCat N) C)
+      , list C^.obj
+| 0 F := []
+| (nat.succ N) F := (F^.obj (some (fin_of 0))) :: @PullbackDrgm.mk_doms N (F □□ CoSpanCat.forget_base N)
+
+/-! #brief Every functor out of CoSpanCat is a PullbackDrgm.
+-/
+theorem PullbackDrgm.length_mk_doms {C : Cat.{ℓobj ℓhom}}
+    : ∀ {N : ℕ}
+        (F : Fun (CoSpanCat N) C)
+      , list.length (PullbackDrgm.mk_doms F) = N
+| 0 F := rfl
+| (nat.succ N) F := congr_arg nat.succ (@PullbackDrgm.length_mk_doms N (F □□ CoSpanCat.forget_base N))
+
+/-! #brief Every functor out of CoSpanCat is a PullbackDrgm.
+-/
+definition PullbackDrgm.mk_homs {C : Cat.{ℓobj ℓhom}}
+    : ∀ {N : ℕ}
+        (F : Fun (CoSpanCat N) C)
+      , @HomsIn C (PullbackDrgm.mk_doms F) (F^.obj none)
+| 0 F := HomsIn.nil
+| (nat.succ N) F
+:= HomsIn.cons (F^.hom (CoSpanHom.hom (fin_of 0)))
+               (@PullbackDrgm.mk_homs N (F □□ CoSpanCat.forget_base N))
+
+/-! #brief Every functor out of CoSpanCat is a PullbackDrgm.
+-/
+theorem PullbackDrgm.uniq {C : Cat.{ℓobj ℓhom}}
+    {N : ℕ}
+    (F : Fun (CoSpanCat N) C)
+    : PullbackDrgm C (PullbackDrgm.mk_homs F) == F
+:= begin
+     apply Fun.heq,
+     { exact congr_arg CoSpanCat (PullbackDrgm.length_mk_doms F) },
+     { trivial },
+     { intros n₁ n₂ ωn,
+       dsimp [PullbackDrgm],
+       cases n₁ with n₁ ωn₁,
+       { cases n₂ with n₂ ωn₂,
+         { trivial },
+         { exact sorry } -- TODO
+       },
+       { cases n₂ with n₂ ωn₂,
+         { exact sorry }, -- TODO
+         { exact sorry } -- TODO
+       } 
+     },
+     { intros x₁ y₁ x₂ y₂ f₁ f₂ ωf,
+       cases f₁,
+       { cases f₂,
+         { exact sorry }, -- TODO
+         { exact sorry } -- TODO
+       },
+       { cases f₂,
+         { exact sorry }, -- TODO
+         { exact sorry } -- TODO
+       }
+     }
+   end
 
 /-! #brief A cone over a pullback.
 -/
@@ -121,6 +205,14 @@ instance HasAllPullbacks.HasPullback (C : Cat.{ℓobj ℓhom})
     (maps : HomsIn (base :: factor) t)
     : HasPullback C maps
 := HasAllPullbacks.has_pullback maps
+
+instance HasAllPullbacks.HasAllLimitsFrom (C : Cat.{ℓobj ℓhom})
+    [C_HasAllPullbacks : HasAllPullbacks C]
+    (N : ℕ)
+    : HasAllLimitsFrom C (CoSpanCat (nat.succ N))
+:= { has_limit := λ L, let l := HasAllPullbacks.HasPullback C (PullbackDrgm.mk_homs L)
+                       in cast (HasLimit.heq begin rw PullbackDrgm.length_mk_doms end rfl (PullbackDrgm.uniq L)) l
+   }
 
 /-! #brief A category with all pullbacks along a given hom.
 -/
@@ -304,6 +396,35 @@ definition pullback.uniq {C : Cat.{ℓobj ℓhom}}
     : Iso (pullback.iso maps_HasPullback₁ maps_HasPullback₂)
           (pullback.iso maps_HasPullback₂ maps_HasPullback₁)
 := limit.uniq maps_HasPullback₁ maps_HasPullback₂
+
+
+
+/- -----------------------------------------------------------------------
+Pullbacks in functor categories.
+----------------------------------------------------------------------- -/
+
+/-! #brief Pullbacks in functor categories can be computed pointwise.
+-/
+instance FunCat.HasPullback {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllPullbacks : HasAllPullbacks D]
+    {base : Fun C D} {factor : list (Fun C D)} {t : Fun C D}
+    (maps : @HomsIn (FunCat C D) (base :: factor) t)
+    : HasPullback (FunCat C D) maps
+:= @FunCat.HasLimit _ _ _ (HasAllPullbacks.HasAllLimitsFrom D _) (PullbackDrgm (FunCat C D) maps)
+
+/-! #brief Pullbacks in functor categories can be computed pointwise.
+-/
+instance FunCat.HasAllPullbacks {C : Cat.{ℓobj₁ ℓhom₁}} {D : Cat.{ℓobj₂ ℓhom₂}}
+    [D_HasAllPullbacks : HasAllPullbacks D]
+    : HasAllPullbacks (FunCat C D)
+:= { has_pullback := λ base factor t maps, FunCat.HasPullback maps
+   }
+
+
+
+/- -----------------------------------------------------------------------
+Pullback squares.
+----------------------------------------------------------------------- -/
 
 /-! #brief A pullback square.
 -/
