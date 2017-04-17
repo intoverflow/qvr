@@ -2,7 +2,7 @@
 Inductive types.
 ----------------------------------------------------------------------- -/
 
-import .s4_poly_endofuns
+import .s5_wtypes
 
 namespace qp
 
