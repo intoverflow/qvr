@@ -7,7 +7,6 @@ import ..c2_limits
 import ..c3_wtypes
 
 import .s1_basic
-import ..c3_wtypes.depprod
 
 namespace qp
 

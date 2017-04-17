@@ -3,8 +3,9 @@ Polynomial functors.
 ----------------------------------------------------------------------- -/
 
 import ..c2_limits
-import .s1_exp
-import .s2_algebras
+import .s1_base_change
+import .s2_exp
+import .s3_algebras
 
 namespace qp
 
