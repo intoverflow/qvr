@@ -20,34 +20,34 @@ W-types.
 -/
 @[class] definition HasWType (C : Cat.{ℓobj ℓhom})
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {b a : C^.obj} (disp : C^.hom b a)
-:= HasInitAlg (PolyEndoFun disp)
+    [C_HasDepProd : HasAllDepProd C]
+    (P : PolyEndoFun C)
+:= HasInitAlg P^.endo
 
 /-! #brief Helper for showing that a function has a W-Type.
 -/
 definition HasWType.show (C : Cat.{ℓobj ℓhom})
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {b a : C^.obj} (disp : C^.hom b a)
+    [C_HasDepProd : HasAllDepProd C]
+    (P : PolyEndoFun C)
     (ty : C^.obj)
-    (hom : C^.hom ((PolyEndoFun disp)^.obj ty) ty)
+    (hom : C^.hom (P^.endo^.obj ty) ty)
     (ini : ∀ (ty' : C^.obj)
-             (hom' : C^.hom ((PolyEndoFun disp)^.obj ty') ty')
+             (hom' : C^.hom (P^.endo^.obj ty') ty')
            , C^.hom ty ty')
     (ωcomm : ∀ (ty' : C^.obj)
-               (hom' : C^.hom ((PolyEndoFun disp)^.obj ty') ty')
-             , hom' ∘∘ (PolyEndoFun disp)^.hom (ini ty' hom')
+               (hom' : C^.hom (P^.endo^.obj ty') ty')
+             , hom' ∘∘ P^.endo^.hom (ini ty' hom')
                 = ini ty' hom' ∘∘ hom)
     (ωuniq : ∀ (ty' : C^.obj)
-               (hom' : C^.hom ((PolyEndoFun disp)^.obj ty') ty')
+               (hom' : C^.hom (P^.endo^.obj ty') ty')
                (h : C^.hom ty ty')
-               (ωh : hom' ∘∘ (PolyEndoFun disp)^.hom h
+               (ωh : hom' ∘∘ P^.endo^.hom h
                       = h ∘∘ hom)
              , h = ini ty' hom')
-    : HasWType C disp
+    : HasWType C P
 := HasInit.show
     { carr := ty
     , hom := hom
@@ -63,60 +63,60 @@ definition HasWType.show (C : Cat.{ℓobj ℓhom})
 definition HasWType.Adamek (C : Cat.{ℓobj ℓhom})
     [C_HasInit : HasInit C]
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
+    [C_HasDepProd : HasAllDepProd C]
     [C_HasAllCoLimitsFrom : HasAllCoLimitsFrom C NatCat]
-    {b a : C^.obj} (disp : C^.hom b a)
-    (f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun disp) NatCat)
-    : HasWType C disp
-:= PolyEndoFun.Adamek disp
+    (P : PolyEndoFun C)
+    (f_PresCoLimitsFrom : PresCoLimitsFrom (DepProdFun P^.hom) NatCat)
+    : HasWType C P
+:= NatIso.EndoAlgBij.HasInitAlg₁ (PolyEndoFun.Adamek P^.hom) P^.iso
 
 /-! #brief The carrier of a W-type.
 -/
 definition wtype.carr {C : Cat.{ℓobj ℓhom}}
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {b a : C^.obj} (disp : C^.hom b a)
-    [disp_HasWType : HasWType C disp]
+    [C_HasDepProd : HasAllDepProd C]
+    (P : PolyEndoFun C)
+    [P_HasWType : HasWType C P]
     : C^.obj
-:= @initalg.carr _ _ disp_HasWType
+:= @initalg.carr _ _ P_HasWType
 
 /-! #brief The structure hom of a W-type.
 -/
-definition wtype.hom {C : Cat.{ℓobj ℓhom}}
+definition wtype.fold {C : Cat.{ℓobj ℓhom}}
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {b a : C^.obj} (disp : C^.hom b a)
-    [disp_HasWType : HasWType C disp]
-    : C^.hom ((PolyEndoFun disp)^.obj (wtype.carr disp)) (wtype.carr disp)
-:= @initalg.hom C (PolyEndoFun disp) disp_HasWType
+    [C_HasDepProd : HasAllDepProd C]
+    (P : PolyEndoFun C)
+    [P_HasWType : HasWType C P]
+    : C^.hom (P^.endo^.obj (wtype.carr P)) (wtype.carr P)
+:= @initalg.hom C P^.endo P_HasWType
 
 /-! #brief The inverse of the structure hom of a W-type.
 -/
-definition wtype.elim {C : Cat.{ℓobj ℓhom}}
+definition wtype.unfold {C : Cat.{ℓobj ℓhom}}
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {b a : C^.obj} (disp : C^.hom b a)
-    [disp_HasWType : HasWType C disp]
-    : C^.hom (wtype.carr disp) ((PolyEndoFun disp)^.obj (wtype.carr disp))
-:= @initalg.unhom C (PolyEndoFun disp) disp_HasWType
+    [C_HasDepProd : HasAllDepProd C]
+    (P : PolyEndoFun C)
+    [P_HasWType : HasWType C P]
+    : C^.hom (wtype.carr P) (P^.endo^.obj (wtype.carr P))
+:= @initalg.unhom C P^.endo P_HasWType
 
 /-! #brief hom and elim are isos.
 -/
 definition wtype.iso {C : Cat.{ℓobj ℓhom}}
     [C_HasAllFinProducts : HasAllFinProducts C]
     [C_HasFinal : HasFinal C]
-    [C_HasDepProd : HasDepProd C]
     [C_HasAllPullbacks : HasAllPullbacks C]
-    {b a : C^.obj} (disp : C^.hom b a)
-    [disp_HasWType : HasWType C disp]
-    : Iso (wtype.hom disp) (wtype.elim disp)
-:= @initalg.iso C (PolyEndoFun disp) disp_HasWType
+    [C_HasDepProd : HasAllDepProd C]
+    (P : PolyEndoFun C)
+    [P_HasWType : HasWType C P]
+    : Iso (wtype.fold P) (wtype.unfold P)
+:= @initalg.iso C P^.endo P_HasWType
 
 end qp

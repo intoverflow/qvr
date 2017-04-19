@@ -305,23 +305,19 @@ definition LeanCat.BaseChange_DepProd.Adj
 
 /-! #brief LeanCat has dependent product.
 -/
-instance LeanCat.HasDepProd
-    : HasDepProd LeanCat.{ℓ}
-:= { depprod := λ x y f f_HasPullbacksAlong, @LeanCat.DepProdFun x y f
-   , adj := sorry -- λ x y f f_HasPullbacksAlong, @LeanCat.BaseChange_DepProd.Adj x y f
+instance LeanCat.HasDepProd {X Y : LeanCat.{ℓ}^.obj}
+    (f : LeanCat.{ℓ}^.hom X Y)
+    : HasDepProd LeanCat.{ℓ} f
+:= { depprod := LeanCat.DepProdFun f
+   , adj := LeanCat.BaseChange_DepProd.Adj f
    }
 
-/-! #brief Handy wrapper for PolyEndoFun.
+/-! #brief LeanCat has all dependent products.
 -/
-definition LeanCat.PolyEndoFun
-    {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    : Fun LeanCat.{ℓ} LeanCat.{ℓ}
-:= @PolyEndoFun LeanCat.{ℓ}
-      LeanCat.HasFinal
-      LeanCat.HasDepProd
-      LeanCat.HasAllPullbacks
-      B A disp
+instance LeanCat.HasAllDepProd
+    : HasAllDepProd LeanCat.{ℓ}
+:= { has_depprod := λ x y f, LeanCat.HasDepProd f
+   }
 
 
 
@@ -329,170 +325,37 @@ definition LeanCat.PolyEndoFun
 Existence of W-types in LeanCat.
 ----------------------------------------------------------------------- -/
 
-definition fancyquot
-    {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    (L : Fun NatCat (OverCat LeanCat.{ℓ} B))
-    (a : A)
-    (fibers : list {b : B // disp b = a})
-:= quot (λ (X Y : Σ n, ListProd (list.map (λ (b : {b : B // disp b = a})
-                                           , {x : (L^.obj n)^.obj // (L^.obj n)^.hom x = b^.val})
-                                          fibers))
-         , ∃ (f : NatCat^.hom X^.fst Y^.fst)
-           , ListProd.map (λ (b : {b // disp b = a})
-                             (y : {x // (L^.obj (Y^.fst))^.hom x = b^.val})
-                           , y^.val)
-              fibers Y^.snd
-             = ListProd.map (λ (b : {b // disp b = a})
-                               (x : {x // (L^.obj (X^.fst))^.hom x = b^.val})
-                             , (L^.hom f)^.hom x^.val)
-                fibers X^.snd)
-
-definition LeanCat.DepProdFun.PresCoLimit.hom''
-    {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    (L : Fun NatCat (OverCat LeanCat.{ℓ} B))
-    (a : A)
-    : ∀ (fibers : list {b : B // disp b = a})
-      , ListProd (list.map (λ (b : {b : B // disp b = a})
-                            , {x : (colimit L)^.obj // (colimit L)^.hom x = b^.val})
-                           fibers)
-      → fancyquot disp L a fibers
-| [] u := quot.mk _ { fst := nat.zero
-                    , snd := punit.star
-                    }
-| [Ba] (subtype.mk b ωb)
-:= let h : (Σ (n : ℕ), (L^.obj n)^.obj)
-           → fancyquot disp L a [Ba]
-        := λ l, quot.mk _ { fst := l^.fst
-                          , snd := { val := l^.snd
-                                   , property := sorry
-                                   }
-                          }
-in quot.lift h
-    begin
-      intros l₁ l₂ ωl,
-      apply quot.sound,
-      exact ωl
-    end
-    b
-| (Ba :: Ba₀ :: BB) (prod.mk b bb)
-:= let h₁ : (Σ (n : ℕ), (L^.obj n)^.obj)
-           → (Σ n, ListProd (list.map (λ (b : {b : B // disp b = a})
-                                      , {x : (L^.obj n)^.obj // (L^.obj n)^.hom x = b^.val})
-                                     (Ba₀ :: BB)))
-           → fancyquot disp L a (Ba :: Ba₀ :: BB)
-         := λ x₁ x₂, quot.mk _
-                     { fst := nat.max x₁^.fst x₂^.fst
-                     , snd := ( { val := (L^.hom (nat.le_max_left _ _))^.hom x₁^.snd
-                                , property := sorry
-                                }
-                              , ListProd.map
-                                  (λ (b : {b // disp b = a})
-                                     (x : {x // (L^.obj (x₂^.fst))^.hom x = b^.val})
-                                   , @subtype.mk
-                                      (L^.obj (nat.max (x₁^.fst) (x₂^.fst)))^.obj
-                                      (λ x, (L^.obj (nat.max (x₁^.fst) (x₂^.fst)))^.hom x = b^.val)
-                                      ((L^.hom (nat.le_max_right x₁^.fst x₂^.fst))^.hom x^.val)
-                                      sorry)
-                                  (Ba₀ :: BB) x₂^.snd)
-                     }
-in let h₂ : (Σ (n : ℕ), (L^.obj n)^.obj)
-           → fancyquot disp L a (Ba₀ :: BB)
-           → fancyquot disp L a (Ba :: Ba₀ :: BB)
-        := λ x₁, quot.lift (h₁ x₁)
-                  begin
-                    intros l₁ l₂ ωl,
-                    apply quot.sound,
-                    dsimp,
-                    exact sorry
-                  end
-in quot.lift h₂
-    begin
-      intros l₁ l₂ ωl,
-      apply funext, intro x₁,
-      dsimp,
-      exact sorry
-    end
-    b^.val
-    (LeanCat.DepProdFun.PresCoLimit.hom'' (Ba₀ :: BB) bb)
-
-definition LeanCat.DepProdFun.PresCoLimit.hom'
-    {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    (L : Fun NatCat (OverCat LeanCat.{ℓ} B))
-    (a : A)
-    [a_FinFiber : FinType {b : B // disp b = a}]
-    : @product LeanCat {b : B // disp b = a}
-        (λ b, { x : (colimit L)^.obj // (colimit L)^.hom x = b^.val})
-        (LeanCat.HasProduct.{ℓ ℓ} _)
-      → (colimit (OverFun.out LeanCat A □□ (LeanCat.DepProdFun disp □□ L)))
-      -- → quot (LeanCat.HasAllCoLimits.prop.{ℓ 0 0}
-      --           (OverFun.out LeanCat A □□ (LeanCat.DepProdFun disp □□ L)))
-      -- → quot (λ (X Y : Σ n, @coproduct LeanCat A
-      --                         (λ a, @product LeanCat {b : B // disp b = a}
-      --                                 (λ (b : {b // disp b = a}), {x // (L^.obj n)^.hom x = b^.val})
-      --                                 (LeanCat.HasProduct.{ℓ ℓ} _))
-      --                         (LeanCat.HasCoProduct.{ℓ ℓ} _))
-      --         , ∃ (f : NatCat^.hom X^.fst Y^.fst), Y^.snd = (LeanCat.DepProdFun.hom disp (L^.hom f))^.hom X^.snd)
-:= λ ll, --quot.mk _ { fst := begin end, snd := { fst := a, snd := λ b, begin end } }
-begin
-exact sorry
-end
-
 definition LeanCat.DepProdFun.PresCoLimit.hom
-    {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    (ωdisp : ∀ (a : A), FinType { b : B // disp b = a })
-    (L : Fun NatCat (OverCat LeanCat.{ℓ} B))
-    : OverHom LeanCat A
-        ((LeanCat.DepProdFun disp)^.obj (colimit L))
-        (colimit (LeanCat.DepProdFun disp □□ L))
-:= { hom := λ af, LeanCat.DepProdFun.PresCoLimit.hom' disp L af^.fst af^.snd
-   , triangle
-      := begin
-           apply funext, intro af,
-           cases af with a f,
-           exact sorry
-         end
-   }
+    (P : PolyEndoFun LeanCat.{ℓ})
+    (ωP : ∀ (a : P^.codom), FinType { b : P^.dom // P^.hom b = a })
+    (L : Fun NatCat (OverCat LeanCat P^.dom))
+     : OverHom LeanCat P^.codom
+        ((LeanCat.DepProdFun P^.hom)^.obj (colimit L))
+        (colimit (LeanCat.DepProdFun P^.hom □□ L))
+:= sorry
 
-/-! #brief LeanCat.DepProdFun on a map with finite fibers preserves NatCat-colimits.
--/
 definition LeanCat.DepProdFun.PresCoLimit
-    {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    (ωdisp : ∀ (a : A), FinType { b : B // disp b = a })
-    (L : Fun NatCat (OverCat LeanCat.{ℓ} B))
-    : PresCoLimit L (LeanCat.DepProdFun disp)
+    (P : PolyEndoFun LeanCat.{ℓ})
+    (ωP : ∀ (a : P^.codom), FinType { b : P^.dom // P^.hom b = a })
+    (L : Fun NatCat (OverCat LeanCat P^.dom))
+    : PresCoLimit L (LeanCat.DepProdFun P^.hom)
 := PresCoLimit.show
     (λ L_HasCoLimit C hom ωhom
-     , let ccone : CoCone (LeanCat.DepProdFun disp □□ L)
+     , let ccone : CoCone (LeanCat.DepProdFun P^.hom □□ L)
                 := CoCone.mk C hom @ωhom
-       in (OverCat LeanCat A)^.circ
-           ((OverCat LeanCat A)^.circ
+       in (OverCat LeanCat P^.codom)^.circ
+           ((OverCat LeanCat P^.codom)^.circ
               (@colimit.univ _ _ _ (LeanCat.Over.HasCoLimit _ _) ccone)
-              (LeanCat.DepProdFun.PresCoLimit.hom disp ωdisp L))
-           ((LeanCat.DepProdFun disp)^.hom (colimit.iso L_HasCoLimit (LeanCat.Over.HasCoLimit B L))))
+              (LeanCat.DepProdFun.PresCoLimit.hom P ωP L))
+           ((LeanCat.DepProdFun P^.hom)^.hom (colimit.iso L_HasCoLimit (LeanCat.Over.HasCoLimit P^.dom L))))
     sorry
     sorry
 
-
-definition LeanCat.HasWType {B A : LeanCat.{ℓ}^.obj}
-    (disp : LeanCat.{ℓ}^.hom B A)
-    (ωdisp : ∀ (a : A), FinType { b : B // disp b = a })
-    : @HasWType LeanCat
-        LeanCat.HasFinal
-        LeanCat.HasDepProd
-        LeanCat.HasAllPullbacks
-        B A disp
-:= @HasWType.Adamek LeanCat.{ℓ}
-    LeanCat.HasInit
-    LeanCat.HasFinal
-    LeanCat.HasDepProd
-    LeanCat.HasAllPullbacks
-    (HasAllCoLimits.HasAllCoLimitsFrom LeanCat.{ℓ} NatCat)
-    B A disp
-    ({ pres_colimit := LeanCat.DepProdFun.PresCoLimit disp ωdisp })
+definition LeanCat.HasWType
+    (P : PolyEndoFun LeanCat.{ℓ})
+    (ωP : ∀ (a : P^.codom), FinType { b : P^.dom // P^.hom b = a })
+    : HasWType LeanCat P
+:= HasWType.Adamek LeanCat P
+    { pres_colimit := LeanCat.DepProdFun.PresCoLimit P ωP }
 
 end qp

@@ -154,36 +154,41 @@ definition DepSum_BaseChange.Adj {C : Cat.{ℓobj ℓhom}}
 Dependent product.
 ----------------------------------------------------------------------- -/
 
-/-! #brief A category with dependent products.
+/-! #brief A category with a dependent product.
 -/
 class HasDepProd (C : Cat.{ℓobj ℓhom})
-:= (depprod
-     : ∀ {x y : C^.obj} (f : C^.hom x y)
-         [f_HasPullbacksAlong : HasPullbacksAlong C f]
-       , Fun (OverCat C x) (OverCat C y))
-   (adj
-     : ∀ {x y : C^.obj} (f : C^.hom x y)
-         [f_HasPullbacksAlong : HasPullbacksAlong C f]
-       , Adj (BaseChangeFun f) (depprod f))
+    {x y : C^.obj} (f : C^.hom x y)
+    [f_HasPullbacksAlong : HasPullbacksAlong C f]
+:= (depprod : Fun (OverCat C x) (OverCat C y))
+   (adj : Adj (BaseChangeFun f) depprod)
+
+/-! #brief A category with all dependent products.
+-/
+class HasAllDepProd (C : Cat.{ℓobj ℓhom})
+    [C_HasAllPullbacks : HasAllPullbacks C]
+:= (has_depprod : ∀ {x y : C^.obj} (f : C^.hom x y)
+                  , HasDepProd C f)
+
+attribute [instance] HasAllDepProd.has_depprod
 
 /-! #brief A dependent product functor.
 -/
 definition DepProdFun {C : Cat.{ℓobj ℓhom}}
-    [C_HasDepProd : HasDepProd C]
     {x y : C^.obj}
     (f : C^.hom x y)
     [f_HasPullbacksAlong : HasPullbacksAlong C f]
+    [C_HasDepProd : HasDepProd C f]
     : Fun (OverCat C x) (OverCat C y)
-:= HasDepProd.depprod f
+:= HasDepProd.depprod f_HasPullbacksAlong
 
 /-! #brief Base change is adjoint to dependent product.
 -/
 definition BaseChange_DepProd.Adj {C : Cat.{ℓobj ℓhom}}
-    [C_HasDepProd : HasDepProd C]
     {x y : C^.obj}
     (f : C^.hom x y)
     [f_HasPullbacksAlong : HasPullbacksAlong C f]
+    [C_HasDepProd : HasDepProd C f]
     : Adj (BaseChangeFun f) (DepProdFun f)
-:= HasDepProd.adj f
+:= HasDepProd.adj f_HasPullbacksAlong
 
 end qp

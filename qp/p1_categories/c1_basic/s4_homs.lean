@@ -71,6 +71,27 @@ definition HomsList.id {C : Cat.{ℓobj ℓhom}}
 | [] := HomsList.nil
 | (factor :: factors) := HomsList.cons (C^.id factor) (HomsList.id factors)
 
+/-! #brief Mapping a construction across a homs list.
+-/
+definition HomsList.map' {C : Cat.{ℓobj ℓhom}}
+    {A : Type ℓ} (f : ∀ {x y : C^.obj}, C^.hom x y → A)
+    : ∀ {doms_codoms : list (prod C^.obj C^.obj)}
+      , HomsList C doms_codoms → list A
+| [] homs := []
+| ((prod.mk a b) :: doms_codoms) (dlist.cons .(_) hom .(_) homs)
+:= f hom :: HomsList.map' homs
+
+/-! #brief Generating a HomsList from a list.
+-/
+definition HomsList.from_list {C : Cat.{ℓobj ℓhom}}
+    {A : Type ℓ}
+    {f_dom : A → C^.obj} {f_codom : A → C^.obj}
+    (f : ∀ (a : A), C^.hom (f_dom a) (f_codom a))
+    : ∀ (aa : list A)
+      , HomsList C (list.map (λ (a : A), (f_dom a, f_codom a)) aa)
+| [] := HomsList.nil
+| (a :: aa) := HomsList.cons (f a) (HomsList.from_list aa)
+
 /-! #brief Fetching a hom out of HomsList.
 -/
 definition HomsList.get {C : Cat.{ℓobj ℓhom}}

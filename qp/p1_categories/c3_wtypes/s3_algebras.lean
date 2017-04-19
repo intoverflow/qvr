@@ -189,15 +189,26 @@ Initial algebras.
 
 /-! #brief Initial algebras are preserved by natural isomorphisms.
 -/
-definition NatIso.EndoAlgBij.HasInitAlg {C : Cat.{ℓobj ℓhom}}
+definition NatIso.EndoAlgBij.HasInitAlg₁ {C : Cat.{ℓobj ℓhom}}
     {F₁ F₂ : Fun C C}
-    [F₂_HasInitAlg : HasInitAlg F₂]
+    (F₂_HasInitAlg : HasInitAlg F₂)
     {η₁₂ : NatTrans F₁ F₂}
     {η₂₁ : NatTrans F₂ F₁}
     (η_iso : NatIso η₁₂ η₂₁)
     : HasInitAlg F₁
 := @PresInit.HasInit _ _ F₂_HasInitAlg
       η₁₂^.EndoAlgFun η_iso^.EndoAlgBij^.PresInit₂
+
+/-! #brief Initial algebras are preserved by natural isomorphisms.
+-/
+definition NatIso.EndoAlgBij.HasInitAlg₂ {C : Cat.{ℓobj ℓhom}}
+    {F₁ F₂ : Fun C C}
+    (F₁_HasInitAlg : HasInitAlg F₁)
+    {η₁₂ : NatTrans F₁ F₂}
+    {η₂₁ : NatTrans F₂ F₁}
+    (η_iso : NatIso η₁₂ η₂₁)
+    : HasInitAlg F₂
+:= NatIso.EndoAlgBij.HasInitAlg₁ F₁_HasInitAlg η_iso^.flip
 
 /-! #brief An initial algebra.
 -/
